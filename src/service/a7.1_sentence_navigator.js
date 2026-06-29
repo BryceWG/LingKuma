@@ -487,7 +487,8 @@ function navigateToLazySentence(sentenceInfo, direction) {
     try {
       sentenceInfo.rect = getSentenceRect(sentenceInfo.sentence, {
         textNode: sentenceInfo.textNode,
-        range: sentenceInfo.range
+        range: sentenceInfo.range,
+        sentenceRange: sentenceInfo.sentenceRange
       });
     } catch (e) {
       console.warn('[SentenceNavigator] 懒导航获取句子位置失败:', e);
@@ -514,7 +515,7 @@ function navigateToSentence(index, direction) {
   // 使用A7的getSentenceRect函数
   if (typeof getSentenceRect === 'function' && sentenceInfo.textNode && sentenceInfo.range) {
     try {
-      sentenceInfo.rect = getSentenceRect(sentenceInfo.sentence, { textNode: sentenceInfo.textNode, range: sentenceInfo.range });
+      sentenceInfo.rect = getSentenceRect(sentenceInfo.sentence, { textNode: sentenceInfo.textNode, range: sentenceInfo.range, sentenceRange: sentenceInfo.sentenceRange });
     } catch (e) {
       console.warn('[SentenceNavigator] 获取句子位置失败:', e);
     }
@@ -600,7 +601,7 @@ function triggerSentenceExplosion(sentenceInfo) {
   // 如果rect还没计算，才计算
   if (!rect && typeof getSentenceRect === 'function' && sentenceInfo.textNode && sentenceInfo.range) {
     try {
-      rect = getSentenceRect(sentenceInfo.sentence, { textNode: sentenceInfo.textNode, range: sentenceInfo.range });
+      rect = getSentenceRect(sentenceInfo.sentence, { textNode: sentenceInfo.textNode, range: sentenceInfo.range, sentenceRange: sentenceInfo.sentenceRange });
       sentenceInfo.rect = rect; // 缓存结果
     } catch (e) {
       console.warn('[SentenceNavigator] getSentenceRect 调用失败:', e);

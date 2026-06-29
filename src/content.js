@@ -680,8 +680,19 @@ function getSentenceForWord(detail) {
   // console.log('[getSentenceForWord] 计算出的 sentenceEnd (在标准化文本中的索引):', sentenceEnd);
   // console.log('[getSentenceForWord] 句子长度:', sentenceEnd - sentenceStart);
 
+  let sentenceRangeStart = sentenceStart;
+  let sentenceRangeEnd = sentenceEnd;
+  const updateSentenceFromNormalizedRange = (start, end) => {
+    const rawSentence = cleanedNormalizedFullText.slice(start, end);
+    const leadingWhitespaceLength = (rawSentence.match(/^\s*/) || [''])[0].length;
+    const trailingWhitespaceLength = (rawSentence.match(/\s*$/) || [''])[0].length;
+    sentenceRangeStart = start + leadingWhitespaceLength;
+    sentenceRangeEnd = end - trailingWhitespaceLength;
+    return rawSentence.trim();
+  };
+
   // 提取句子 (从标准化文本中提取)
-  let sentence = cleanedNormalizedFullText.slice(sentenceStart, sentenceEnd).trim(); // trim 再次确保
+  let sentence = updateSentenceFromNormalizedRange(sentenceStart, sentenceEnd); // trim 再次确保
   // console.log('[getSentenceForWord] 初始提取的句子 (来自标准化文本):', sentence);
   // console.log('[getSentenceForWord] 初始句子长度:', sentence.length);
 
@@ -712,7 +723,7 @@ function getSentenceForWord(detail) {
       // console.log('[getSentenceForWord] 句子需要扩展 (基于标准化文本)');
       const EXTENSION_LENGTH = 100;
       sentenceEnd = Math.min(sentenceEnd + EXTENSION_LENGTH, cleanedNormalizedFullText.length);
-      sentence = cleanedNormalizedFullText.slice(sentenceStart, sentenceEnd).trim();
+      sentence = updateSentenceFromNormalizedRange(sentenceStart, sentenceEnd);
       // console.log('[getSentenceForWord] 扩展后的句子 (初步, 来自标准化文本):', sentence);
 
        // 在扩展后的标准化句子中找结束点
@@ -720,6 +731,7 @@ function getSentenceForWord(detail) {
       if (endMatch) {
           const endPos = sentence.indexOf(endMatch[0]) + endMatch[0].length;
           sentence = sentence.slice(0, endPos);
+          sentenceRangeEnd = sentenceRangeStart + endPos;
           // console.log('[getSentenceForWord] 扩展后找到结束点，截取后的句子 (来自标准化文本):', sentence);
       }
   }
@@ -739,12 +751,12 @@ function getSentenceForWord(detail) {
   let sentenceRange = null;
   try {
     // 使用 normalizedCharMap 找到句子起始和结束位置对应的 DOM 节点
-    if (normalizedCharMap.length > 0 && sentenceStart < normalizedCharMap.length) {
+    if (normalizedCharMap.length > 0 && sentenceRangeStart < normalizedCharMap.length) {
       // 找到起始位置
-      let startInfo = normalizedCharMap[sentenceStart];
+      let startInfo = normalizedCharMap[sentenceRangeStart];
       
-      // 找到结束位置（sentenceEnd 是 exclusive，所以用 sentenceEnd - 1）
-      let endInfo = normalizedCharMap[Math.min(sentenceEnd - 1, normalizedCharMap.length - 1)];
+      // 找到结束位置（sentenceRangeEnd 是 exclusive，所以用 sentenceRangeEnd - 1）
+      let endInfo = normalizedCharMap[Math.min(sentenceRangeEnd - 1, normalizedCharMap.length - 1)];
       
       if (startInfo && endInfo && startInfo.node && endInfo.node) {
         sentenceRange = document.createRange();

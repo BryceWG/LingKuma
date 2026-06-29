@@ -3852,7 +3852,8 @@ document.addEventListener('mousemove', (e) => {
       // 获取句子的位置信息
       const sentenceRect = getSentenceRect(sentenceInfo.sentence, {
         textNode: sentenceInfo.textNode,
-        range: sentenceInfo.range
+        range: sentenceInfo.range,
+        sentenceRange: sentenceInfo.sentenceRange
       });
       showWordExplosion(sentenceInfo.sentence, sentenceRect, sentenceInfo);
     }, HOVER_DELAY);
@@ -4137,7 +4138,8 @@ async function handleA7PointerActivation(e) {
     // 获取句子的位置信息
     const sentenceRect = getSentenceRect(sentenceInfo.sentence, {
       textNode: sentenceInfo.textNode,
-      range: sentenceInfo.range
+      range: sentenceInfo.range,
+      sentenceRange: sentenceInfo.sentenceRange
     });
     console.log('[WordExplosion] 句子位置信息:', sentenceRect);
     showWordExplosion(sentenceInfo.sentence, sentenceRect, sentenceInfo);
@@ -4537,11 +4539,45 @@ function findWordAtPositionInTextNode(textNode, rawRanges, x, y) {
   }
 }
 
+function getRangeBoundingRect(range) {
+  if (!range || !range.startContainer || !range.endContainer) return null;
+  if (!document.contains(range.startContainer) || !document.contains(range.endContainer)) return null;
+
+  const rects = Array.from(range.getClientRects()).filter(rect => rect.width > 0 && rect.height > 0);
+  if (rects.length === 0) return null;
+
+  let minLeft = Infinity;
+  let minTop = Infinity;
+  let maxRight = -Infinity;
+  let maxBottom = -Infinity;
+
+  for (const rect of rects) {
+    minLeft = Math.min(minLeft, rect.left);
+    minTop = Math.min(minTop, rect.top);
+    maxRight = Math.max(maxRight, rect.right);
+    maxBottom = Math.max(maxBottom, rect.bottom);
+  }
+
+  return {
+    left: minLeft,
+    top: minTop,
+    right: maxRight,
+    bottom: maxBottom,
+    width: maxRight - minLeft,
+    height: maxBottom - minTop
+  };
+}
+
 // 获取句子的边界矩形（支持新系统和备用系统）
 function getSentenceRect(sentence, foundInfo) {
   if (!sentence || !foundInfo) return null;
 
   try {
+    const precomputedRect = getRangeBoundingRect(foundInfo.sentenceRange);
+    if (precomputedRect) {
+      return precomputedRect;
+    }
+
     // 处理备用系统的情况（只有range属性）
     if (foundInfo.range && !foundInfo.textNode) {
       return getSentenceRectFallback(sentence, foundInfo.range);

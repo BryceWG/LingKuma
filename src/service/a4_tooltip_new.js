@@ -9643,7 +9643,8 @@ function handleSentenceExplosion() {
         if (!sentenceRect && typeof getSentenceRect === 'function') {
           sentenceRect = getSentenceRect(sentenceInfo.sentence, {
             textNode: sentenceInfo.textNode,
-            range: sentenceInfo.range
+            range: sentenceInfo.range,
+            sentenceRange: sentenceInfo.sentenceRange
           });
         }
         
