@@ -737,6 +737,7 @@ const i18n = {
     'aiChannelLabel': 'AI 渠道:',
     'aiChannelDiy': '自定义（Custom API ）',
     'aiChannelOhmygpt': 'OhMyGpt（需授权登录）',
+    'aiChannelZeroZero': '0-0 (beta)',
     'apiSidebar': '侧边栏解析',
     'apiYoutubeCaption': 'YouTube字幕处理', // 新增
     'apiYoutubeCaptionSettings': 'YouTube字幕处理设置', // 新增
@@ -1108,6 +1109,7 @@ Lingkuma完全开源免费，软件维护不易，如果您感觉该软件对你
     'aiChannelLabel': 'AI 頻道:',
     'aiChannelDiy': '自訂（Custom API ）',
     'aiChannelOhmygpt': 'OhMyGpt（需授權登入）',
+    'aiChannelZeroZero': '0-0 (beta)',
     'apiSidebar': '側邊欄解析',
     'apiYoutubeCaption': 'YouTube字幕處理',
     'apiYoutubeCaptionSettings': 'YouTube字幕處理設定',
@@ -1488,6 +1490,7 @@ Lingkuma完全開源免費，軟體維護不易，如果您感覺該軟體對你
     'aiChannelLabel': 'AI Channel:',
     'aiChannelDiy': 'Custom',
     'aiChannelOhmygpt': 'OhMyGpt',
+    'aiChannelZeroZero': '0-0 (beta)',
     // ... existing en translations ...
     'apiSidebar': 'Sidebar Analysis',
     'apiYoutubeCaption': 'YouTube Caption Processing', // 新增
@@ -1736,6 +1739,7 @@ Lingkuma完全開源免費，軟體維護不易，如果您感覺該軟體對你
     'aiChannelLabel': 'AI Channel:',
     'aiChannelDiy': 'Custom',
     'aiChannelOhmygpt': 'OhMyGpt',
+    'aiChannelZeroZero': '0-0 (beta)',
     'apiSidebar': 'Seitenleistenanalyse',
     'apiYoutubeCaption': 'YouTube-Untertitelverarbeitung', // 新增
     'apiYoutubeCaptionSettings': 'YouTube-Untertitelverarbeitungseinstellungen', // 新增
@@ -1982,6 +1986,7 @@ Lingkuma完全開源免費，軟體維護不易，如果您感覺該軟體對你
     'aiChannelLabel': 'AI Channel:',
     'aiChannelDiy': 'Custom',
     'aiChannelOhmygpt': 'OhMyGpt',
+    'aiChannelZeroZero': '0-0 (beta)',
     'apiSidebar': 'Analisi Barra Laterale',
     'apiYoutubeCaption': 'Elaborazione Sottotitoli YouTube', // 新增
     'apiYoutubeCaptionSettings': 'Impostazioni Elaborazione Sottotitoli YouTube', // 新增
@@ -2252,6 +2257,7 @@ Lingkuma完全開源免費，軟體維護不易，如果您感覺該軟體對你
     'aiChannelLabel': 'AI Channel:',
     'aiChannelDiy': 'Custom',
     'aiChannelOhmygpt': 'OhMyGpt',
+    'aiChannelZeroZero': '0-0 (beta)',
     'apiSidebar': '사이드바 분석',
     'apiYoutubeCaption': 'YouTube 자막 처리', // 新增
     'apiYoutubeCaptionSettings': 'YouTube 자막 처리 설정', // 新增
@@ -2433,6 +2439,7 @@ Lingkuma完全開源免費，軟體維護不易，如果您感覺該軟體對你
     'aiChannelLabel': 'AI Channel:',
     'aiChannelDiy': 'Custom',
     'aiChannelOhmygpt': 'OhMyGpt',
+    'aiChannelZeroZero': '0-0 (beta)',
     'apiSidebar': 'Анализ боковой панели',
     'apiYoutubeCaption': 'Обработка YouTube-подписей', // 新增
     'apiYoutubeCaptionSettings': 'Настройки обработки YouTube-подписей', // 新增
@@ -5081,19 +5088,201 @@ if (document.readyState === 'loading') {
 }
 
 // 根据AI渠道更新UI显示状态
+const ZEROZERO_BASE_URL = 'https://api.0-0.pro/v1/chat/completions';
+const ZEROZERO_MODELS_URL = 'https://api.0-0.pro/v1/models';
+
+function setZeroZeroModelStatus(message, color = 'var(--text-secondary, #666)') {
+  const status = document.getElementById('zerozeroModelStatus');
+  if (!status) return;
+  status.textContent = message || '';
+  status.style.color = color;
+}
+
+function renderZeroZeroModels(models, selectedModel = '') {
+  const select = document.getElementById('zerozeroModelSelect');
+  if (!select) return;
+
+  select.innerHTML = '';
+  if (!Array.isArray(models) || models.length === 0) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '请先填写 API Key 获取模型列表';
+    select.appendChild(option);
+    return;
+  }
+
+  models.forEach(model => {
+    const modelId = typeof model === 'string' ? model : model?.id;
+    if (!modelId) return;
+
+    const option = document.createElement('option');
+    option.value = modelId;
+    option.textContent = model?.owned_by ? `${modelId} (${model.owned_by})` : modelId;
+    select.appendChild(option);
+  });
+
+  if (selectedModel && Array.from(select.options).some(option => option.value === selectedModel)) {
+    select.value = selectedModel;
+  } else if (select.options.length > 0) {
+    select.selectedIndex = 0;
+  }
+}
+
+function normalizeZeroZeroModels(data) {
+  if (!data || !Array.isArray(data.data)) return [];
+
+  return data.data
+    .filter(model => model && model.id)
+    .map(model => ({
+      id: model.id,
+      owned_by: model.owned_by || ''
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+function saveZeroZeroAiConfig(patch, callback) {
+  chrome.storage.local.get('aiConfig', function(result) {
+    const aiConfig = result.aiConfig || {};
+    Object.assign(aiConfig, patch, { zerozeroBaseUrl: ZEROZERO_BASE_URL });
+    chrome.storage.local.set({ aiConfig: aiConfig }, function() {
+      if (typeof callback === 'function') callback(aiConfig);
+    });
+  });
+}
+
+async function fetchZeroZeroModels(apiKey) {
+  const response = await fetch(ZEROZERO_MODELS_URL, {
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+      authorization: `Bearer ${apiKey}`
+    }
+  });
+
+  if (!response.ok) {
+    let errorText = '';
+    try {
+      errorText = await response.text();
+    } catch (error) {
+      errorText = response.statusText || '';
+    }
+    throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
+  }
+
+  return normalizeZeroZeroModels(await response.json());
+}
+
+async function refreshZeroZeroModels() {
+  const keyInput = document.getElementById('zerozeroApiKey');
+  const select = document.getElementById('zerozeroModelSelect');
+  const refreshBtn = document.getElementById('zerozeroRefreshModelsBtn');
+  const apiKey = keyInput?.value?.trim() || '';
+
+  if (!apiKey) {
+    renderZeroZeroModels([], '');
+    setZeroZeroModelStatus('请先粘贴 0-0 API Key', 'red');
+    saveZeroZeroAiConfig({ zerozeroApiKey: '', zerozeroModels: [], zerozeroModel: '' });
+    return;
+  }
+
+  if (refreshBtn) refreshBtn.disabled = true;
+  setZeroZeroModelStatus('正在获取 0-0 模型列表...', 'orange');
+
+  try {
+    const models = await fetchZeroZeroModels(apiKey);
+    const selectedBeforeFetch = select?.value || '';
+    const nextSelected = selectedBeforeFetch && models.some(model => model.id === selectedBeforeFetch)
+      ? selectedBeforeFetch
+      : (models[0]?.id || '');
+
+    renderZeroZeroModels(models, nextSelected);
+    saveZeroZeroAiConfig({
+      zerozeroApiKey: apiKey,
+      zerozeroModels: models,
+      zerozeroModel: nextSelected
+    });
+
+    if (models.length === 0) {
+      setZeroZeroModelStatus('没有获取到可用模型', 'red');
+    } else {
+      setZeroZeroModelStatus(`已获取 ${models.length} 个模型，当前激活：${nextSelected}`, 'green');
+    }
+  } catch (error) {
+    setZeroZeroModelStatus(`获取模型失败：${error.message || error}`, 'red');
+  } finally {
+    if (refreshBtn) refreshBtn.disabled = false;
+  }
+}
+
+function initZeroZeroSettings() {
+  const keyInput = document.getElementById('zerozeroApiKey');
+  const baseUrlInput = document.getElementById('zerozeroBaseUrl');
+  const select = document.getElementById('zerozeroModelSelect');
+  const refreshBtn = document.getElementById('zerozeroRefreshModelsBtn');
+
+  if (baseUrlInput) baseUrlInput.value = ZEROZERO_BASE_URL;
+
+  chrome.storage.local.get('aiConfig', function(result) {
+    const aiConfig = result.aiConfig || {};
+    if (keyInput) keyInput.value = aiConfig.zerozeroApiKey || '';
+    renderZeroZeroModels(aiConfig.zerozeroModels || [], aiConfig.zerozeroModel || '');
+  });
+
+  if (keyInput && !keyInput.dataset.zerozeroInitialized) {
+    keyInput.addEventListener('mouseenter', function() { this.type = 'text'; });
+    keyInput.addEventListener('mouseleave', function() { this.type = 'password'; });
+    keyInput.addEventListener('input', debounce(function() {
+      const apiKey = this.value.trim();
+      saveZeroZeroAiConfig({ zerozeroApiKey: apiKey });
+      if (apiKey.length >= 8) refreshZeroZeroModels();
+    }, 800));
+    keyInput.dataset.zerozeroInitialized = 'true';
+  }
+
+  if (refreshBtn && !refreshBtn.dataset.zerozeroInitialized) {
+    refreshBtn.addEventListener('click', refreshZeroZeroModels);
+    refreshBtn.dataset.zerozeroInitialized = 'true';
+  }
+
+  if (select && !select.dataset.zerozeroInitialized) {
+    select.addEventListener('change', function() {
+      const selectedModel = this.value || '';
+      saveZeroZeroAiConfig({ zerozeroModel: selectedModel });
+      if (selectedModel) {
+        setZeroZeroModelStatus(`当前激活：${selectedModel}`, 'green');
+      }
+    });
+    select.dataset.zerozeroInitialized = 'true';
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initZeroZeroSettings);
+} else {
+  initZeroZeroSettings();
+}
+
 function updateApiChannelUI(channel) {
   const customApiSettings = document.getElementById('customApiSettings');
   const ohmygptSettings = document.getElementById('ohmygptSettings');
   const ohmygptAuthDetails = document.getElementById('ohmygptAuthDetails');
+  const zerozeroSettings = document.getElementById('zerozeroSettings');
   
   if (channel === 'ohmygpt') {
     if (customApiSettings) customApiSettings.style.display = 'none';
     if (ohmygptSettings) ohmygptSettings.style.display = 'flex';
     if (ohmygptAuthDetails) ohmygptAuthDetails.style.display = 'block';
+    if (zerozeroSettings) zerozeroSettings.style.display = 'none';
+  } else if (channel === 'zerozero') {
+    if (customApiSettings) customApiSettings.style.display = 'none';
+    if (ohmygptSettings) ohmygptSettings.style.display = 'none';
+    if (ohmygptAuthDetails) ohmygptAuthDetails.style.display = 'none';
+    if (zerozeroSettings) zerozeroSettings.style.display = 'block';
   } else {
     if (customApiSettings) customApiSettings.style.display = 'block';
     if (ohmygptSettings) ohmygptSettings.style.display = 'none';
     if (ohmygptAuthDetails) ohmygptAuthDetails.style.display = 'none';
+    if (zerozeroSettings) zerozeroSettings.style.display = 'none';
   }
 }
 // 监听AI渠道切换

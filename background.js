@@ -2578,6 +2578,16 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
           config.apiKey = responseConfig.ohmygptToken || "";
           config.temperature = responseConfig.ohmygptTemperature !== undefined ? parseFloat(responseConfig.ohmygptTemperature) : temperature;
           console.log("使用 OhMyGPT 配置:", config);
+        } else if (aiChannel === "zerozero") {
+          config.apiBaseURL = "https://api.0-0.pro/v1/chat/completions";
+          config.apiModel = responseConfig.zerozeroModel || "";
+          config.apiKey = responseConfig.zerozeroApiKey || "";
+          config.temperature = responseConfig.zerozeroTemperature !== undefined ? parseFloat(responseConfig.zerozeroTemperature) : temperature;
+          console.log("[background.js] 使用 0-0 配置:", {
+            apiBaseURL: config.apiBaseURL,
+            apiModel: config.apiModel,
+            hasApiKey: Boolean(config.apiKey)
+          });
         } else {
           // 如果不是 ohmygpt 通道，判断是否轮询
           if (enablePolling && result.customApiProfiles?.profiles?.length > 1) {
@@ -2631,11 +2641,20 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
             }
           }
         }
+        if (aiChannel === "zerozero" && !config.apiKey) {
+          reject(new Error("0-0 API Key 未配置，请在插件设置中填写"));
+          return;
+        }
+
+        if (aiChannel === "zerozero" && !config.apiModel) {
+          reject(new Error("0-0 模型未选择，请在插件设置中获取模型列表并选择一个模型"));
+          return;
+        }
+
         if (!config.apiKey && !config.apiBaseURL) {
           reject(new Error("AI API Key 或 Token 未配置，请在插件设置中填写"));
           return;
         }
-
         console.log("[background.js] 发起 AI 请求到:", config.apiBaseURL);
 
         // 检测 API 类型
