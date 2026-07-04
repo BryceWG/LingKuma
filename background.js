@@ -2333,6 +2333,42 @@ function extractResponsesContent(data) {
   return '';
 }
 
+function extractAITextContent(content) {
+  if (typeof content === 'string') {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content.map(item => extractAITextContent(item)).join('');
+  }
+
+  if (content && typeof content === 'object') {
+    if (typeof content.text === 'string') {
+      return content.text;
+    }
+    if (typeof content.content === 'string' || Array.isArray(content.content)) {
+      return extractAITextContent(content.content);
+    }
+  }
+
+  return '';
+}
+
+function extractChatCompletionsContent(data) {
+  const choice = data?.choices?.[0];
+  return extractAITextContent(choice?.delta?.content)
+    || extractAITextContent(choice?.message?.content)
+    || extractAITextContent(data?.message?.content)
+    || extractAITextContent(data?.content);
+}
+
+function extractAIResponseContent(data, apiType) {
+  if (apiType === 'responses') {
+    return extractResponsesContent(data);
+  }
+
+  return extractChatCompletionsContent(data);
+}
 /**
  * 检测响应是否为流式格式（SSE）
  * @param {Response} response - fetch 响应对象
@@ -2370,7 +2406,7 @@ async function collectStreamResponse(response, apiType) {
       return null;
     } else {
       // Chat Completions API 流式格式
-      return data.choices?.[0]?.delta?.content || null;
+      return extractChatCompletionsContent(data) || null;
     }
   };
 
@@ -2732,6 +2768,54 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
           // 处理流式响应
           console.log("[background.js] 开始处理流式响应，API类型:", apiType);
 
+          if (!isStreamResponse(response)) {
+            const data = await response.json();
+            const content = extractAIResponseContent(data, apiType);
+
+            if (!isSidebarRequest && !tabId) {
+              resolve(data);
+              return;
+            }
+
+            if (content) {
+              if (isSidebarRequest) {
+                chrome.runtime.sendMessage({
+                  action: "streamUpdate",
+                  data: {
+                    content: content,
+                    isFirstChunk: true
+                  }
+                }).catch(err => console.log("发送侧栏非流式数据失败:", err));
+              } else if (tabId) {
+                chrome.tabs.sendMessage(tabId, {
+                  action: "streamChunk",
+                  data: {
+                    content: content,
+                    isFirstChunk: true,
+                    isDone: true
+                  }
+                }).catch(err => console.log("发送非流式数据失败:", err));
+              }
+            }
+
+            if (tabId) {
+              chrome.tabs.sendMessage(tabId, {
+                action: "streamComplete",
+                data: { word, sentence }
+              }).catch(err => console.log("发送完成信号失败:", err));
+            }
+
+            if (isSidebarRequest) {
+              chrome.runtime.sendMessage({
+                action: "streamComplete",
+                data: { word, sentence }
+              }).catch(err => console.log("发送侧边栏完成信号失败:", err));
+            }
+
+            resolve({ success: true, stream: true });
+            return;
+          }
+
           const reader = response.body.getReader();
           let buffer = '';
           let isFirstChunk = true;
@@ -2752,7 +2836,7 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
               return null;
             } else {
               // Chat Completions API 流式格式
-              return data.choices?.[0]?.delta?.content || null;
+              return extractChatCompletionsContent(data) || null;
             }
           };
 
