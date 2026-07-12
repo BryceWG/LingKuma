@@ -193,6 +193,7 @@ class ScopeObserver {
     this.mutPairFlag = 0; // 变更观察器状态标志
     this.wordDetailsFromDB = {}; // 单词详情数据
     this.highlightEnabled = true; // 插件高亮显示状态，关闭时保留扫描缓存
+    this.pendingTextNodesWhilePaused = new Set(); // 关闭期间新增的文本，重新开启后再处理
     this.wordExplosionInitTimer = null;
     this.wordExplosionInitRetries = 0;
     this.wordExplosionInitStarted = false;
@@ -384,19 +385,32 @@ class ScopeObserver {
     }
 
     this.reapplyHighlights({ forceEnabled: true });
+
+    if (this.pendingTextNodesWhilePaused.size > 0) {
+      const pendingTextNodes = Array.from(this.pendingTextNodesWhilePaused).filter(textNode => document.contains(textNode));
+      this.pendingTextNodesWhilePaused.clear();
+      if (pendingTextNodes.length > 0) {
+        this.processNewTextNodes(pendingTextNodes);
+      }
+    }
   }
 
   // 重新应用所有高亮
   reapplyHighlights(options = {}) {
     console.log("重新应用所有高亮...");
     try {
-      if (!this.highlightEnabled && !options.forceEnabled) {
+      if (!this.highlightEnabled) {
         console.log("高亮当前已关闭，不重新应用");
         return;
       }
 
       // 检查插件是否启用
       chrome.storage.local.get(['enablePlugin', 'wordHighlightFloatingButtonScope', 'wordHighlightPageTabOverrides'], (result) => {
+        if (!this.highlightEnabled) {
+          console.log("高亮已在等待存储状态期间关闭，不重新应用");
+          return;
+        }
+
         if (!isWordHighlightEnabledForCurrentPage(result) && !options.forceEnabled) {
           console.log("插件已禁用，不重新应用高亮");
           return;
@@ -591,7 +605,7 @@ class ScopeObserver {
 
   // 提取扫描文档的逻辑为独立方法
   startDocumentScan() {
-    if (this.destroyed) return;
+    if (this.destroyed || !this.highlightEnabled) return;
     // 确保在获取设置之后再执行扫描和观察
     this.scanDocument();
     this.mutObserve(); // 开始观察DOM变化
@@ -604,7 +618,7 @@ class ScopeObserver {
 
   // 扫描文档
   scanDocument() {
-    if (this.destroyed) return;
+    if (this.destroyed || !this.highlightEnabled) return;
     console.log("扫描文档中的文本节点...");
 
     const scope = this.tree.scope;
@@ -688,6 +702,13 @@ class ScopeObserver {
   async processTextNodesInChunks(nodes, callback) {
     if (this.destroyed) return;
     if (!nodes || nodes.length === 0) {
+      if (callback) callback();
+      return;
+    }
+    if (!this.highlightEnabled) {
+      for (const textNode of nodes) {
+        this.pendingTextNodesWhilePaused.add(textNode);
+      }
       if (callback) callback();
       return;
     }
@@ -829,6 +850,14 @@ class ScopeObserver {
       }
     }
 
+    if (!this.highlightEnabled) {
+      for (const textNode of nodes) {
+        this.pendingTextNodesWhilePaused.add(textNode);
+      }
+      if (callback) callback();
+      return;
+    }
+
     // 第三步：分批处理文本节点（现在可以直接使用缓存）
     let chunkSize = this.tree.chunkSize || 50;
     let chunkDelay = this.tree.chunkDelay || 20;
@@ -838,6 +867,13 @@ class ScopeObserver {
     // 使用RAF代替setTimeout
     const processChunk = () => {
       if (this.destroyed) return;
+      if (!this.highlightEnabled) {
+        for (let i = index; i < nodes.length; i++) {
+          this.pendingTextNodesWhilePaused.add(nodes[i]);
+        }
+        if (callback) callback();
+        return;
+      }
       const start = index;
       const end = Math.min(index + chunkSize, nodes.length);
 
@@ -878,6 +914,13 @@ class ScopeObserver {
   }
   // 处理单个文本节点 - 优化版：使用缓存
   processTextNode(textNode, parent) {
+    if (!this.highlightEnabled) {
+      if (textNode) {
+        this.pendingTextNodesWhilePaused.add(textNode);
+      }
+      return;
+    }
+
     // 检查文本节点和父节点是否有效
     if (!textNode || !parent || !textNode.textContent) {
       return;
@@ -1954,10 +1997,22 @@ if (window.location.hostname.includes('youtube.com')) {
       // 立即处理删除的节点（无需节流）
       if (removedNodes.size > 0) {
         this.handleRemovedNodes(removedNodes);
+        for (const textNode of this.pendingTextNodesWhilePaused) {
+          if (!document.contains(textNode)) {
+            this.pendingTextNodesWhilePaused.delete(textNode);
+          }
+        }
       }
 
       // 如果没有新文本节点，直接返回
       if (newTextNodes.size === 0) return;
+
+      if (!this.highlightEnabled) {
+        for (const textNode of newTextNodes) {
+          this.pendingTextNodesWhilePaused.add(textNode);
+        }
+        return;
+      }
 
       // 节流处理新增的文本节点
       pendingMutations.push(...newTextNodes);
@@ -1965,6 +2020,15 @@ if (window.location.hostname.includes('youtube.com')) {
       if (throttleTimer) return;
 
       throttleTimer = setTimeout(() => {
+        if (!this.highlightEnabled) {
+          for (const textNode of pendingMutations) {
+            this.pendingTextNodesWhilePaused.add(textNode);
+          }
+          pendingMutations = [];
+          throttleTimer = null;
+          return;
+        }
+
         if (pendingMutations.length === 0) {
           throttleTimer = null;
           return;
@@ -2123,6 +2187,14 @@ if (window.location.hostname.includes('youtube.com')) {
 
   // 新增：增量处理新文本节点（支持按需加载）
   async processNewTextNodes(textNodes) {
+    if (this.destroyed) return;
+    if (!this.highlightEnabled) {
+      for (const textNode of textNodes) {
+        this.pendingTextNodesWhilePaused.add(textNode);
+      }
+      return;
+    }
+
     const startTime = performance.now();
 
     // 第一步：提取所有可能的单词
@@ -2253,6 +2325,14 @@ if (window.location.hostname.includes('youtube.com')) {
       }
     }
 
+    // 批量查询期间用户可能关闭高亮；此时保留节点，不能继续创建新的 CSS Highlight。
+    if (!this.highlightEnabled) {
+      for (const textNode of textNodes) {
+        this.pendingTextNodesWhilePaused.add(textNode);
+      }
+      return;
+    }
+
     // 第三步：处理文本节点
     for (const textNode of textNodes) {
       // 检查文本节点是否仍在DOM中
@@ -2276,6 +2356,13 @@ if (window.location.hostname.includes('youtube.com')) {
 
   // 新增：从缓存应用高亮
   applyHighlightFromCache(textNode, parent, cachedResult) {
+    if (!this.highlightEnabled) {
+      if (textNode) {
+        this.pendingTextNodesWhilePaused.add(textNode);
+      }
+      return;
+    }
+
     const ranges = [];
     const darkModePrefix = this.isDarkMode ? "dark-" : "";
 
@@ -2870,6 +2957,7 @@ if (window.location.hostname.includes('youtube.com')) {
     this.parent2Text2RangesView.clear();
     this.textCache.clear();
     this.ignoredElements.clear();
+    this.pendingTextNodesWhilePaused.clear();
     this.wordDetailsFromDB = {};
     this.handleIntersectingBound = null;
     this.mutOb = null;
