@@ -57,6 +57,7 @@
     let subtitleListInitialized = false;
     let subtitleListItems = [];
     let subtitleOffsetMode = 'normal';
+    let readingSubtitleAutoFollow = true;
 
     function isYouTubePage() {
         return window.location.hostname.includes('youtube.com');
@@ -91,6 +92,7 @@
             replay: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/>',
             layout: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M12 10v10"/>',
             clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+            settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.07a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.53-1H3v-4h.07A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 8.97 4.6 1.7 1.7 0 0 0 10 3.07V3h4v.07a1.7 1.7 0 0 0 1.03 1.53 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9 1.7 1.7 0 0 0 20.93 10H21v4h-.07a1.7 1.7 0 0 0-1.53 1Z"/>',
             autoPause: '<circle cx="12" cy="12" r="9"/><path d="M10 8v8"/><path d="M14 8v8"/>'
         };
         return '<svg ' + attrs + '>' + (icons[name] || icons.play) + '</svg>';
@@ -902,8 +904,10 @@
         youtubeVideoOverlay: false,
         youtubeDisplayMode: 'theater',
         youtubeCommaSentencing: false,
-        youtubeSubtitleOffset: 'normal'
+        youtubeSubtitleOffset: 'normal',
+        youtubeReadingSubtitleAutoFollow: true
     }, function(result) {
+        readingSubtitleAutoFollow = result.youtubeReadingSubtitleAutoFollow !== false;
         if (result.youtubeVideoOverlay) {
             console.log("YouTube 视频覆盖层已启用");
             currentDisplayMode = result.youtubeDisplayMode || 'theater';
@@ -942,6 +946,11 @@
         const controlBar = document.getElementById('overlay-control-bar');
         if (controlBar) {
             controlBar.remove();
+        }
+
+        const settingsSelector = document.getElementById('overlay-settings-selector');
+        if (settingsSelector) {
+            settingsSelector.remove();
         }
 
         if (keydownHandler) {
@@ -1965,8 +1974,8 @@
             showModeSelector();
         });
 
-        const offsetBtn = createControlButton('clock', 'Subtitle Offset', () => {
-            showSubtitleOffsetSelector();
+        const settingsBtn = createControlButton('settings', '设置', () => {
+            showOverlaySettings();
         });
 
         controlBar.appendChild(autoPauseBtn);
@@ -1975,7 +1984,7 @@
         controlBar.appendChild(replayBtn);
         controlBar.appendChild(nextBtn);
         controlBar.appendChild(modeBtn);
-        controlBar.appendChild(offsetBtn);
+        controlBar.appendChild(settingsBtn);
 
         return controlBar;
     }
@@ -2124,62 +2133,108 @@
         document.body.appendChild(selector);
     }
 
-    function showSubtitleOffsetSelector() {
-        const existingSelector = document.getElementById('subtitle-offset-selector');
+    function showOverlaySettings() {
+        const existingSelector = document.getElementById('overlay-settings-selector');
         if (existingSelector) {
             existingSelector.remove();
             return;
         }
 
         const selector = document.createElement('div');
-        selector.id = 'subtitle-offset-selector';
+        selector.id = 'overlay-settings-selector';
         Object.assign(selector.style, {
             position: 'fixed',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
             backgroundColor: YOUTUBE_OVERLAY_UI.ivory,
-            borderRadius: '14px',
+            borderRadius: '18px',
             boxShadow: '0 0 0 1px ' + YOUTUBE_OVERLAY_UI.borderWarm + ', 0 18px 48px rgba(20, 20, 19, 0.16)',
             zIndex: '114515',
             padding: '20px',
-            minWidth: '300px'
+            width: 'min(380px, calc(100vw - 32px))',
+            maxHeight: 'calc(100vh - 48px)',
+            overflowY: 'auto',
+            boxSizing: 'border-box'
         });
 
         const title = document.createElement('h3');
-        title.textContent = '字幕偏移设置';
+        title.textContent = '覆盖层设置';
         Object.assign(title.style, {
-            margin: '0 0 15px 0',
-            textAlign: 'center',
-            color: YOUTUBE_OVERLAY_UI.charcoal
+            margin: '0 0 16px 0',
+            color: YOUTUBE_OVERLAY_UI.charcoal,
+            fontSize: '18px',
+            lineHeight: '1.4'
+        });
+
+        const subtitleSection = document.createElement('section');
+        Object.assign(subtitleSection.style, {
+            padding: '16px',
+            borderRadius: '14px',
+            backgroundColor: YOUTUBE_OVERLAY_UI.parchment,
+            boxShadow: '0 0 0 1px ' + YOUTUBE_OVERLAY_UI.borderCream
+        });
+
+        const sectionTitle = document.createElement('h4');
+        sectionTitle.textContent = '字幕设置';
+        Object.assign(sectionTitle.style, {
+            margin: '0 0 4px 0',
+            color: YOUTUBE_OVERLAY_UI.charcoal,
+            fontSize: '15px'
+        });
+
+        const sectionDescription = document.createElement('p');
+        sectionDescription.textContent = '控制字幕显示时机与阅读模式的列表跟随。';
+        Object.assign(sectionDescription.style, {
+            margin: '0 0 16px 0',
+            color: YOUTUBE_OVERLAY_UI.stone,
+            fontSize: '12px',
+            lineHeight: '1.5'
+        });
+
+        const offsetLabel = document.createElement('div');
+        offsetLabel.textContent = '字幕偏移';
+        Object.assign(offsetLabel.style, {
+            marginBottom: '8px',
+            color: YOUTUBE_OVERLAY_UI.charcoal,
+            fontSize: '13px',
+            fontWeight: '600'
         });
 
         const modes = [
-            { id: 'normal', name: 'Normal', desc: 'Show subtitle for current timestamp' },
-            { id: 'prev', name: 'Delay One', desc: 'Show previous subtitle' },
-            { id: 'next', name: 'Advance One', desc: 'Show next subtitle' }
+            { id: 'normal', name: '正常', desc: '显示当前时间对应的字幕' },
+            { id: 'prev', name: '延后一条', desc: '显示当前字幕的前一条' },
+            { id: 'next', name: '提前一条', desc: '显示当前字幕的后一条' }
         ];
 
         const modeList = document.createElement('div');
         Object.assign(modeList.style, {
             display: 'flex',
             flexDirection: 'column',
-            gap: '10px'
+            gap: '8px'
         });
+
+        const modeButtons = [];
+
+        function styleOffsetModeButton(button, modeId) {
+            const isActive = subtitleOffsetMode === modeId;
+            button.style.backgroundColor = isActive ? YOUTUBE_OVERLAY_UI.terracotta : YOUTUBE_OVERLAY_UI.ivory;
+            button.style.color = isActive ? YOUTUBE_OVERLAY_UI.ivory : YOUTUBE_OVERLAY_UI.charcoal;
+            button.style.borderColor = isActive ? YOUTUBE_OVERLAY_UI.terracotta : YOUTUBE_OVERLAY_UI.borderWarm;
+        }
 
         modes.forEach(mode => {
             const modeBtn = document.createElement('button');
             modeBtn.innerHTML = `<strong>${mode.name}</strong><br><small>${mode.desc}</small>`;
             Object.assign(modeBtn.style, {
                 padding: '10px',
-                border: '1px solid ' + YOUTUBE_OVERLAY_UI.borderWarm,
-                borderRadius: '14px',
-                backgroundColor: subtitleOffsetMode === mode.id ? YOUTUBE_OVERLAY_UI.terracotta : YOUTUBE_OVERLAY_UI.ivory,
-                color: subtitleOffsetMode === mode.id ? YOUTUBE_OVERLAY_UI.ivory : YOUTUBE_OVERLAY_UI.charcoal,
+                border: '1px solid',
+                borderRadius: '12px',
                 cursor: 'pointer',
                 textAlign: 'left',
                 transition: 'all 0.2s ease'
             });
+            styleOffsetModeButton(modeBtn, mode.id);
 
             modeBtn.addEventListener('mouseenter', () => {
                 if (subtitleOffsetMode !== mode.id) {
@@ -2188,20 +2243,64 @@
             });
 
             modeBtn.addEventListener('mouseleave', () => {
-                if (subtitleOffsetMode !== mode.id) {
-                    modeBtn.style.backgroundColor = YOUTUBE_OVERLAY_UI.ivory;
-                }
+                styleOffsetModeButton(modeBtn, mode.id);
             });
 
             modeBtn.addEventListener('click', () => {
                 subtitleOffsetMode = mode.id;
                 chrome.storage.local.set({ youtubeSubtitleOffset: mode.id });
                 lastOverlaySubtitleText = '';
-                selector.remove();
+                modeButtons.forEach(({ button, id }) => styleOffsetModeButton(button, id));
             });
 
             modeList.appendChild(modeBtn);
+            modeButtons.push({ button: modeBtn, id: mode.id });
         });
+
+        const autoFollowRow = document.createElement('label');
+        Object.assign(autoFollowRow.style, {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+            marginTop: '14px',
+            padding: '12px',
+            borderRadius: '12px',
+            backgroundColor: YOUTUBE_OVERLAY_UI.ivory,
+            boxShadow: '0 0 0 1px ' + YOUTUBE_OVERLAY_UI.borderWarm,
+            cursor: 'pointer'
+        });
+
+        const autoFollowCopy = document.createElement('span');
+        autoFollowCopy.innerHTML = '<strong style="display:block;font-size:13px;color:' + YOUTUBE_OVERLAY_UI.charcoal + ';">播放时自动跟随</strong>' +
+            '<small style="display:block;margin-top:3px;color:' + YOUTUBE_OVERLAY_UI.stone + ';line-height:1.45;">关闭后播放时也可自由滚动；暂停时始终不会跟随。</small>';
+
+        const autoFollowToggle = document.createElement('input');
+        autoFollowToggle.type = 'checkbox';
+        autoFollowToggle.checked = readingSubtitleAutoFollow;
+        autoFollowToggle.setAttribute('aria-label', '播放时字幕自动跟随');
+        Object.assign(autoFollowToggle.style, {
+            width: '20px',
+            height: '20px',
+            flex: '0 0 20px',
+            accentColor: YOUTUBE_OVERLAY_UI.terracotta,
+            cursor: 'pointer'
+        });
+
+        autoFollowToggle.addEventListener('change', () => {
+            readingSubtitleAutoFollow = autoFollowToggle.checked;
+            chrome.storage.local.set({ youtubeReadingSubtitleAutoFollow: readingSubtitleAutoFollow });
+            console.log('阅读模式字幕自动跟随:', readingSubtitleAutoFollow);
+        });
+
+        autoFollowRow.appendChild(autoFollowCopy);
+        autoFollowRow.appendChild(autoFollowToggle);
+
+        subtitleSection.appendChild(sectionTitle);
+        subtitleSection.appendChild(sectionDescription);
+        subtitleSection.appendChild(offsetLabel);
+        subtitleSection.appendChild(modeList);
+        subtitleSection.appendChild(autoFollowRow);
 
         const closeBtn = document.createElement('button');
         closeBtn.textContent = '关闭';
@@ -2221,7 +2320,7 @@
         });
 
         selector.appendChild(title);
-        selector.appendChild(modeList);
+        selector.appendChild(subtitleSection);
         selector.appendChild(closeBtn);
         document.body.appendChild(selector);
     }
@@ -2556,6 +2655,8 @@
 
     function updateSubtitleList(subtitleList, currentSentence) {
         const currentTime = getYoutubeCurrentTime();
+        const video = getVideoElement();
+        const shouldAutoFollow = readingSubtitleAutoFollow && video && !video.paused && !video.ended;
 
         if (!subtitleListInitialized) {
             const sentences = extractAllSentences(rebuiltSubtitles);
@@ -2647,7 +2748,7 @@
             element.style.borderColor = isActive ? YOUTUBE_OVERLAY_UI.terracotta : YOUTUBE_OVERLAY_UI.borderCream;
             element.style.boxShadow = isActive ? '0 0 0 1px ' + YOUTUBE_OVERLAY_UI.terracotta + ', 0 8px 22px rgba(201, 100, 66, 0.12)' : '0 0 0 1px ' + YOUTUBE_OVERLAY_UI.borderCream;
 
-            if (isActive) {
+            if (isActive && shouldAutoFollow) {
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         });
