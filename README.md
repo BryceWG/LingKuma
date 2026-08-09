@@ -6,6 +6,11 @@
 </div>
 
 <p align="center">
+  <strong>English</strong> ·
+  <a href="./README.zh.md">简体中文</a>
+</p>
+
+<p align="center">
   <a href="https://docs.lingkuma.org">Wiki</a> ·
   <a href="https://github.com/lingkuma/LingKuma/issues">Issues</a> ·
   <a href="https://github.com/lingkuma/LingKuma">Source code</a>
