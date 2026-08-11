@@ -10,11 +10,15 @@
   <strong>简体中文</strong>
 </p>
 
+
 <p align="center">
   <a href="https://docs.lingkuma.org">Wiki</a> ·
   <a href="https://github.com/lingkuma/LingKuma/issues">问题反馈</a> ·
   <a href="https://github.com/lingkuma/LingKuma">源代码</a>
 </p>
+
+## <strong>🤖 基于 OpenAI Codex 构建</strong></a><br />
+  <sub>LingKuma 使用 Codex 参与功能开发、代码审查、问题排查和项目文档维护。</sub>
 
 
 
@@ -39,10 +43,6 @@
 
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](http://tg.lingkuma.org/) [![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat&logo=discord&logoColor=white)](http://dc.lingkuma.org/) [![QQ 频道](https://img.shields.io/badge/QQ%20Channel-12B7F5?style=flat&logo=tencentqq&logoColor=white)](https://pd.qq.com/s/hbotsiacz)
 
-## 大模型邀请奖励，帮助项目持续开发
-
-本项目使用 [0-0 AI-API 中转平台](https://0-0.pro/register?ref=75RRBBR3) 完成，Gemini、Claude、GPT 最高 0.1 折优惠。
-点击链接注册，或使用邀请码 `75RRBBR3`，首充双方获得 25% 返利，感谢助力开发。
 
 ## 📚 Wiki
 
@@ -137,9 +137,6 @@
 
 ## 支持项目
 
-本项目使用 [0-0 AI-API](https://0-0.pro/register?ref=75RRBBR3) 提供 AI 服务。Gemini、Claude 和 GPT 最高可享 0.1 折优惠。
-
-通过链接注册或使用邀请码 `75RRBBR3`。首次充值时，双方均可获得 25% 返利。感谢你支持项目持续开发。
 
 <a href="https://afdian.com/a/lingkuma"><img width="200" src="https://pic1.afdiancdn.com/static/img/welcome/button-sponsorme.png" alt="赞助 LingKuma"></a>
 
