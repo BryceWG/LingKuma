@@ -1294,6 +1294,11 @@
         const punctuationRegex = getPunctuationRegex();
         const events = subtitleData.events || [];
 
+        // YouTube cue boundaries are presentation-oriented and can split a sentence
+        // or put several punctuated sentences in one segment. Normalize each segment
+        // into a word/punctuation timeline before finding sentence boundaries.
+        const sourceSegments = [];
+
         events.forEach(paragraph => {
             const paragraphStartTime = paragraph.tStartMs;
             if (paragraph.segs) {
@@ -1305,25 +1310,70 @@
                     }
                     let wordText = segment.utf8.trim();
                     if (wordText === "") return;
-                    const hasPunctuation = punctuationRegex.test(wordText);
-                    let punctuation = null;
-                    if (hasPunctuation) {
-                        const lastChar = wordText.charAt(wordText.length - 1);
-                        if (punctuationRegex.test(lastChar)) {
-                            punctuation = lastChar;
-                            wordText = wordText.substring(0, wordText.length - 1).trim();
-                        }
-                    }
-                    if (wordText === "") return;
-                    let wordEndTime = paragraphStartTime + paragraph.dDurationMs;
-                    words.push({
-                        utf8: wordText,
+                    sourceSegments.push({
+                        text: wordText,
                         tStartMs: wordStartTime,
-                        tEndMs: wordEndTime,
-                        punctuation: punctuation
+                        tEndMs: paragraphStartTime + (paragraph.dDurationMs || 0)
                     });
                 });
             }
+        });
+
+        sourceSegments.forEach((segment, segmentIndex) => {
+            const nextSegment = sourceSegments[segmentIndex + 1];
+            const segmentEndTime = nextSegment && nextSegment.tStartMs > segment.tStartMs
+                ? nextSegment.tStartMs
+                : Math.max(segment.tEndMs, segment.tStartMs);
+            const tokens = [];
+            let currentWord = '';
+
+            const pushWord = () => {
+                const normalizedWord = currentWord.trim();
+                if (normalizedWord) {
+                    tokens.push({ type: 'word', text: normalizedWord });
+                }
+                currentWord = '';
+            };
+
+            for (const character of segment.text) {
+                if (punctuationRegex.test(character)) {
+                    pushWord();
+                    if (tokens.length > 0) {
+                        const previousToken = tokens[tokens.length - 1];
+                        if (previousToken.type === 'punctuation') {
+                            previousToken.text += character;
+                        } else {
+                            tokens.push({ type: 'punctuation', text: character });
+                        }
+                    }
+                } else if (/\s/.test(character)) {
+                    pushWord();
+                } else {
+                    currentWord += character;
+                }
+            }
+            pushWord();
+
+            const wordTokens = tokens.filter(token => token.type === 'word');
+            let wordIndex = 0;
+            tokens.forEach(token => {
+                if (token.type === 'punctuation') {
+                    if (words.length > 0) {
+                        words[words.length - 1].punctuation =
+                            (words[words.length - 1].punctuation || '') + token.text;
+                    }
+                    return;
+                }
+
+                const wordProgress = wordTokens.length > 1 ? wordIndex / wordTokens.length : 0;
+                words.push({
+                    utf8: token.text,
+                    tStartMs: segment.tStartMs + (segmentEndTime - segment.tStartMs) * wordProgress,
+                    tEndMs: segmentEndTime,
+                    punctuation: null
+                });
+                wordIndex++;
+            });
         });
 
         for (let i = 0; i < words.length - 1; i++) {
@@ -2768,6 +2818,11 @@
                 if (element.length > 0) {
                     const punctuation = element[0];
                     if (punctuationRegex.test(punctuation) && currentSentenceWords.length > 0) {
+                        // Keep the boundary punctuation in the displayed sentence.
+                        currentSentenceWords.push({
+                            originalIndex: i,
+                            data: element
+                        });
                         const sentenceText = mergeWordsIntoSentences(currentSentenceWords);
                         sentences.push({
                             text: sentenceText,
