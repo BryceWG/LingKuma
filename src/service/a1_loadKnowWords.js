@@ -1,3 +1,45 @@
+// YouTube creates utility/player frames (including about:blank) that do not
+// contain user-readable page text. Keep the runtime in the top YouTube page;
+// other sites retain their existing all-frame support for real reader frames.
+function isYouTubeHost(hostname) {
+  return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(hostname || '');
+}
+
+function shouldSkipYouTubeFrame() {
+  if (window.self === window.top) {
+    return false;
+  }
+
+  if (isYouTubeHost(window.location.hostname)) {
+    return true;
+  }
+
+  const candidateUrls = [document.referrer];
+  try {
+    const ancestors = window.location.ancestorOrigins;
+    if (ancestors && ancestors.length) {
+      for (let i = 0; i < ancestors.length; i++) {
+        candidateUrls.push(ancestors[i]);
+      }
+    }
+  } catch (error) {
+    // Cross-origin frames may not expose ancestorOrigins.
+  }
+
+  return candidateUrls.some(url => {
+    try {
+      return isYouTubeHost(new URL(url).hostname);
+    } catch (error) {
+      return false;
+    }
+  });
+}
+
+const shouldSkipLingKumaFrame = shouldSkipYouTubeFrame();
+if (shouldSkipLingKumaFrame) {
+  globalThis.__lingkumaSkipHighlightFrame = true;
+}
+
 // 检测是否在iframe中运行
 // const isInIframe = window !== window.top;
 // // const isIframe =  (window.self !== window.top);
@@ -65,6 +107,11 @@ const HIGHLIGHT_RUNTIME_STORAGE_KEYS = [
 startHighlightRuntimeFromStorage();
 
 function startHighlightRuntimeFromStorage() {
+  if (shouldSkipLingKumaFrame) {
+    console.log('[LingKuma] 跳过 YouTube 子 iframe 高亮运行时:', window.location.href);
+    return;
+  }
+
   // 优化：合并所有storage读取为一次调用
   chrome.storage.local.get(HIGHLIGHT_RUNTIME_STORAGE_KEYS, function(result) {
     // 设置高亮语言开关

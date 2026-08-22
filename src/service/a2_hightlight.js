@@ -7,6 +7,35 @@ function isOrionIOSRuntime() {
 
 const COMPANION_FEATURE_RETRY_DELAY = 500;
 const COMPANION_FEATURE_MAX_RETRIES = 120;
+const YOUTUBE_MUTATION_FLUSH_DELAY = 180;
+const YOUTUBE_HIGHLIGHT_IDENTIFIERS = [
+  'ytp-caption-window-container',
+  'untertitle-drag-container',
+  'untertitle-display',
+  'untertitle-text',
+  'highlight-wrapper',
+  'caption-window',
+  'captions-text',
+  'caption-visual-line',
+  'ytp-caption-segment',
+  'above-the-fold',
+  'trancy-app',
+  'trancy-container',
+  'youtube-overlay-float-button',
+  'youtube-video-overlay',
+  'overlay-video-container',
+  'overlay-subtitle-container',
+  'overlay-subtitle-text',
+  'overlay-subtitle-list-container',
+  'overlay-subtitle-list',
+  'overlay-control-bar',
+  'overlay-right-container',
+  'subtitle-item',
+  'ytd-comment-thread-renderer',
+  'ytd-comment-view-model',
+  'yt-attributed-string',
+  'comment-content'
+];
 
 // 添加iOS设备检测
 // window.orion_isIOS is provided later by orion_tts.js; default to false before it loads.
@@ -194,6 +223,8 @@ class ScopeObserver {
     this.wordDetailsFromDB = {}; // 单词详情数据
     this.highlightEnabled = true; // 插件高亮显示状态，关闭时保留扫描缓存
     this.pendingTextNodesWhilePaused = new Set(); // 关闭期间新增的文本，重新开启后再处理
+    this.isYouTubePage = typeof window !== 'undefined' && /(^|\.)youtube\.com$/i.test(window.location.hostname);
+    this.youtubeLastProcessedText = new WeakMap();
     this.wordExplosionInitTimer = null;
     this.wordExplosionInitRetries = 0;
     this.wordExplosionInitStarted = false;
@@ -944,19 +975,6 @@ class ScopeObserver {
       return;
     }
 
-    // 检查缓存
-    const cacheKey = text + '|' + this.getCurrentLanguageSettings();
-    let cachedResult = this.textCache.get(cacheKey);
-
-    if (cachedResult) {
-      // 使用缓存结果直接创建高亮
-      this.applyHighlightFromCache(textNode, parent, cachedResult);
-      return;
-    }
-
-
-
-
     // 检查父元素是否在忽略列表中
 // 检查父元素是否在忽略列表中
 //注意isAllowedYouTubeElement函数！也要同步添加
@@ -991,7 +1009,11 @@ if (window.location.hostname.includes('youtube.com')) {
     'overlay-subtitle-list',
     'overlay-control-bar',
     'overlay-right-container',
-    'subtitle-item'
+    'subtitle-item',
+    'ytd-comment-thread-renderer',
+    'ytd-comment-view-model',
+    'yt-attributed-string',
+    'comment-content'
   ];
 
   // 检查元素是否属于允许的类或ID
@@ -1002,6 +1024,12 @@ if (window.location.hostname.includes('youtube.com')) {
     let currentElement = parent;
 
     while (currentElement && !isAllowedElement) {
+      const tagName = (currentElement.tagName || '').toLowerCase();
+      if (allowedYoutubeIdentifiers.some(identifier => tagName === identifier)) {
+        isAllowedElement = true;
+        break;
+      }
+
       // 检查当前元素的ID
       if (currentElement.id && allowedYoutubeIdentifiers.some(id => currentElement.id.includes(id))) {
         isAllowedElement = true;
@@ -1051,9 +1079,27 @@ if (window.location.hostname.includes('youtube.com')) {
       }
     }
 
+    // Reuse the segmentation cache only after page-specific filters ran.
+    // Otherwise a cached YouTube node could bypass the allowlist above.
+    const cacheKey = text + '|' + this.getCurrentLanguageSettings();
+    const cachedResult = this.textCache.get(cacheKey);
+
     // 检查是否在小窗口内，如果是则跳过
     if (parent && (parent.closest('.vocab-tooltip') || parent.closest('.analysis-window') || parent.closest('.custom-word-tooltip') || parent.closest('.custom-word-selection-popup') || parent.closest('.custom-word-query-button'))) {
       return;
+    }
+
+    // YouTube reuses caption nodes and updates their characterData repeatedly.
+    // Only mark a node after page filters pass, otherwise a node observed before
+    // its caption ancestor is mounted could be skipped forever.
+    if (this.isYouTubePage) {
+      const currentText = textNode.textContent;
+      const previous = this.youtubeLastProcessedText.get(textNode);
+      if (previous && previous.text === currentText && previous.parent === parent) {
+        return;
+      }
+      this.youtubeLastProcessedText.set(textNode, { text: currentText, parent });
+      this.cleanupTextNodeHighlight(textNode);
     }
 
     // 如果已经有缓存结果，直接处理
@@ -1948,7 +1994,33 @@ if (window.location.hostname.includes('youtube.com')) {
   newMutOb() {
     const self = this;
     let throttleTimer = null;
-    let pendingMutations = [];
+    let pendingMutations = new Map();
+    let processingPromise = null;
+
+    const flushPendingMutations = () => {
+      throttleTimer = null;
+      if (this.destroyed || pendingMutations.size === 0) return;
+
+      if (!this.highlightEnabled) {
+        for (const textNode of pendingMutations.keys()) {
+          this.pendingTextNodesWhilePaused.add(textNode);
+        }
+        pendingMutations.clear();
+        return;
+      }
+
+      const nodesToProcess = Array.from(pendingMutations.keys());
+      pendingMutations.clear();
+      processingPromise = Promise.resolve(self.processNewTextNodes(nodesToProcess))
+        .catch(error => console.error('增量处理文本节点失败:', error))
+        .finally(() => {
+          processingPromise = null;
+          if (pendingMutations.size > 0 && !throttleTimer) {
+            throttleTimer = setTimeout(flushPendingMutations,
+              this.isYouTubePage ? YOUTUBE_MUTATION_FLUSH_DELAY : 100);
+          }
+        });
+    };
 
     return new MutationObserver(mutations => {
       if (this.destroyed) return;
@@ -1988,15 +2060,25 @@ if (window.location.hostname.includes('youtube.com')) {
           }
         }
 
-        // 处理文本内容变化
-        if (mutation.type === 'characterData' && mutation.target.textContent.trim()) {
-          newTextNodes.add(mutation.target);
+        // 处理文本内容变化，包括 YouTube 切换字幕时短暂写入的空文本。
+        if (mutation.type === 'characterData') {
+          if (mutation.target.textContent.trim()) {
+            newTextNodes.add(mutation.target);
+          } else {
+            this.cleanupTextNodeHighlight(mutation.target);
+            if (this.isYouTubePage) {
+              this.youtubeLastProcessedText.delete(mutation.target);
+            }
+          }
         }
       }
 
       // 立即处理删除的节点（无需节流）
       if (removedNodes.size > 0) {
         this.handleRemovedNodes(removedNodes);
+        for (const node of removedNodes) {
+          pendingMutations.delete(node);
+        }
         for (const textNode of this.pendingTextNodesWhilePaused) {
           if (!document.contains(textNode)) {
             this.pendingTextNodesWhilePaused.delete(textNode);
@@ -2014,36 +2096,16 @@ if (window.location.hostname.includes('youtube.com')) {
         return;
       }
 
-      // 节流处理新增的文本节点
-      pendingMutations.push(...newTextNodes);
+      // Keep only the latest mutation for each node. YouTube frequently rewrites
+      // the same caption node several times before the browser paints it.
+      for (const textNode of newTextNodes) {
+        pendingMutations.set(textNode, textNode.textContent);
+      }
 
-      if (throttleTimer) return;
+      if (throttleTimer || processingPromise) return;
 
-      throttleTimer = setTimeout(() => {
-        if (!this.highlightEnabled) {
-          for (const textNode of pendingMutations) {
-            this.pendingTextNodesWhilePaused.add(textNode);
-          }
-          pendingMutations = [];
-          throttleTimer = null;
-          return;
-        }
-
-        if (pendingMutations.length === 0) {
-          throttleTimer = null;
-          return;
-        }
-
-        const nodesToProcess = [...pendingMutations];
-        pendingMutations = [];
-
-        // console.log(`增量处理 ${nodesToProcess.length} 个新文本节点`);
-
-        // 增量处理新文本节点
-        self.processNewTextNodes(nodesToProcess);
-
-        throttleTimer = null;
-      }, 100); // 减少节流延迟到100ms
+      throttleTimer = setTimeout(flushPendingMutations,
+        this.isYouTubePage ? YOUTUBE_MUTATION_FLUSH_DELAY : 100);
     });
   }
 
@@ -2147,6 +2209,23 @@ if (window.location.hostname.includes('youtube.com')) {
         }
       }
     }
+
+    // The lookup index also stores every Range. Drop entries for a reused
+    // YouTube text node so detached ranges cannot accumulate indefinitely.
+    if (typeof wordRangesMap !== 'undefined' && wordRangesMap instanceof Map) {
+      const wordEntries = Array.from(wordRangesMap.entries());
+      for (let i = 0; i < wordEntries.length; i++) {
+        const [word, details] = wordEntries[i];
+        const remaining = details.filter(detail => {
+          return !detail || !detail.range || detail.range.startContainer !== textNode;
+        });
+        if (remaining.length > 0) {
+          wordRangesMap.set(word, remaining);
+        } else {
+          wordRangesMap.delete(word);
+        }
+      }
+    }
   }
 
   // 新增：清理元素高亮
@@ -2186,6 +2265,22 @@ if (window.location.hostname.includes('youtube.com')) {
   }
 
   // 新增：增量处理新文本节点（支持按需加载）
+  isAllowedYouTubeTextNode(textNode) {
+    if (!this.isYouTubePage) return true;
+    let element = textNode?.parentElement;
+    while (element && element !== document.body && element !== document.documentElement) {
+      const id = element.id || '';
+      const className = typeof element.className === 'string' ? element.className : '';
+      const tagName = (element.tagName || '').toLowerCase();
+      if (YOUTUBE_HIGHLIGHT_IDENTIFIERS.some(identifier =>
+        tagName === identifier || id.includes(identifier) || className.split(/\s+/).some(name => name.includes(identifier)))) {
+        return true;
+      }
+      element = element.parentElement;
+    }
+    return false;
+  }
+
   async processNewTextNodes(textNodes) {
     if (this.destroyed) return;
     if (!this.highlightEnabled) {
@@ -2202,10 +2297,12 @@ if (window.location.hostname.includes('youtube.com')) {
 
     for (const textNode of textNodes) {
       if (!textNode || !textNode.textContent) continue;
+      if (!document.contains(textNode)) continue;
 
       // 跳过隐藏元素
       const parent = textNode.parentNode;
       if (parent && this.isElementHidden(parent)) continue;
+      if (!this.isAllowedYouTubeTextNode(textNode)) continue;
 
       const text = textNode.textContent.replace(/\u00AD/g, '');
 
@@ -2340,6 +2437,7 @@ if (window.location.hostname.includes('youtube.com')) {
 
       const parent = textNode.parentNode;
       if (!parent) continue;
+      if (!this.isAllowedYouTubeTextNode(textNode)) continue;
 
       // 直接处理单个文本节点，无需重新扫描整个文档
       this.processTextNode(textNode, parent);

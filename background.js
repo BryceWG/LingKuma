@@ -112,6 +112,28 @@ function getHighlightPageKeyFromUrl(url) {
   }
 }
 
+function isYouTubeTab(tab) {
+  try {
+    return /(^|\.)youtube(?:-nocookie)?\.com$/i.test(new URL(tab?.url || '').hostname);
+  } catch (error) {
+    return false;
+  }
+}
+
+function getHighlightRuntimeTarget(tab, frameIds = null) {
+  if (!tab || !Number.isInteger(tab.id)) {
+    return null;
+  }
+
+  if (isYouTubeTab(tab)) {
+    return { tabId: tab.id, frameIds: [0] };
+  }
+
+  return Array.isArray(frameIds) && frameIds.length > 0
+    ? { tabId: tab.id, frameIds }
+    : { tabId: tab.id, allFrames: true };
+}
+
 async function getHighlightPageKey(tabId) {
   const tab = await getTabById(tabId);
   return getHighlightPageKeyFromUrl(tab?.url);
@@ -123,8 +145,12 @@ async function getHighlightRuntimeMissingFrameIds(tabId) {
   }
 
   try {
+    const tab = await getTabById(tabId);
+    if (!tab) {
+      return null;
+    }
     const results = await chrome.scripting.executeScript({
-      target: { tabId, allFrames: true },
+      target: getHighlightRuntimeTarget(tab),
       func: sentinel => globalThis[sentinel] === true,
       args: [HIGHLIGHT_RUNTIME_SENTINEL]
     });
@@ -161,10 +187,12 @@ async function isHighlightRuntimeLoaded(tabId) {
 
 async function markHighlightRuntimeLoaded(tabId, frameIds = null) {
   try {
+    const tab = await getTabById(tabId);
+    if (!tab) {
+      return;
+    }
     await chrome.scripting.executeScript({
-      target: Array.isArray(frameIds) && frameIds.length > 0
-        ? { tabId, frameIds }
-        : { tabId, allFrames: true },
+      target: getHighlightRuntimeTarget(tab, frameIds),
       func: sentinel => {
         globalThis[sentinel] = true;
       },
@@ -193,9 +221,7 @@ async function injectHighlightRuntime(tabId) {
         return true;
       }
 
-      const target = Array.isArray(missingFrameIds) && missingFrameIds.length > 0
-        ? { tabId, frameIds: missingFrameIds }
-        : { tabId, allFrames: true };
+      const target = getHighlightRuntimeTarget(tab, missingFrameIds);
 
       await chrome.scripting.executeScript({
         target,

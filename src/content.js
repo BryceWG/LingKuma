@@ -187,7 +187,14 @@ function isAllowedYouTubeElement(parent) {
     'overlay-subtitle-container',
     'overlay-subtitle-list-container',
     'overlay-subtitle-list',
-    'subtitle-item'
+    'subtitle-item',
+    // YouTube comments use custom elements rather than the subtitle tree.
+    // Keep these nodes available to getSentenceForWord so A4/A7 can resolve
+    // the sentence after a highlighted comment word is clicked.
+    'ytd-comment-thread-renderer',
+    'ytd-comment-view-model',
+    'yt-attributed-string',
+    'comment-content'
   ];
 
   // 检查元素是否属于允许的类或ID
@@ -198,6 +205,12 @@ function isAllowedYouTubeElement(parent) {
     let currentElement = parent;
 
     while (currentElement && !isAllowedElement) {
+      const tagName = (currentElement.tagName || '').toLowerCase();
+      if (allowedYoutubeIdentifiers.some(identifier => tagName === identifier)) {
+        isAllowedElement = true;
+        break;
+      }
+
       // 检查当前元素的ID
       if (currentElement.id && allowedYoutubeIdentifiers.some(id => currentElement.id.includes(id))) {
         isAllowedElement = true;
