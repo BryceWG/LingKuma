@@ -3594,11 +3594,17 @@ document.addEventListener('DOMContentLoaded', function() {
       // 获取当前活动标签页并打开侧栏
       chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         if (tabs[0]) {
-          chrome.sidePanel.open({tabId: tabs[0].id}, function() {
-            if (chrome.runtime.lastError) {
-              console.error("打开侧边栏失败:", chrome.runtime.lastError);
-            }
-          });
+          if (chrome.sidePanel) {
+            // Chrome/Edge: sidePanel API
+            chrome.sidePanel.open({tabId: tabs[0].id}, function() {
+              if (chrome.runtime.lastError) {
+                console.error("打开侧边栏失败:", chrome.runtime.lastError);
+              }
+            });
+          } else if (typeof browser !== 'undefined' && browser.sidebarAction) {
+            // Firefox: sidebarAction API（需用户在浏览器侧栏选择器中选中 LingKuma 一次）
+            browser.sidebarAction.open().catch(err => console.error("打开侧边栏失败:", err));
+          }
           // 关闭popup
           window.close();
         }

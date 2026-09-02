@@ -4135,6 +4135,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === "openSidebar") {
     try {
+      // Firefox: sidebarAction API（Chrome 的 sidePanel 在 Firefox 不存在）
+      if (typeof chrome.sidePanel === 'undefined' && typeof browser !== 'undefined' && browser.sidebarAction) {
+        browser.sidebarAction.open().then(() => {
+          setTimeout(() => {
+            chrome.runtime.sendMessage({
+              action: "updateSidebar",
+              data: {
+                word: message.data.word,
+                sentence: message.data.sentence,
+                stream: true
+              }
+            });
+          }, 300);
+        }).catch(error => {
+          console.error("打开侧边栏失败:", error);
+          sendResponse({ status: "error", error: error.message });
+        });
+        return true;
+      }
       // 使用sender.tab.id作为tabId参数打开侧边栏
       // 这是必要的，因为我们需要指定在哪个标签页打开侧边栏
       chrome.sidePanel.open({
@@ -4633,6 +4652,18 @@ if (message.action === "playTTS") {
     console.log('playTTS', message);
 
     const { text, lang, isSentence, options } = message.payload;
+
+    // Firefox 无 chrome.tts API，直接回报错误（Firefox 用户应使用 edge_tts/orion_tts 路径）
+    if (typeof chrome.tts === 'undefined' || !chrome.tts) {
+        console.warn('chrome.tts API 不可用（Firefox），跳过内置 TTS');
+        chrome.runtime.sendMessage({
+            action: "audioPlaybackError",
+            error: '当前浏览器不支持内置 TTS，请使用 Edge TTS 或 Orion TTS',
+            audioType: isSentence ? "sentence" : "word"
+        });
+        sendResponse({ success: false, error: 'chrome.tts unavailable' });
+        return true;
+    }
 
     // 停止当前播放
     chrome.tts.stop();

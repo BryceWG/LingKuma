@@ -12,12 +12,9 @@
   },
   "permissions": [
     "activeTab",
-    "tts",
     "storage",
     "tabs",
-    "offscreen",
     "downloads",
-    "sidePanel",
     "clipboardRead",
     "contextMenus",
     "scripting",
@@ -30,8 +27,7 @@
     "service_worker": "background.js",
     "scripts": [
       "background.js"
-    ],
-    "persistent": false
+    ]
   },
   "content_scripts": [
     {
@@ -53,9 +49,6 @@
   ],
   "action": {
     "default_popup": "./src/popup/popup.html"
-  },
-  "side_panel": {
-    "default_path": "src/sidebar/sidebar.html"
   },
   "web_accessible_resources": [
     {
@@ -90,5 +83,9 @@
       "id": "firefox@lingkuma.org",
       "strict_min_version": "140.0"
     }
+  },
+  "sidebar_action": {
+    "default_panel": "src/sidebar/sidebar.html",
+    "default_title": "LingKuma Sidebar"
   }
 }
