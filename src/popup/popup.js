@@ -445,9 +445,7 @@ function initializeSettings() {
       autoExpandTooltip: false, // 默认不自动展开未高亮单词的小窗
       autoCloseTooltip: false, // 默认不自动关闭小窗
       autoRefreshTooltip: false,
-      defaultExpandTooltip: false,
-      defaultExpandSententsTooltip: true,
-      defaultExpandCapsule: true, // 默认展开胶囊
+      defaultExpandCapsule: false, // 默认收起胶囊，点击右上角菜单按钮展开
       preferPopupAbove: false,
       selectionPopupPreferDown: false, // 划词弹窗优先默认向下弹出
       explosionPriorityMode: false, // 默认不启用爆炸优先模式
@@ -1390,32 +1388,6 @@ function updateAutoRefreshTooltipState(enabled) {
     autoRefreshTooltip.style.cursor = enabled ? "pointer" : "not-allowed";
 }
 
-
-//弹窗默认展开
-const defaultExpandTooltip = document.getElementById('defaultExpandTooltip');
-
-// 加载状态
-chrome.storage.local.get('defaultExpandTooltip', function(result) {
-    defaultExpandTooltip.checked = result.defaultExpandTooltip || false;
-});
-
-// 监听变化
-defaultExpandTooltip.addEventListener('change', function(e) {
-    chrome.storage.local.set({ defaultExpandTooltip: e.target.checked });
-});
-
-//句子默认展开
-const defaultExpandSententsTooltip = document.getElementById('defaultExpandSententsTooltip');
-
-// 加载状态
-chrome.storage.local.get('defaultExpandSententsTooltip', function(result) {
-    defaultExpandSententsTooltip.checked = result.defaultExpandSententsTooltip === undefined ? true : result.defaultExpandSententsTooltip;
-});
-
-// 监听变化
-defaultExpandSententsTooltip.addEventListener('change', function(e) {
-    chrome.storage.local.set({ defaultExpandSententsTooltip: e.target.checked });
-});
 
 //胶囊默认展开
 const defaultExpandCapsule = document.getElementById('defaultExpandCapsule');

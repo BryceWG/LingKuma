@@ -1604,23 +1604,8 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
                         </div>
 
-                        <!-- 添加AI推荐条目 -->
-                        <div class="translation-item ai-recommendation">
-                            <span>Hmm...</span>
-                            <div class="translation-actions">
-                                <button class="translation-action-btn add-ai-translation">+</button>
-                            </div>
-
-                        </div>
-
-                        <!-- 添加第二个AI推荐条目 -->
-                        <div class="translation-item ai-recommendation-2">
-                            <span>Hmm...</span>
-                            <div class="translation-actions">
-                                <button class="translation-action-btn add-ai-translation-2">+</button>
-                            </div>
-
-                        </div>
+                        <!-- AI 释义合并横幅（AI1/AI2 各为一行，由 JS 填充；失败或停用的行不显示） -->
+                        <div class="translation-item ai-recommendation" style="display: none;"></div>
                     </div>
                 </div>
             </div>
@@ -1702,11 +1687,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                     </div>
                 </div>
             </div>
-            <button class="expand-collapse-btn">
-                <svg width="16" height="16" class="svg-icon svg-icon--chevronUp" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" xmlns:xlink="http://www.w3.org/1999/xlink">
-                    <path fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" class="is-stroke" d="M27.5,21L16.7,10.8c-0.4-0.4-1-0.4-1.4,0L4.5,21"></path>
-                </svg>
-            </button>
         </div>
   `;
 
@@ -1930,105 +1910,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
   // 更新按钮颜色
   updateButtonColors(tooltipEl, wordStatus);
 
-        // 更新收缩功能的选择器
-        const collapseBtn = tooltipEl.querySelector('.expand-collapse-btn');
-
-        collapseBtn.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-
-            // 判断当前是否是收缩状态,如果是收缩状态则即将展开
-            const isCurrentlyCollapsed = tooltipEl.classList.contains('collapsed');
-
-            tooltipEl.classList.toggle('collapsed');
-
-            // 如果从收缩状态展开,则触发手动添加例句
-            if (isCurrentlyCollapsed) {
-              console.log("展开按钮被点击,触发手动添加例句");
-
-              // 检查例句是否已存在
-              const existingDetails = highlightManager.wordDetailsFromDB[word.toLowerCase()];
-              const sentenceExists = existingDetails?.sentences?.some(item => item.sentence === sentence);
-
-              if (sentenceExists) {
-                console.log("例句已存在,不重复添加");
-              } else {
-                console.log("例句不存在,开始添加");
-
-                let currentUrl = window.top.location.href;
-                // 添加例句和翻译
-                fetchSentenceTranslation(word, sentence).then(sentTranslation => {
-                  chrome.runtime.sendMessage({
-                    action: "addSentence",
-                    word: originalWord,
-                    sentence: sentence,
-                    translation: sentTranslation,
-                    url: currentUrl
-                  }, (res) => {
-                    if (res && res.error) {
-                      console.error("保存例句失败:", res.error);
-                    } else {
-                      console.log("保存例句成功");
-
-                      // 添加本地缓存
-                      if (highlightManager && highlightManager.wordDetailsFromDB) {
-                        const existingDetails = highlightManager.wordDetailsFromDB[word.toLowerCase()] || {};
-                        highlightManager.wordDetailsFromDB[word.toLowerCase()] = {
-                          ...existingDetails,
-                          sentences: [...(existingDetails.sentences || []), { sentence: sentence, translation: sentTranslation, url: currentUrl }]
-                        };
-                        console.log("本地缓存已更新:", highlightManager.wordDetailsFromDB[word.toLowerCase()]);
-                      }
-
-                      // 刷新tooltip中显示的例句
-                      refreshTooltipSentences(word, sentence);
-                    }
-                  });
-                });
-              }
-            }
-
-            // // 强制重新应用液体玻璃效果
-            // setTimeout(async () => {
-            //   console.log('展开/收缩后重新应用液体玻璃效果');
-            //   // 先清理现有效果
-            //   cleanupLiquidGlass();
-            //   // 重新应用效果
-            //   setTimeout(async () => {
-            //     await applyLiquidGlassToTooltip();
-            //   }, 50);
-            // }, 200); // 等待CSS动画完成
-              // 让高度始终自动适应内容
-              tooltipEl.style.height = 'auto';
-
-              // 如果需要隐藏某些内容，通过 CSS 类来控制显示/隐藏
-              if (tooltipEl.classList.contains('collapsed')) {                // tooltipEl.querySelector('.scrollable-content').style.display = 'none';
-
-                  const sentencesSection = tooltipEl.querySelector('.section:first-child');
-                  sentencesSection.style.border = 'none';
-                  //除了第一个元素，其他.scrollable-content下的元素全都隐藏掉；
-                  tooltipEl.querySelectorAll('.section').forEach(element => {
-                    if (element !== sentencesSection) {
-                      element.style.display = 'none';
-                    }
-                  });
-
-            } else {                // tooltipEl.querySelector('.scrollable-content').style.display = 'block';
-
-               //.scrollable-content 第一个元素     border复原：    border: 1px solid #8f9799;
-               //除了第一个元素，其他.scrollable-content下的元素全都现实出来
-               const sentencesSection = tooltipEl.querySelector('.section:first-child');
-
-               sentencesSection.style.removeProperty('border');
-
-               tooltipEl.querySelectorAll('.section').forEach(element => {
-                 if (element !== sentencesSection) {
-                   element.style.display = 'block';
-                 }
-               });
-
-              }
-        });
         // 添加各个模块的伸缩功能
         tooltipEl.querySelectorAll('.section-header').forEach(header => {
           header.addEventListener('mousedown', (e) => {
@@ -3429,8 +3310,8 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               }
 
               // 添加AI推荐项，使用保存的结果
-              // AI翻译2使用保存的结果
-              if (aiTranslationStatus.ai2.result && aiTranslationStatus.ai2.result !== "(✿◠‿◠)") {
+              // AI翻译2使用保存的结果；失败/占位的文本直接不显示
+              if (!isAiTextHidden(aiTranslationStatus.ai2.result)) {
                 createAIRecommendation2(expandedList, aiTranslationStatus.ai2.result);
               }
 
@@ -3574,12 +3455,45 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
         }
 
         //---AI释义---
-        // 创建新的AI推荐释义 ， 添加到列表
+        // AI 释义合并横幅：AI1/AI2 各为一行，共用 .ai-recommendation 容器
+        // 失败或未启用时返回的占位文本，命中后直接隐藏对应行
+        const AI_HIDDEN_TEXTS = ['翻译失败', 'AI 释义加载失败', '暂无翻译', '(✿◠‿◠)'];
+
+        function isAiTextHidden(text) {
+            return !text || AI_HIDDEN_TEXTS.includes(text.trim());
+        }
+
+        // 按各行文本同步合并横幅显示状态：占位/失败的行隐藏，全部隐藏时隐藏整条横幅
+        function syncAiBannerVisibility(banner) {
+            if (!banner) return;
+            let anyVisible = false;
+            banner.querySelectorAll('.ai-rec-line').forEach(line => {
+                const span = line.querySelector('.ai-translation-text, .ai-translation-text-2');
+                const hidden = !span || isAiTextHidden(span.textContent);
+                line.style.display = hidden ? 'none' : '';
+                if (!hidden) anyVisible = true;
+            });
+            banner.style.display = anyVisible ? '' : 'none';
+        }
+
+        function getOrCreateAiBanner(translationList) {
+            let banner = translationList.querySelector('.translation-item.ai-recommendation');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.className = 'translation-item ai-recommendation';
+                translationList.appendChild(banner);
+            }
+            return banner;
+        }
+
+        // 创建AI推荐释义行（合并横幅内的第一行）
         function createAIRecommendation(translationList, savedText = null) {
 
-            // 创建AI推荐释义容器
+            const banner = getOrCreateAiBanner(translationList);
+
+            // 创建AI推荐释义行容器
             const aiItem = document.createElement('div');
-            aiItem.className = 'translation-item ai-recommendation';
+            aiItem.className = 'ai-rec-line ai-rec-line-1';
             // 添加样式使整个条目可点击
             aiItem.style.cursor = 'pointer';
 
@@ -3604,8 +3518,9 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             aiItem.appendChild(aiText);
             aiItem.appendChild(actions);
 
-            // 添加到列表末尾
-            translationList.appendChild(aiItem);
+            // 添加到合并横幅中，并按内容同步显示状态
+            banner.appendChild(aiItem);
+            syncAiBannerVisibility(banner);
 
             // 为整个AI推荐条目添加点击事件
             aiItem.addEventListener('mousedown', function(e) {
@@ -3706,6 +3621,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                         console.log("AI释义加载完成", translation);
                         // 更新文本内容
                         aiTextElement.textContent = translation;
+                        syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
 
                         // 标记AI翻译1完成
                         aiTranslationStatus.ai1.completed = true;
@@ -3764,12 +3680,14 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                     }).catch(error => {
                         console.error("获取AI释义失败:", error);
                         aiTextElement.textContent = "AI 释义加载失败";
+                        syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
                         // 标记AI翻译1完成（即使失败）
                         aiTranslationStatus.ai1.completed = true;
                         aiTranslationStatus.ai1.result = "AI 释义加载失败";
                     });
                 } else {
                     aiTextElement.textContent = "(✿◠‿◠)";
+                    syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
                     // 标记AI翻译1完成（未启用）
                     aiTranslationStatus.ai1.completed = true;
                     aiTranslationStatus.ai1.result = "(✿◠‿◠)";
@@ -3782,7 +3700,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
         }
 
         //---第二个AI释义---
-        // 创建第二个AI推荐释义 ， 添加到列表
+        // 创建第二个AI推荐释义行（合并横幅内的第二行）
         function createAIRecommendation2(translationList, savedText = null) {
             // 先检查开关是否打开
             getStorageValue('autoRequestAITranslations2').then(function(autoRequestAITranslations2) {
@@ -3791,9 +3709,11 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                     return;
                 }
 
-                // 创建AI推荐释义容器
+                const banner = getOrCreateAiBanner(translationList);
+
+                // 创建AI推荐释义行容器
                 const aiItem = document.createElement('div');
-                aiItem.className = 'translation-item ai-recommendation-2';
+                aiItem.className = 'ai-rec-line ai-rec-line-2';
                 // 添加样式使整个条目可点击
                 aiItem.style.cursor = 'pointer';
 
@@ -3818,8 +3738,9 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             aiItem.appendChild(aiText);
             aiItem.appendChild(actions);
 
-            // 添加到列表末尾
-            translationList.appendChild(aiItem);
+            // 添加到合并横幅中，并按内容同步显示状态
+            banner.appendChild(aiItem);
+            syncAiBannerVisibility(banner);
 
             // 为整个AI推荐条目添加点击事件
             aiItem.addEventListener('mousedown', function(e) {
@@ -3905,6 +3826,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                         console.log("第二个AI释义加载完成", translation);
                         // 更新文本内容
                         aiTextElement.textContent = translation;
+                        syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
 
                         // 标记AI翻译2完成
                         aiTranslationStatus.ai2.completed = true;
@@ -3920,6 +3842,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                     }).catch(error => {
                         console.error("获取第二个AI释义失败:", error);
                         aiTextElement.textContent = "AI 释义加载失败";
+                        syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
                         // 标记AI翻译2完成（即使失败）
                         aiTranslationStatus.ai2.completed = true;
                         aiTranslationStatus.ai2.result = "AI 释义加载失败";
@@ -3928,6 +3851,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                     });
                 } else {
                     aiTextElement.textContent = "(✿◠‿◠)";
+                    syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
                     // 标记AI翻译2完成（未启用）
                     aiTranslationStatus.ai2.completed = true;
                     aiTranslationStatus.ai2.result = "(✿◠‿◠)";
@@ -4864,31 +4788,8 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
       applyMinimizeStateWithoutRepositioning();
     }
 
-    // 在显示动画之前，先处理收缩和最小化状态，避免闪动
+    // 弹窗始终完全展开：翻译、AI 释义、例句/搭配全部直接展示，不再提供收起状态
     getStorageValues(['defaultExpandTooltip', 'defaultExpandSententsTooltip']).then(function(expandResult) {
-      // 如果设置为不展开,则添加collapsed类
-      if (!expandResult.defaultExpandTooltip) {
-        tooltipEl.classList.add('collapsed');
-        const sentencesSection = tooltipEl.querySelector('.section:first-child');
-        if (sentencesSection) {
-          sentencesSection.style.border = 'none';
-        }
-        //除了第一个元素，其他.scrollable-content下的元素全都隐藏掉；
-        tooltipEl.querySelectorAll('.section').forEach(element => {
-          if (element !== sentencesSection) {
-            element.style.display = 'none';
-          }
-        });
-      }
-
-      // 如果设置为不展开例句,则为例句section添加collapsed类
-      if (!expandResult.defaultExpandSententsTooltip) {
-        const sentencesSection = tooltipEl.querySelector('.section:last-child');
-        if (sentencesSection) {
-          sentencesSection.classList.add('collapsed');
-        }
-      }
-
       // 最小化状态已经在位置计算时处理，这里不再重复处理
 
       // 位置计算完成后，设置tooltip可见性
@@ -6282,8 +6183,7 @@ body {
 .fixed-footer {
     flex-shrink: 0;
     background: transparent; /* 改为透明 */
-    padding: 10px 16px;  /* 从16px减小到12px */
-    padding-bottom: 1px;
+    padding: 8px 16px;  /* 上下边距保持一致 */
     border-top: 1px solid rgb(213,216,220);
     z-index: 1; /* 提升层级 */
     position: relative; /* 创建新的堆叠上下文 */
@@ -7124,8 +7024,9 @@ html[data-theme='dark'] .sound-icon svg path {
 }
 
 .example-sentence-pair {
-    background: #eae5e3ab;
-    border-radius: 10px;
+    background: #dcdddd8a;
+    backdrop-filter: blur(10px);
+    border-radius: 4px;
     margin-bottom:5px;
 }
 
@@ -7138,7 +7039,7 @@ html[data-theme='dark'] .sound-icon svg path {
 .example-sentence:hover {
     padding: 3.5px;
     background: rgb(224, 224, 224);
-    border-radius: 10px;
+    border-radius: 4px;
 }
 
 .example-translation {
@@ -7214,21 +7115,20 @@ html[data-theme='dark'] .sound-icon svg path {
 
 .translation-item {
     position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 30px;
+    box-sizing: border-box;
     padding-right: 60px;
-    background: #909b9b66;
+    background: #dcdddd8a;
     backdrop-filter: blur(10px);
-    border-radius: 10px;
+    border-radius: 4px;
     margin: 4px;
 
 }
 
 .translation-item:hover {
-    position: relative;
-    padding-right: 60px;
-    background: #C0C6C9;
-        backdrop-filter: blur(10px);
-    border-radius: 10px;
-    margin: 4px;
+    background: #c9cdcd;
 }
 
 .ai-translation-text{
@@ -7236,74 +7136,13 @@ html[data-theme='dark'] .sound-icon svg path {
 
 }
 
- /* LXGW */
-.ai-translation-text::before {
-    content: '';
-    display: block;
-    height: 5px;
-}
-
 .translation-text{
- /* padding-top :4px;  微调顶部内边距 */
  font-weight: bold;
 }
 
- /* LXGW */
-.translation-text::before {
-    content: '';
-    display: block;
-    height: 5px;
-}
+/* AI 释义合并横幅内的行结构样式见下方 .ai-rec-line 规则 */
 
-.translation-item.ai-recommendation {
-    display: flex;
-    align-items: center;
-    margin-top: 8px;
-    padding: 8px;
-    padding: 2px;
-    background-color: #f8f9fa;
-    border-radius: 10px;
-    border-left: none;
-    position: relative;
-    padding-right: 60px; /* 为按钮预留空间 */
-}
-.translation-item.ai-recommendation:hover {
-    display: flex;
-    align-items: center;
-    margin-top: 8px;
-    padding: 8px;
-    padding: 2px;
-    background-color: #eef1f4;
-    border-radius: 10px;
-    border-left: none;
-    position: relative;
-    padding-right: 60px; /* 为按钮预留空间 */
-}
-
-.translation-item.ai-recommendation-2 {
-    display: flex;
-    align-items: center;
-    margin-top: 8px;
-    padding: 8px;
-    padding: 2px;
-    background-color: #f8f9fa;
-    border-radius: 10px;
-    border-left: none;
-    position: relative;
-    padding-right: 60px; /* 为按钮预留空间 */
-}
-.translation-item.ai-recommendation-2:hover {
-    display: flex;
-    align-items: center;
-    margin-top: 8px;
-    padding: 8px;
-    padding: 2px;
-    background-color: #eef1f4;
-    border-radius: 10px;
-    border-left: none;
-    position: relative;
-    padding-right: 60px; /* 为按钮预留空间 */
-}
+/* AI 释义合并横幅沿用基础 .translation-item 统一样式，行结构见下方 .ai-rec-line 规则 */
 
 .number-badge {
     background: #FFE591;
@@ -7511,62 +7350,37 @@ padding-top: 5px;
 
 }
 
-/* 展开/收缩按钮样式 */
-.expand-collapse-btn {
-    width: 100%;
-    height: 10px;
-    border: 0 solid transparent !important;
-    background: rgba(0, 0, 0, 0) !important;
-    cursor: pointer;
+/* AI 释义合并横幅（AI1/AI2 合并为一条横幅，各占一行） */
+.translation-item.ai-recommendation {
+    flex-direction: column;
+    align-items: stretch;
+    padding-right: 16px; /* 覆盖基础类的 60px，按钮空间由各行自行预留 */
+}
+
+.ai-rec-line {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
- /*   margin-top: -12px;*/
-   margin-bottom: 1px;
+    min-height: 26px;
+    padding-right: 40px; /* 为右侧加号按钮预留空间 */
 }
 
-/* --- 新增：expand-collapse-btn 悬停动画 --- */
-.expand-collapse-btn:hover {
-   /* --- transform: scale(1.1);--- */
-}
-/* --- 动画结束 --- */
-
-.expand-collapse-btn svg {
+/* 覆盖通用悬停规则：只显示当前悬停行的加号按钮 */
+.translation-item.ai-recommendation:hover .translation-actions {
+    opacity: 0;
 }
 
-.expand-collapse-btn svg path {
-    stroke: #000000 !important; /* 强制设置为黑色，解决Orion浏览器显示蓝色的问题 */
+.translation-item.ai-recommendation .ai-rec-line:hover .translation-actions {
+    opacity: 1;
 }
 
-.dark-mode .expand-collapse-btn svg path {
-    stroke: #ffffff !important; /* 暗色模式下强制设置为白色 */
+/* 在小屏幕设备上默认显示加号按钮 */
+@media (max-width: 500px) {
+    .translation-item.ai-recommendation .ai-rec-line .translation-actions {
+        opacity: 1 !important;
+    }
 }
 
-.vocab-tooltip.collapsed .expand-collapse-btn svg {
-    transform: rotate(180deg);
-}
-
-/* AI推荐条目样式（与上方主定义保持一致） */
-.ai-recommendation {
-    margin-top: 8px;
-    padding: 8px;
-    background-color: #f8f9fa;
-    border-radius: 6px;
-    border-left: none;
-    position: relative;
-    padding-right: 60px; /* 为按钮预留空间 */
-}
-
-/* 第二个AI推荐条目样式 */
-.ai-recommendation-2 {
-    margin-top: 8px;
-    padding: 8px;
-    background-color: #f8f9fa;
-    border-radius: 6px;
-    border-left: none;
-    position: relative;
-    padding-right: 60px; /* 为按钮预留空间 */
-}
 
 .ai-badge {
     display: flex;
@@ -7582,33 +7396,7 @@ padding-top: 5px;
     stroke: #007bff;
 }
 
-/* AI推荐释义的加号按钮 */
-.ai-recommendation .translation-actions {
-    opacity: 0;
-}
-
-.ai-recommendation:hover .translation-actions {
-    opacity: 1;
-}
-
-/* 第二个AI推荐释义的加号按钮 */
-.ai-recommendation-2 .translation-actions {
-    opacity: 0;
-}
-
-.ai-recommendation-2:hover .translation-actions {
-    opacity: 1;
-}
-
-/* 在小屏幕设备上默认显示AI推荐释义的加号按钮 */
-@media (max-width: 500px) {
-    .ai-recommendation .translation-actions {
-        opacity: 1 !important; /* 小屏幕上默认显示，使用!important确保优先级 */
-    }
-    .ai-recommendation-2 .translation-actions {
-        opacity: 1 !important; /* 小屏幕上默认显示，使用!important确保优先级 */
-    }
-}
+/* AI推荐释义的加号按钮：默认隐藏，悬停对应行时显示（见 .ai-rec-line 规则） */
 
 /* 修改释义管理按钮样式，默认隐藏 */
 .translation-item {
@@ -7829,22 +7617,12 @@ shadowRoot.appendChild(style);
     }
 
     .dark-mode .translation-item {
-      background: #2d2d2dc7;
+      background: #3d3d3d;
       color: #e0e0e0;
     }
 
     .dark-mode .translation-item:hover {
-      background: #3a3a3a;
-    }
-
-    .dark-mode .translation-item.ai-recommendation {
-      background-color: #2d2d2dc7;
-      border-left: none;
-    }
-
-    .dark-mode .translation-item.ai-recommendation-2 {
-      background-color: #2d2d2dc7;
-      border-left: none;
+      background: #4a4a4a;
     }
 
     /* 当鼠标悬停在整个句子对上时，显示删除按钮 */
@@ -7855,7 +7633,7 @@ shadowRoot.appendChild(style);
    }
 
    .dark-mode .example-sentence-pair {
-       background: #2d2d2d; /* <--- 保持原有背景色，只让 section 透明 */
+       background: #3d3d3d; /* <--- 与横幅/标签保持一致 */
 
    }
 
@@ -7866,7 +7644,7 @@ shadowRoot.appendChild(style);
    .dark-mode .example-sentence:hover {
        padding: 3.5px;
        background: #3a3a3a;
-       border-radius: 10px;
+       border-radius: 4px;
 
    }
 
