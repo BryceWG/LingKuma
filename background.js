@@ -276,7 +276,11 @@ async function getHighlightControlState(tabId) {
   const pageEnabled = pageKey && Object.prototype.hasOwnProperty.call(pageOverrides, pageKey)
     ? pageOverrides[pageKey] === true
     : pageOverrides[String(tabId)] === true;
-  const enabled = scope === 'page' ? pageEnabled : globalEnabled;
+  const hasPageOverride = (pageKey && Object.prototype.hasOwnProperty.call(pageOverrides, pageKey))
+    || Object.prototype.hasOwnProperty.call(pageOverrides, String(tabId));
+  // page scope：有单站 override 以 override 为准；无记录的域名回退到 popup 总开关，
+  // 避免"每个新域名都要手动点一次图标才生效"的问题。
+  const enabled = scope === 'page' ? (hasPageOverride ? pageEnabled : globalEnabled) : globalEnabled;
 
   return { scope, enabled, globalEnabled };
 }
