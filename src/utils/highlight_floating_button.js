@@ -203,19 +203,6 @@
     }
   }
 
-  function triggerButtonPulse(button) {
-    if (!button) {
-      return;
-    }
-
-    button.dataset.pulse = 'true';
-    window.setTimeout(() => {
-      if (button) {
-        delete button.dataset.pulse;
-      }
-    }, 280);
-  }
-
   function broadcastHighlightState(enabled) {
     chrome.runtime.sendMessage({
       action: 'broadcastToggleHighlight',
@@ -315,7 +302,6 @@
 
     const nextIsDark = !currentPageThemeIsDark;
     applyCurrentPageTheme(nextIsDark);
-    triggerButtonPulse(themeButtonWrap);
     saveCurrentPageTheme(nextIsDark);
 
     if (event?.type === 'click' && event.detail > 0) {
@@ -351,7 +337,6 @@
   function toggleHighlight() {
     const enabled = !currentHighlightEnabled;
     updateHighlightState(enabled);
-    triggerButtonPulse(buttonWrap);
 
     chrome.runtime.sendMessage({
       action: 'toggleWordHighlightFromFloatingButton',
@@ -367,34 +352,11 @@
     });
   }
 
-  function randomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1) + min);
-  }
-
-  function initializeStars() {
-    if (!buttonWrap) {
-      return;
-    }
-
-    buttonWrap.querySelectorAll('.star').forEach((star) => {
-      star.style.setProperty('--angle', randomInt(0, 360));
-      star.style.setProperty('--duration', randomInt(6, 20));
-      star.style.setProperty('--delay', randomInt(1, 10));
-      star.style.setProperty('--alpha', randomInt(40, 90) / 100);
-      star.style.setProperty('--size', randomInt(2, 6));
-      star.style.setProperty('--distance', randomInt(40, 200));
-    });
-  }
-
   function createStyles() {
     const style = document.createElement('style');
     style.textContent = `
       :host {
         all: initial;
-        --transition: 0.25s;
-        --dock-motion: 470ms cubic-bezier(0.16, 1, 0.3, 1);
-        --spark: 1.8s;
-        --hue: 245;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
@@ -409,11 +371,6 @@
         width: ${BUTTON_WIDTH}px;
         height: ${BUTTON_STACK_HEIGHT}px;
         z-index: 2147483647;
-        transform: translate3d(0, 0, 0);
-        transform-origin: center;
-        transition:
-          width var(--dock-motion),
-          height var(--dock-motion);
       }
 
       .lk-floating-stack[data-dock="top"],
@@ -428,16 +385,6 @@
         left: 0;
         width: ${BUTTON_WIDTH}px;
         height: ${BUTTON_HEIGHT}px;
-        opacity: 0.88;
-        transform: translate3d(0, 0, 0);
-        transform-origin: center;
-        transition:
-          opacity 180ms ease,
-          transform var(--dock-motion),
-          top var(--dock-motion),
-          left var(--dock-motion),
-          width var(--dock-motion),
-          height var(--dock-motion);
       }
 
       .lk-floating-slot--theme {
@@ -445,35 +392,27 @@
       }
 
       .lk-floating-stack[data-dock="left"] .lk-floating-slot {
-        opacity: 0.42;
-        transform: translate3d(-${SIDE_DOCK_OFFSET}px, 0, 0);
+        transform: translate(-${SIDE_DOCK_OFFSET}px, 0);
       }
 
       .lk-floating-stack[data-dock="right"] .lk-floating-slot {
-        opacity: 0.42;
-        transform: translate3d(${SIDE_DOCK_OFFSET}px, 0, 0);
+        transform: translate(${SIDE_DOCK_OFFSET}px, 0);
       }
 
       .lk-floating-stack[data-dock="top"] .lk-floating-slot,
       .lk-floating-stack[data-dock="bottom"] .lk-floating-slot {
         width: ${BUTTON_HEIGHT}px;
         height: ${BUTTON_WIDTH}px;
-        opacity: 0.42;
       }
 
       .lk-floating-stack[data-dock="top"] .lk-floating-slot {
         top: 0;
-        transform: translate3d(0, -${SIDE_DOCK_OFFSET}px, 0);
+        transform: translate(0, -${SIDE_DOCK_OFFSET}px);
       }
 
       .lk-floating-stack[data-dock="bottom"] .lk-floating-slot {
         top: 0;
-        transform: translate3d(0, ${SIDE_DOCK_OFFSET}px, 0);
-      }
-
-      .lk-floating-stack[data-dock="top"] .lk-floating-slot--highlight,
-      .lk-floating-stack[data-dock="bottom"] .lk-floating-slot--highlight {
-        left: 0;
+        transform: translate(0, ${SIDE_DOCK_OFFSET}px);
       }
 
       .lk-floating-stack[data-dock="top"] .lk-floating-slot--theme,
@@ -490,25 +429,10 @@
       .lk-floating-stack[data-dock="bottom"] .lk-floating-slot:hover,
       .lk-floating-stack[data-dock="bottom"] .lk-floating-slot:focus-within,
       .lk-floating-stack[data-dragging="true"] .lk-floating-slot {
-        opacity: 0.98;
-        transform: translate3d(0, 0, 0);
+        transform: translate(0, 0);
       }
 
       .lk-floating-highlight {
-        --cut: 0.1em;
-        --active: 0;
-        --bg:
-          radial-gradient(
-            120% 120% at 126% 126%,
-            hsl(var(--hue) calc(var(--active) * 97%) 98% / calc(var(--active) * 0.9)) 40%,
-            transparent 50%
-          ) calc(100px - (var(--active) * 100px)) 0 / 100% 100% no-repeat,
-          radial-gradient(
-            120% 120% at 120% 120%,
-            hsl(var(--hue) calc(var(--active) * 97%) 70% / calc(var(--active) * 1)) 30%,
-            transparent 70%
-          ) calc(100px - (var(--active) * 100px)) 0 / 100% 100% no-repeat,
-          hsl(var(--hue) calc(var(--active) * 100%) calc(12% - (var(--active) * 8%)));
         position: absolute;
         top: 0;
         left: 0;
@@ -521,32 +445,15 @@
         border: 0;
         border-radius: 2rem;
         padding: 0.9em 1.3em;
-        color: hsl(0 0% calc(60% + (var(--active) * 26%)));
-        background: var(--bg);
-        // box-shadow:
-        //   0 0 calc(var(--active) * 6em) calc(var(--active) * 3em) hsl(var(--hue) 97% 61% / 0.5),
-        //   0 0.05em 0 0 hsl(var(--hue) calc(var(--active) * 97%) calc((var(--active) * 50%) + 30%)) inset,
-        //   0 -0.05em 0 0 hsl(var(--hue) calc(var(--active) * 97%) calc(var(--active) * 10%)) inset,
-        //   0 12px 30px rgba(20, 20, 19, 0.18);
+        color: #fff;
+        background: rgba(60, 60, 60, 0.55);
         cursor: grab;
-        font-size: 16px;
+        font-size: 12px;
         font-weight: 600;
         line-height: 1;
-        letter-spacing: 0;
         white-space: nowrap;
-        opacity: 0.88;
-        transform: translate3d(0, 0, 0);
-        scale: 1;
-        transform-style: preserve-3d;
-        perspective: 100vmin;
-        overflow: hidden;
-        transition:
-          opacity 180ms ease,
-          transform var(--dock-motion),
-          box-shadow var(--transition),
-          scale var(--transition),
-          background var(--transition),
-          color var(--transition);
+        opacity: 0.5;
+        transition: opacity 0.15s ease;
         user-select: none;
         touch-action: none;
         -webkit-tap-highlight-color: transparent;
@@ -570,13 +477,13 @@
       .lk-floating-stack[data-dragging="true"] .lk-current-page-theme {
         top: 0;
         left: 0;
-        transform: translate3d(0, 0, 0);
+        transform: none;
       }
 
       .lk-floating-highlight:hover:not([data-collapse-after-click="true"]),
       .lk-floating-highlight:focus-visible,
       .lk-floating-highlight[data-dragging="true"] {
-        opacity: 0.98;
+        opacity: 1;
       }
 
       .lk-floating-highlight:focus-visible {
@@ -588,143 +495,10 @@
         cursor: grabbing;
       }
 
-      .lk-floating-highlight[data-pulse="true"],
-      .lk-current-page-theme[data-pulse="true"] {
-        -webkit-animation: lk-button-pop 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
-        animation: lk-button-pop 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
-      }
-
-      .lk-floating-highlight[data-highlight="on"] {
-        --active: 1;
-        --play-state: running;
-      }
-
-      .lk-floating-highlight[data-highlight="off"] {
-        --active: 0;
-      }
-
-      .spark {
-        position: absolute;
-        inset: 0;
-        border-radius: 2rem;
-        rotate: 0deg;
-        overflow: hidden;
-        -webkit-mask: linear-gradient(white, transparent 50%);
-        mask: linear-gradient(white, transparent 50%);
-        -webkit-animation: flip calc(var(--spark) * 2) infinite steps(2, end);
-        animation: flip calc(var(--spark) * 2) infinite steps(2, end);
-      }
-
-      .spark::before {
-        content: "";
-        position: absolute;
-        width: 200%;
-        aspect-ratio: 1;
-        top: 0%;
-        left: 50%;
-        z-index: -1;
-        translate: -50% -15%;
-        rotate: 0;
-        transform: rotate(-90deg);
-        opacity: calc((var(--active)) + 0.4);
-        background: conic-gradient(
-          from 0deg,
-          transparent 0 340deg,
-          white 360deg
-        );
-        transition: opacity var(--transition);
-        -webkit-animation: rotate var(--spark) linear infinite both;
-        animation: rotate var(--spark) linear infinite both;
-      }
-
-      .spark::after {
-        content: "";
-        position: absolute;
-        inset: var(--cut);
-        border-radius: 2rem;
-      }
-
-      .backdrop {
-        position: absolute;
-        inset: var(--cut);
-        background: var(--bg);
-        border-radius: 2rem;
-        transition: background var(--transition);
-      }
-
-      .galaxy {
-        position: absolute;
-        width: 100%;
-        aspect-ratio: 1;
-        top: 50%;
-        left: 50%;
-        translate: -50% -50%;
-        overflow: hidden;
-        opacity: var(--active);
-        transition: opacity var(--transition);
-      }
-
-      .galaxy__ring {
-        height: 200%;
-        width: 200%;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        border-radius: 50%;
-        transform: translate(-28%, -40%) rotateX(-24deg) rotateY(-30deg) rotateX(90deg);
-        transform-style: preserve-3d;
-      }
-
-      .galaxy__container {
-        position: absolute;
-        inset: 0;
-        opacity: var(--active);
-        transition: opacity var(--transition);
-        -webkit-mask: radial-gradient(white, transparent);
-        mask: radial-gradient(white, transparent);
-      }
-
-      .star {
-        height: calc(var(--size) * 1px);
-        aspect-ratio: 1;
-        background: white;
-        border-radius: 50%;
-        position: absolute;
-        opacity: var(--alpha);
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) rotate(10deg) rotate(0deg) translateY(calc(var(--distance) * 1px));
-        -webkit-animation: orbit calc(var(--duration) * 1s) calc(var(--delay) * -1s) infinite linear;
-        animation: orbit calc(var(--duration) * 1s) calc(var(--delay) * -1s) infinite linear;
-      }
-
-      .star--static {
-        -webkit-animation:
-          move-x calc(var(--duration) * 0.1s) calc(var(--delay) * -0.1s) infinite linear,
-          move-y calc(var(--duration) * 0.2s) calc(var(--delay) * -0.2s) infinite linear;
-        animation:
-          move-x calc(var(--duration) * 0.1s) calc(var(--delay) * -0.1s) infinite linear,
-          move-y calc(var(--duration) * 0.2s) calc(var(--delay) * -0.2s) infinite linear;
-        top: 50%;
-        left: 50%;
-        transform: translate(0, 0);
-        max-height: 4px;
-        filter: brightness(4);
-        opacity: 0.9;
-      }
-
-      .lk-floating-highlight[data-highlight="on"] .star--static {
-        -webkit-animation-play-state: paused;
-        animation-play-state: paused;
-      }
-
       .text {
         position: relative;
         z-index: 1;
-        translate: 2% -6%;
-        color: hsl(0 0% calc(60% + (var(--active) * 26%)));
-        letter-spacing: 0.01ch;
-        transition: color var(--transition);
+        color: #fff;
         pointer-events: none;
       }
 
@@ -740,19 +514,11 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: #ebebeb;
-        box-shadow:
-          inset 0 2px 7px rgba(0, 0, 0, 0.26),
-          inset 0 -2px 7px rgba(255, 255, 255, 0.46),
-          0 10px 24px rgba(20, 20, 19, 0.16);
+        background: rgba(60, 60, 60, 0.55);
         cursor: pointer;
-        opacity: 0.88;
+        opacity: 0.5;
         overflow: hidden;
-        transition:
-          opacity 180ms ease,
-          transform var(--dock-motion),
-          background 220ms ease,
-          box-shadow 220ms ease;
+        transition: opacity 0.15s ease;
         user-select: none;
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
@@ -760,7 +526,7 @@
 
       .lk-current-page-theme:hover,
       .lk-current-page-theme:focus-visible {
-        opacity: 0.98;
+        opacity: 1;
       }
 
       .lk-current-page-theme:focus-visible {
@@ -777,11 +543,6 @@
         left: 4px;
         border-radius: 999px;
         background: linear-gradient(180deg, #ffcc89, #d8860b);
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
-        transition:
-          left 220ms ease,
-          transform 220ms ease,
-          background 220ms ease;
       }
 
       .lk-current-page-theme svg {
@@ -790,7 +551,6 @@
         width: 18px;
         height: 18px;
         flex: 0 0 18px;
-        transition: fill 220ms ease, color 220ms ease;
       }
 
       .lk-current-page-theme .theme-sun {
@@ -804,7 +564,7 @@
       }
 
       .lk-current-page-theme[data-theme="dark"] {
-        background: #242424;
+        background: rgba(20, 20, 20, 0.55);
       }
 
       .lk-current-page-theme[data-theme="dark"]::after {
@@ -819,102 +579,6 @@
 
       .lk-current-page-theme[data-theme="dark"] .theme-moon {
         fill: #fff;
-      }
-
-      @-webkit-keyframes orbit {
-        to {
-          transform: translate(-50%, -50%) rotate(10deg) rotate(360deg) translateY(calc(var(--distance) * 1px));
-        }
-      }
-
-      @keyframes orbit {
-        to {
-          transform: translate(-50%, -50%) rotate(10deg) rotate(360deg) translateY(calc(var(--distance) * 1px));
-        }
-      }
-
-      @-webkit-keyframes move-x {
-        0% {
-          translate: -100px 0;
-        }
-        100% {
-          translate: 100px 0;
-        }
-      }
-
-      @keyframes move-x {
-        0% {
-          translate: -100px 0;
-        }
-        100% {
-          translate: 100px 0;
-        }
-      }
-
-      @-webkit-keyframes move-y {
-        0% {
-          transform: translate(0, -50px);
-        }
-        100% {
-          transform: translate(0, 50px);
-        }
-      }
-
-      @keyframes move-y {
-        0% {
-          transform: translate(0, -50px);
-        }
-        100% {
-          transform: translate(0, 50px);
-        }
-      }
-
-      @-webkit-keyframes flip {
-        to {
-          rotate: 360deg;
-        }
-      }
-
-      @keyframes flip {
-        to {
-          rotate: 360deg;
-        }
-      }
-
-      @-webkit-keyframes rotate {
-        to {
-          transform: rotate(90deg);
-        }
-      }
-
-      @keyframes rotate {
-        to {
-          transform: rotate(90deg);
-        }
-      }
-
-      @-webkit-keyframes lk-button-pop {
-        0% {
-          scale: 1;
-        }
-        45% {
-          scale: 1.08;
-        }
-        100% {
-          scale: 1;
-        }
-      }
-
-      @keyframes lk-button-pop {
-        0% {
-          scale: 1;
-        }
-        45% {
-          scale: 1.08;
-        }
-        100% {
-          scale: 1;
-        }
       }
     `;
     return style;
@@ -1041,41 +705,7 @@
     buttonWrap = document.createElement('button');
     buttonWrap.className = 'lk-floating-highlight';
     buttonWrap.type = 'button';
-    buttonWrap.innerHTML = `
-      <span class="spark" aria-hidden="true"></span>
-      <span class="backdrop" aria-hidden="true"></span>
-      <span class="galaxy__container" aria-hidden="true">
-        <span class="star star--static"></span>
-        <span class="star star--static"></span>
-        <span class="star star--static"></span>
-        <span class="star star--static"></span>
-      </span>
-      <span class="galaxy" aria-hidden="true">
-        <span class="galaxy__ring">
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-          <span class="star"></span>
-        </span>
-      </span>
-      <span class="text">Kuma</span>
-    `;
+    buttonWrap.innerHTML = '<span class="text">Kuma</span>';
 
     themeSlot = document.createElement('div');
     themeSlot.className = 'lk-floating-slot lk-floating-slot--theme';
@@ -1117,7 +747,6 @@
       }
     });
 
-    initializeStars();
     applyPosition(getSharedPosition(savedPosition));
     updateHighlightState(currentHighlightEnabled);
     const pageThemeIsDark = normalizePageThemeOverride(pageThemeOverride);

@@ -12,8 +12,6 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   z-index: 2147483647;
   cursor: auto;
-  transform: translateZ(0); /* 启用硬件加速 */
-  will-change: transform, opacity; /* 提示浏览器元素将发生变化 */
   max-width: 300px; /* 限制宽度避免过大的DOM结构 */
   max-height: 400px;
   overflow-y: auto; /* 内容过多时允许滚动 */
@@ -268,7 +266,6 @@
 ::highlight(dark-state2),
 ::highlight(dark-state3),
 ::highlight(dark-state4) {
-  will-change: background-color;
 }
 
 :root.pdf-viewer ::highlight(default),
@@ -402,7 +399,6 @@
   align-items: center;
   justify-content: center;
   border-radius: 7px;
-  transition: all 0.2s;
 }
 
 .word-explosion-close-btn:hover {
@@ -418,7 +414,6 @@
   background: #f5f5f5;
   border-radius: 7px;
   cursor: pointer;
-  transition: all 0.2s;
   padding: 2px;
   color: #666;
   display: flex;
@@ -452,7 +447,6 @@
   background: #f5f5f5;
   border-radius: 7px;
   cursor: pointer;
-  transition: all 0.2s;
   padding: 2px;
   color: #666;
   display: flex;
@@ -560,7 +554,6 @@
   background: #f5f5f5;
   border-radius: 7px;
   cursor: pointer;
-  transition: all 0.2s;
   padding: 2px;
   color: #666;
 }
@@ -631,7 +624,6 @@
   background: #f5f5f5;
   border-radius: 7px;
   border: 1px solid #e0e0e0;
-  transition: all 0.2s;
 }
 
 .word-explosion-word-item:hover {
@@ -690,7 +682,6 @@
   font-size: 14px;
   padding: 2px 4px;
   border-radius: 7px;
-  transition: all 0.2s;
   user-select: none;
 }
 

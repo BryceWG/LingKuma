@@ -243,8 +243,8 @@ class ScopeObserver {
     this.isJapaneseDominantPage = false; // 页面是否为日文主导，默认false
 
     // 日语分词器相关设置
-    this.useKuromojiTokenizer = false; // 是否使用kuromoji分词，默认关闭
-    this.autoLoadKuromojiForJapanese = false; // 是否智能加载kuromoji（仅日语页面），默认关闭
+    this.useKuromojiTokenizer = false; // kuromoji已移除（性能优化），日语分词统一使用Intl.Segmenter
+    this.autoLoadKuromojiForJapanese = false; // kuromoji已移除
     this.kuromojiInitPromise = null; // kuromoji初始化Promise
     this.kuromojiInitialized = false; // kuromoji是否已初始化
 
@@ -290,7 +290,7 @@ class ScopeObserver {
       } else if (message.action === "reinitializeJapaneseTokenizer") {
         // 重新初始化日语分词器
         this.autoLoadKuromojiForJapanese = message.autoLoad === true;
-        this.useKuromojiTokenizer = message.useKuromoji === true;
+        this.useKuromojiTokenizer = false; // kuromoji已移除，强制使用Intl.Segmenter
 
         console.log("日语分词器设置已更新:",
           this.autoLoadKuromojiForJapanese ? "智能加载kuromoji" :
@@ -555,7 +555,7 @@ class ScopeObserver {
       this.highlightAlphabeticEnabled = result.highlightAlphabeticEnabled !== false;
       this.autoDetectJapaneseKanji = result.autoDetectJapaneseKanji !== false; // 默认开启
       this.autoLoadKuromojiForJapanese = result.autoLoadKuromojiForJapanese === true; // 默认关闭
-      this.useKuromojiTokenizer = result.useKuromojiTokenizer === true; // 默认关闭
+      this.useKuromojiTokenizer = false; // kuromoji已移除
 
       console.log("高亮开关状态已加载:",
         "中:", this.highlightChineseEnabled,

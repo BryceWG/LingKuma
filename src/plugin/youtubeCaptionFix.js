@@ -30,7 +30,7 @@
         youtubeCommaSentencing: false,
         youtubeBionicReading: true,
         youtubeFontSize: 24,
-        youtubeFontFamily: 'Fanwood',
+        youtubeFontFamily: 'system',
     }, function(result) {
         console.log("result: ", result);
 
@@ -45,7 +45,7 @@
             console.log("仿生阅读设置:", window.youtubeBionicReadingEnabled);
             // 保存字体设置到全局变量
             window.youtubeFontSize = result.youtubeFontSize !== undefined ? result.youtubeFontSize : 24;
-            window.youtubeFontFamily = result.youtubeFontFamily !== undefined ? result.youtubeFontFamily : 'Fanwood';
+            window.youtubeFontFamily = result.youtubeFontFamily !== undefined ? result.youtubeFontFamily : 'system';
             console.log("字体设置:", window.youtubeFontSize + 'px', window.youtubeFontFamily);
             initializePlugin();
             setupUrlMonitoring();
@@ -137,8 +137,9 @@
             const textElement = document.getElementById('untertitle-text');
             if (textElement) {
                 const fontFamilyMap = {
-                    'Fanwood': '"Fanwood", "LXGWWenKai", "PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"',
-                    'LXGWWenKai': '"LXGWWenKai", "PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"',
+                    'Fanwood': '"PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"',
+                    'LXGWWenKai': '"PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"',
+                    'system': '"PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"',
                     'Arial': 'Arial, sans-serif',
                     'Helvetica': 'Helvetica, Arial, sans-serif',
                     'Times New Roman': '"Times New Roman", Times, serif',
@@ -1548,45 +1549,6 @@
                 document.head.appendChild(style);
             }
 
-            // 加载字体
-            const fontUrl = chrome.runtime.getURL("src/fonts/LXGWWenKaiGBLite-Regular.ttf");
-            const fanwoodFontUrl = chrome.runtime.getURL("src/fonts/Fanwood.otf");
-            // 使用encodeURIComponent处理文件名中的空格
-            const fanwoodBoldFontUrl = chrome.runtime.getURL("src/fonts/Fanwood_Bold.otf").replace(/ /g, "%20");
-            const fanwoodItalicFontUrl = chrome.runtime.getURL("src/fonts/Fanwood_Italic.otf").replace(/ /g, "%20");
-
-            // 添加字体样式
-            addStyle(`
-                @font-face {
-                    font-family: 'LXGWWenKai';
-                    src: url('${fontUrl}') format('truetype');
-                    font-weight: normal;
-                    font-style: normal;
-                    font-display: swap;
-                }
-                @font-face {
-                    font-family: 'Fanwood';
-                    src: url('${fanwoodFontUrl}') format('opentype');
-                    font-weight: normal;
-                    font-style: normal;
-                    font-display: swap;
-                }
-                @font-face {
-                    font-family: 'Fanwood';
-                    src: url('${fanwoodBoldFontUrl}') format('opentype');
-                    font-weight: bold;
-                    font-style: normal;
-                    font-display: swap;
-                }
-                @font-face {
-                    font-family: 'Fanwood';
-                    src: url('${fanwoodItalicFontUrl}') format('opentype');
-                    font-weight: normal;
-                    font-style: italic;
-                    font-display: swap;
-                }
-            `);
-
             // 添加仿生阅读样式
             addStyle(`
                 .highlight-wrapper {
@@ -1621,10 +1583,6 @@
                 #untertitle-display {
                     white-space: pre-wrap;
                     word-break: break-word;
-                }
-                /* 为Fanwood字体单独设置字号 */
-                #untertitle-text {
-                    font-family: "Fanwood",  "PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
                 }
                 /* 移除固定字体大小，让JavaScript动态控制 */
             `);
@@ -1689,7 +1647,7 @@
                 minWidth: '300px',
                 wordBreak: 'break-word',
                 whiteSpace: 'pre-wrap',
-                fontFamily: '"Fanwood", "LXGWWenKai", "PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"',
+                fontFamily: '"PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"',
                 userSelect: 'text', // 允许文本选择
                 textAlign: 'left' // 文本左对齐
             });
@@ -1774,10 +1732,11 @@
 
             // 获取字体设置
             const fontSize = window.youtubeFontSize || 24;
-            const fontFamily = window.youtubeFontFamily || 'Fanwood';
+            const fontFamily = window.youtubeFontFamily || 'system';
             const fontFamilyMap = {
-                'Fanwood': '"Fanwood", "LXGWWenKai", "PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"',
-                'LXGWWenKai': '"LXGWWenKai", "PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"',
+                'Fanwood': '"PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"',
+                'LXGWWenKai': '"PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"',
+                'system': '"PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"',
                 'Arial': 'Arial, sans-serif',
                 'Helvetica': 'Helvetica, Arial, sans-serif',
                 'Times New Roman': '"Times New Roman", Times, serif',

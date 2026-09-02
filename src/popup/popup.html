@@ -5,14 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Settings</title>
   <style>
-    @font-face {
-      font-family: "GoudyBookletter1911";
-      src: url("../fonts/goudy_bookletter_1911-webfont.ttf") format("truetype");
-      font-weight: 400;
-      font-style: normal;
-      font-display: swap;
-    }
-
     :root {
       --font-display: Georgia, "Times New Roman", serif;
       --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -1005,7 +997,7 @@
 
     .popup-title {
       margin: 8px 0 0;
-      font-family: "GoudyBookletter1911", var(--font-display);
+      font-family: var(--font-display);
       font-size: 30px;
       line-height: 1.15;
       font-weight: 400;
@@ -1415,14 +1407,6 @@
       <div class="toggle" style="margin-left: 20px;">
         <label for="autoDetectJapaneseKanji" data-i18n="auto_detect_japanese_kanji">Smart detect Japanese Kanji</label>
         <input type="checkbox" id="autoDetectJapaneseKanji">
-      </div>
-      <div class="toggle" style="margin-left: 20px;">
-        <label for="autoLoadKuromojiForJapanese" data-i18n="auto_load_kuromoji_for_japanese">Smart detect Japanese page and auto load Kuromoji</label>
-        <input type="checkbox" id="autoLoadKuromojiForJapanese">
-      </div>
-      <div class="toggle" style="margin-left: 20px;">
-        <label for="useKuromojiTokenizer" data-i18n="use_kuromoji_tokenizer">Use Kuromoji for Japanese (slower)</label>
-        <input type="checkbox" id="useKuromojiTokenizer">
       </div>
       <div class="toggle">
         <label for="highlightKorean" data-i18n="highlight_korean">Korean</label>
@@ -2043,8 +2027,6 @@
         <label for="bionicFontFamily" style="display: block; margin-bottom: 8px;" data-i18n="font_selection">字体选择</label>
         <select id="bionicFontFamily" style="width: 100%; padding: 8px; border: 1px solid var(--ios-border); border-radius: 4px; background-color: var(--ios-bg); color: var(--ios-text);">
           <option value="auto">auto (default)</option>
-          <option value="'LXGWWenKai', serif">LXGWWenKai</option>
-          <option value="'Fanwood', serif">Fanwood</option>
           <option value="Arial, sans-serif">Arial</option>
           <option value="'Times New Roman', serif">Times New Roman</option>
           <option value="'Courier New', monospace">Courier New</option>
@@ -2207,8 +2189,7 @@
       <div class="slider-setting">
         <label for="youtubeFontFamily" data-i18n="youtube_font_family">字体样式</label>
         <select id="youtubeFontFamily">
-          <option value="Fanwood">Fanwood</option>
-          <option value="LXGWWenKai">LXGWWenKai</option>
+          <option value="system">System (Default)</option>
           <option value="Arial">Arial</option>
           <option value="Helvetica">Helvetica</option>
           <option value="Times New Roman">Times New Roman</option>

@@ -2,7 +2,9 @@
   "scripts": {
     "build": "webpack --config webpack.config.js",
     "watch": "webpack --watch --config webpack.config.js",
-    "pack": "npm run build && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pack-crx.ps1"
+    "pack": "npm run build && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pack-crx.ps1",
+    "build:firefox": "webpack --config webpack.config.js && node scripts/use-firefox-manifest.js",
+    "pack:firefox": "npm run build:firefox && node scripts/pack-firefox.js"
   },
   "devDependencies": {
     "clean-webpack-plugin": "^4.0.0",

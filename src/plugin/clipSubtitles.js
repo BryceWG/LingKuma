@@ -35,45 +35,6 @@ function initClipSubtitles() {
             document.head.appendChild(style);
         }
 
-        // 加载字体
-        const fontUrl = chrome.runtime.getURL("src/fonts/LXGWWenKaiGBLite-Regular.ttf");
-        const fanwoodFontUrl = chrome.runtime.getURL("src/fonts/Fanwood.otf");
-        // 使用encodeURIComponent处理文件名中的空格
-        const fanwoodBoldFontUrl = chrome.runtime.getURL("src/fonts/Fanwood_Bold.otf").replace(/ /g, "%20");
-        const fanwoodItalicFontUrl = chrome.runtime.getURL("src/fonts/Fanwood_Italic.otf").replace(/ /g, "%20");
-
-        // 添加字体样式
-        addStyle(`
-            @font-face {
-                font-family: 'LXGWWenKai';
-                src: url('${fontUrl}') format('truetype');
-                font-weight: normal;
-                font-style: normal;
-                font-display: swap;
-            }
-            @font-face {
-                font-family: 'Fanwood';
-                src: url('${fanwoodFontUrl}') format('opentype');
-                font-weight: normal;
-                font-style: normal;
-                font-display: swap;
-            }
-            @font-face {
-                font-family: 'Fanwood';
-                src: url('${fanwoodBoldFontUrl}') format('opentype');
-                font-weight: bold;
-                font-style: normal;
-                font-display: swap;
-            }
-            @font-face {
-                font-family: 'Fanwood';
-                src: url('${fanwoodItalicFontUrl}') format('opentype');
-                font-weight: normal;
-                font-style: italic;
-                font-display: swap;
-            }
-        `);
-
         // 添加仿生阅读样式
         addStyle(`
             .highlight-wrapper {
@@ -109,9 +70,7 @@ function initClipSubtitles() {
                 white-space: pre-wrap;
                 word-break: break-word;
             }
-            /* 为Fanwood字体单独设置字号 */
             #untertitle-text {
-                font-family: "Fanwood", "LXGWWenKai", "PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
                 font-size: 30px !important;
             }
         `);
@@ -155,7 +114,7 @@ function initClipSubtitles() {
             wordBreak: 'break-word',
             whiteSpace: 'pre-wrap',
             overflowWrap: 'break-word',
-            fontFamily: '"Fanwood", "LXGWWenKai", "PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"'
+            fontFamily: '"PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"'
         });
 
         // 创建内容包裹层

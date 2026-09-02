@@ -19,11 +19,9 @@ module.exports = {
     evaluateExpression: "./src/utils/evaluateExpression.js",
     pdfDetection: "./src/utils/pdfDetection.js",
     sentenseOoOo: "./src/utils/sentenseOoOo.js",
-    liquidGlass: "./src/utils/liquid-glass.js",
     bionic: "./src/plugin/bionic.js",
     readingRuler: "./src/plugin/readingRuler.js",
     clipSubtitles: "./src/plugin/clipSubtitles.js",
-    waifu: "./src/plugin/waifu/waifu.js",
     youtubeCaptionFix: "./src/plugin/youtubeCaptionFix.js",
     youtubeCaptionGet: "./src/plugin/youtubeCaptionGet.js",
     a1_loadKnowWords: "./src/service/a1_loadKnowWords.js",
@@ -76,9 +74,6 @@ module.exports = {
       if (pathData.chunk.name === 'sentenseOoOo') {
         return 'src/utils/sentenseOoOo.js';
       }
-      if (pathData.chunk.name === 'liquidGlass') {
-        return 'src/utils/liquid-glass.js';
-      }
       if (pathData.chunk.name === 'bionic') {
         return 'src/plugin/bionic.js';
       }
@@ -87,9 +82,6 @@ module.exports = {
       }
       if (pathData.chunk.name === 'clipSubtitles') {
         return 'src/plugin/clipSubtitles.js';
-      }
-      if (pathData.chunk.name === 'waifu') {
-        return 'src/plugin/waifu/waifu.js';
       }
       if (pathData.chunk.name === 'youtubeCaptionFix') {
         return 'src/plugin/youtubeCaptionFix.js';
@@ -221,16 +213,9 @@ module.exports = {
         { from: 'src/icons/**/*', to: 'src/icons/[name][ext]' ,info: { minimized: true }},
         { from: 'src/popup/img/**/*', to: 'src/popup/img/[name][ext]' ,info: { minimized: true }},
         { from: 'src/options/images/**/*', to: 'src/options/images/[name][ext]' ,info: { minimized: true }},
-        { from: 'src/service/jp/dict/', to: 'src/service/jp/dict/' ,info: { minimized: true }},
-        { from: 'src/service/jp/kuromoji.js', to: 'src/service/jp/kuromoji.js' ,info: { minimized: true }},
         { from: 'src/options/webdav/webdav.js', to: 'src/options/webdav/webdav.js' ,info: { minimized: true }},
-        { from: 'src/service/image/*', to: 'src/service/image/[name][ext]',info: { minimized: true }},
-        { from: 'src/service/image/tg/*.svg', to: 'src/service/image/tg/[name][ext]',info: { minimized: true }},
-        { from: 'src/service/image/tg_png/*.jpg', to: 'src/service/image/tg_png/[name][ext]',info: { minimized: true }},
-        { from: 'src/fonts/*', to: 'src/fonts/[name][ext]',info: { minimized: true }},
         { from: 'src/options/chars/chart.js', to: 'src/options/chars/chart.js' ,info: { minimized: true }},
         { from: 'src/options/chars/chartjs-adapter-date-fns.js', to: 'src/options/chars/chartjs-adapter-date-fns.js' ,info: { minimized: true }},
-        { from: 'src/service/videos/kawai.mp4', to: 'src/service/videos/kawai.mp4' ,info: { minimized: true }},
         { from: 'src/plugin/youtubeCaptionInjected.js', to: 'src/plugin/youtubeCaptionInjected.js' ,info: { minimized: true }},
         { from: 'src/options/liquid-group/**/*', to: 'src/options/liquid-group/[name][ext]' ,info: { minimized: true }},
         { from: 'src/service/image/lottie/*.tgs', to: 'src/service/image/lottie/[name][ext]',info: { minimized: true }},

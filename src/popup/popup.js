@@ -37,7 +37,7 @@ window.addEventListener('unhandledrejection', function(event) {
 });
 
 // 背景设置相关变量
-let backgroundImageUrl = chrome.runtime.getURL("src/service/image/pattern.png"); // 默认背景图片
+let backgroundImageUrl = ''; // 默认无背景图（已移除内置背景库）
 let isBackgroundVideo = false; // 是否使用视频背景
 let backgroundVideoUrl = null; // 视频背景URL
 
@@ -137,6 +137,8 @@ function loadBackgroundSettings() {
 
 // 应用背景设置的函数
 function applyBackgroundSettings(bgSettings) {
+  // 内置背景资源库已移除（性能优化），背景功能永久禁用；自定义背景不再支持
+  bgSettings = Object.assign({}, bgSettings, { enabled: false });
   // 检查是否启用背景
   if (bgSettings.enabled !== true) {
     // 如果禁用背景，将URL设为空
@@ -505,8 +507,6 @@ function initializeSettings() {
       highlightChineseEnabled: false, // 中文默认不高亮
       highlightJapaneseEnabled: true, // 日语默认高亮
       autoDetectJapaneseKanji: true, // 智能识别日语汉字默认开启
-      autoLoadKuromojiForJapanese: true, // 智能加载kuromoji默认关闭
-      useKuromojiTokenizer: false, // 使用kuromoji分词默认关闭
       highlightKoreanEnabled: true, // 韩语默认高亮
       highlightAlphabeticEnabled: true, // 字母语言默认高亮
 
@@ -514,7 +514,7 @@ function initializeSettings() {
       youtubeCommaSentencing: false, // 添加：YouTube 逗号分句的默认值（默认关闭，使用句号分句）
       youtubeBionicReading: true, // 添加：YouTube 仿生阅读的默认值（默认开启）
       youtubeFontSize: 24, // 添加：YouTube 字幕字体大小的默认值
-      youtubeFontFamily: 'Fanwood', // 添加：YouTube 字幕字体样式的默认值
+      youtubeFontFamily: 'system', // 添加：YouTube 字幕字体样式的默认值（系统默认）
       lingqBlocker: false, // 添加：LingqBlocker 的默认值（默认关闭）
 
       // 高亮动词功能默认设置
@@ -776,8 +776,6 @@ const highlightJapanese = document.getElementById('highlightJapanese');
 const wordHighlightFloatingButton = document.getElementById('wordHighlightFloatingButton');
 const wordHighlightFloatingButtonScope = document.getElementById('wordHighlightFloatingButtonScope');
 const autoDetectJapaneseKanji = document.getElementById('autoDetectJapaneseKanji');
-const autoLoadKuromojiForJapanese = document.getElementById('autoLoadKuromojiForJapanese');
-const useKuromojiTokenizer = document.getElementById('useKuromojiTokenizer');
 const highlightKorean = document.getElementById('highlightKorean');
 const highlightAlphabetic = document.getElementById('highlightAlphabetic');
 
@@ -788,8 +786,6 @@ chrome.storage.local.get([
     'highlightChineseEnabled',
     'highlightJapaneseEnabled',
     'autoDetectJapaneseKanji',
-    'autoLoadKuromojiForJapanese',
-    'useKuromojiTokenizer',
     'highlightKoreanEnabled',
     'highlightAlphabeticEnabled'
 ], function(result) {
@@ -800,8 +796,6 @@ chrome.storage.local.get([
     highlightChinese.checked = result.highlightChineseEnabled === undefined ? false : result.highlightChineseEnabled;
     highlightJapanese.checked = result.highlightJapaneseEnabled === undefined ? true : result.highlightJapaneseEnabled;
     autoDetectJapaneseKanji.checked = result.autoDetectJapaneseKanji === undefined ? true : result.autoDetectJapaneseKanji;
-    autoLoadKuromojiForJapanese.checked = result.autoLoadKuromojiForJapanese === undefined ? true : result.autoLoadKuromojiForJapanese;
-    useKuromojiTokenizer.checked = result.useKuromojiTokenizer === undefined ? false : result.useKuromojiTokenizer;
     highlightKorean.checked = result.highlightKoreanEnabled === undefined ? true : result.highlightKoreanEnabled;
     highlightAlphabetic.checked = result.highlightAlphabeticEnabled === undefined ? true : result.highlightAlphabeticEnabled;
 });
@@ -834,54 +828,6 @@ autoDetectJapaneseKanji.addEventListener('change', function(e) {
         if (tabs[0]) {
             chrome.tabs.sendMessage(tabs[0].id, {
                 action: 'redetectPageLanguage'
-            });
-        }
-    });
-});
-
-autoLoadKuromojiForJapanese.addEventListener('change', function(e) {
-    if (e.target.checked) {
-        // 如果启用智能加载，则禁用全局加载
-        useKuromojiTokenizer.checked = false;
-        chrome.storage.local.set({
-            autoLoadKuromojiForJapanese: true,
-            useKuromojiTokenizer: false
-        });
-    } else {
-        chrome.storage.local.set({ autoLoadKuromojiForJapanese: false });
-    }
-
-    // 通知 content script 重新初始化日语分词器
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        if (tabs[0]) {
-            chrome.tabs.sendMessage(tabs[0].id, {
-                action: 'reinitializeJapaneseTokenizer',
-                useKuromoji: e.target.checked ? 'auto' : false,
-                autoLoad: e.target.checked
-            });
-        }
-    });
-});
-
-useKuromojiTokenizer.addEventListener('change', function(e) {
-    if (e.target.checked) {
-        // 如果启用全局加载，则禁用智能加载
-        autoLoadKuromojiForJapanese.checked = false;
-        chrome.storage.local.set({
-            useKuromojiTokenizer: true,
-            autoLoadKuromojiForJapanese: false
-        });
-    } else {
-        chrome.storage.local.set({ useKuromojiTokenizer: false });
-    }
-
-    // 通知 content script 重新初始化日语分词器
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        if (tabs[0]) {
-            chrome.tabs.sendMessage(tabs[0].id, {
-                action: 'reinitializeJapaneseTokenizer',
-                useKuromoji: e.target.checked,
-                autoLoad: false
             });
         }
     });
@@ -1123,7 +1069,7 @@ const youtubeFontFamily = document.getElementById('youtubeFontFamily');
 
 // 加载字体样式设置
 chrome.storage.local.get('youtubeFontFamily', function(result) {
-    const fontFamily = result.youtubeFontFamily !== undefined ? result.youtubeFontFamily : 'Fanwood';
+    const fontFamily = result.youtubeFontFamily !== undefined ? result.youtubeFontFamily : 'system';
     youtubeFontFamily.value = fontFamily;
 });
 
@@ -3841,8 +3787,6 @@ const i18n = {
     "highlight_chinese": "中文",
     "highlight_japanese": "日语",
     "auto_detect_japanese_kanji": "智能识别日文独立汉字",
-    "auto_load_kuromoji_for_japanese": "智能判断网页是否为日语并自动启动koromoji",
-    "use_kuromoji_tokenizer": "⚠️全局使用kuromoji进行分词，包括非日语页面。所有页面增加4s的加载时间，但会有稍微好一点的分词效果",
     "highlight_korean": "韩文",
     "highlight_alphabetic": "拉丁语系(英法德等)",
 
@@ -4050,8 +3994,6 @@ const i18n = {
     "highlight_chinese": "Chinese",
     "highlight_japanese": "Japanese",
     "auto_detect_japanese_kanji": "Smart Detect Japanese Kanji",
-    "auto_load_kuromoji_for_japanese": "Smart Detect Japanese Page and Auto Load Kuromoji",
-    "use_kuromoji_tokenizer": "⚠️Use Kuromoji Globally (All Pages, +4s Load Time)",
     "highlight_korean": "Korean",
     "highlight_alphabetic": "Alphabetic",
 
@@ -4227,8 +4169,6 @@ const i18n = {
     "highlight_chinese": "中文",
     "highlight_japanese": "日語",
     "auto_detect_japanese_kanji": "智慧識別日文獨立漢字",
-    "auto_load_kuromoji_for_japanese": "智慧判斷網頁是否為日語並自動啟動koromoji",
-    "use_kuromoji_tokenizer": "⚠️全域使用kuromoji進行分詞，包括非日語頁面。所有頁面增加4s的載入時間，但會有稍微好一點的分詞效果",
     "highlight_korean": "韓文",
     "highlight_alphabetic": "拉丁語系(英法德等)",
     "word_explosion": "單字爆炸💥",
@@ -4402,8 +4342,6 @@ const i18n = {
         "highlight_chinese": "Chinesisch",
         "highlight_japanese": "Japanisch ",
         "auto_detect_japanese_kanji": "Intelligente Erkennung japanischer Kanji",
-        "auto_load_kuromoji_for_japanese": "Intelligente Erkennung japanischer Seiten und automatisches Laden von Kuromoji",
-        "use_kuromoji_tokenizer": "⚠️Kuromoji global verwenden (Alle Seiten, +4s Ladezeit)",
         "highlight_korean": "Koreanisch",
         "highlight_alphabetic": "Alphabetisch",
 
@@ -4745,8 +4683,6 @@ const i18n = {
         "highlight_chinese": "Chino",
         "highlight_japanese": "Japonés",
         "auto_detect_japanese_kanji": "Detección inteligente de kanji japoneses",
-        "auto_load_kuromoji_for_japanese": "Detección inteligente de páginas japonesas y carga automática de Kuromoji",
-        "use_kuromoji_tokenizer": "⚠️Usar Kuromoji globalmente (Todas las páginas, +4s tiempo de carga)",
         "highlight_korean": "Coreano",
         "highlight_alphabetic": "Alfabético",
 
@@ -4919,8 +4855,6 @@ const i18n = {
           "highlight_chinese": "中国語",
           "highlight_japanese": "日本語",
           "auto_detect_japanese_kanji": "日本語の漢字を自動検出",
-          "auto_load_kuromoji_for_japanese": "日本語ページを自動検出してKuromojiを読み込む",
-          "use_kuromoji_tokenizer": "⚠️Kuromojiをグローバルに使用（全ページ、+4秒読み込み時間）",
           "highlight_korean": "韓国語",
           "highlight_alphabetic": "アルファベット",
 
@@ -5254,8 +5188,6 @@ const i18n = {
           "highlight_chinese": "Китайский",
           "highlight_japanese": "Японский",
           "auto_detect_japanese_kanji": "Умное определение японских кандзи",
-          "auto_load_kuromoji_for_japanese": "Умное определение японских страниц и автоматическая загрузка Kuromoji",
-          "use_kuromoji_tokenizer": "⚠️Использовать Kuromoji глобально (Все страницы, +4s время загрузки)",
           "highlight_korean": "Корейский",
           "highlight_alphabetic": "Алфавитный",
 
@@ -5414,8 +5346,6 @@ const i18n = {
           "highlight_chinese": "Cinese",
           "highlight_japanese": "Giapponese",
           "auto_detect_japanese_kanji": "Rilevamento intelligente dei Kanji giapponesi",
-          "auto_load_kuromoji_for_japanese": "Rileva automaticamente le pagine giapponesi e carica Kuromoji",
-          "use_kuromoji_tokenizer": "⚠️Usa Kuromoji globalmente (Tutte le pagine, +4s tempo di caricamento)",
           "highlight_korean": "Coreano",
           "highlight_alphabetic": "Alfabetico",
 

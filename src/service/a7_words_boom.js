@@ -1532,7 +1532,7 @@ function showWordExplosion(sentence, sentenceRect = null, sentenceInfo = null) {
     if (unknownWords.length === 0) {
       // 没有未知单词，检查是否显示动效
       const result = await getA7StorageValues(['showKnownSentenceAnimation']);
-      const showAnimation = result.showKnownSentenceAnimation !== undefined ? result.showKnownSentenceAnimation : true;
+      const showAnimation = result.showKnownSentenceAnimation !== undefined ? result.showKnownSentenceAnimation : false;
 
       if (showAnimation) {
         // 显示动效
@@ -3016,7 +3016,7 @@ async function updateWordExplosionContent(content) {
     // 从A7设置缓存读取已知句动效配置
     const result = await getA7StorageValues(['showKnownSentenceAnimation', 'knownSentenceAnimation']);
 
-    const showAnimation = result.showKnownSentenceAnimation !== undefined ? result.showKnownSentenceAnimation : true;
+    const showAnimation = result.showKnownSentenceAnimation !== undefined ? result.showKnownSentenceAnimation : false;
 
     if (!showAnimation) {
       // 这个分支不应该被执行到，因为在showWordExplosion中已经处理了
@@ -5239,7 +5239,6 @@ function injectExplosionStyles() {
       align-items: center;
       justify-content: center;
       border-radius: 7px;
-      transition: all 0.2s;
     }
 
     .word-explosion-close-btn:hover {
@@ -5255,7 +5254,6 @@ function injectExplosionStyles() {
       background: #f5f5f5;
       border-radius: 7px;
       cursor: pointer;
-      transition: all 0.2s;
       padding: 2px;
       color: #666;
       display: flex;
@@ -5289,7 +5287,6 @@ function injectExplosionStyles() {
       background: #f5f5f5;
       border-radius: 7px;
       cursor: pointer;
-      transition: all 0.2s;
       padding: 2px;
       color: #666;
       display: flex;
@@ -5397,7 +5394,6 @@ function injectExplosionStyles() {
       background: #f5f5f5;
       border-radius: 7px;
       cursor: pointer;
-      transition: all 0.2s;
       padding: 2px;
       color: #666;
     }
@@ -5498,7 +5494,6 @@ function injectExplosionStyles() {
       background: #f5f5f5;
       border-radius: 7px;
       border: 1px solid #e0e0e0;
-      transition: all 0.2s;
     }
 
     .word-explosion-word-item:hover {
@@ -5543,7 +5538,6 @@ function injectExplosionStyles() {
       font-size: 14px;
       padding: 2px 4px;
       border-radius: 7px;
-      transition: all 0.2s;
       user-select: none;
     }
 
@@ -5565,7 +5559,6 @@ function injectExplosionStyles() {
       font-size: 14px;
       padding: 2px 4px;
       border-radius: 7px;
-      transition: all 0.2s;
       user-select: none;
       color: #4CAF50;
       font-weight: bold;

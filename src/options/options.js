@@ -1,5 +1,5 @@
 // 背景设置相关变量
-let backgroundImageUrl = chrome.runtime.getURL("src/service/image/pattern.png"); // 默认背景图片
+let backgroundImageUrl = ''; // 默认无背景图（已移除内置背景库）
 let isBackgroundVideo = false; // 是否使用视频背景
 let backgroundVideoUrl = null; // 视频背景URL
 
@@ -23,7 +23,7 @@ function loadBackgroundSettings() {
 
     // 如果没有缓存或缓存已过期，从storage获取
     chrome.storage.local.get(['tooltipBackground'], function(result) {
-      const bgSettings = result.tooltipBackground || { enabled: true, defaultType: 'svg' };
+      const bgSettings = result.tooltipBackground || { enabled: false, defaultType: 'svg' };
       console.log("从storage加载背景设置:", bgSettings);
 
       // 更新缓存
@@ -39,6 +39,8 @@ function loadBackgroundSettings() {
 
 // 应用背景设置的函数
 function applyBackgroundSettings(bgSettings) {
+  // 内置背景资源库已移除（性能优化），背景功能永久禁用；自定义背景不再支持
+  bgSettings = Object.assign({}, bgSettings, { enabled: false });
   // 检查是否启用背景
   if (bgSettings.enabled !== true) {
     // 如果禁用背景，将URL设为空
@@ -7244,7 +7246,7 @@ function initTooltipBackgroundSettings() {
 
   // 从存储中加载设置
   chrome.storage.local.get(['tooltipBackground', 'tooltipThemeMode'], function(result) {
-    const bgSettings = result.tooltipBackground || { enabled: true, useCustom: false, defaultType: 'svg' };
+    const bgSettings = result.tooltipBackground || { enabled: false, useCustom: false, defaultType: 'svg' };
     const themeMode = result.tooltipThemeMode || 'auto';
 
     // 设置控件状态

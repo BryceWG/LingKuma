@@ -134,12 +134,10 @@ async function ensureFullWordDetails(word) {
  * 快速获取液体玻璃状态（带缓存）
  */
 function getLiquidGlassEnabledFast() {
-  return getStorageValue('liquidGlassEnabled').then((storedValue) => {
-    const isEnabled = storedValue !== undefined ? storedValue : liquidGlassEnabled;
-    liquidGlassEnabledCache = isEnabled;
-    liquidGlassEnabledCacheTime = Date.now();
-    return isEnabled;
-  });
+  // 液体玻璃库已移除（性能优化），此功能永久禁用
+  liquidGlassEnabledCache = false;
+  liquidGlassEnabledCacheTime = Date.now();
+  return Promise.resolve(false);
 }
 
 /**
@@ -648,8 +646,6 @@ function clearAllPopupsAndWindows() {
     }
   }
 
-
-
   // 4. 清理Shadow DOM中的弹窗元素
   try {
     // 清理tooltip的shadow host
@@ -676,13 +672,11 @@ function clearAllPopupsAndWindows() {
     console.error('清理液体玻璃容器时发生错误:', error);
   }
 
-
-
   console.log('所有弹窗和窗口清理完成');
 }
 
 // 背景设置相关变量
-let backgroundImageUrl = chrome.runtime.getURL("src/service/image/pattern.png"); // 默认背景图片
+let backgroundImageUrl = ''; // 默认无背景图（已移除内置背景库）
 let isBackgroundVideo = false; // 是否使用视频背景
 let backgroundVideoUrl = null; // 视频背景URL
 
@@ -698,7 +692,7 @@ async function loadBackgroundSettings() {
     return;
   }
 
-  const bgSettings = await getStorageValue('tooltipBackground') || { enabled: true, defaultType: 'svg' };
+  const bgSettings = await getStorageValue('tooltipBackground') || { enabled: false, defaultType: 'svg' };
   console.log("从缓存读取背景设置:", bgSettings);
   cachedBackgroundSettings = bgSettings;
   lastBackgroundSettingsUpdate = Date.now();
@@ -708,6 +702,8 @@ async function loadBackgroundSettings() {
 // 应用背景设置的函数，从loadBackgroundSettings中提取出来以便复用
 function applyBackgroundSettings(bgSettings) {
   console.log("[DEBUG a4_tooltip_new.js] applyBackgroundSettings called with settings:", JSON.parse(JSON.stringify(bgSettings)));
+  // 内置背景资源库已移除（性能优化），背景功能永久禁用；自定义背景不再支持
+  bgSettings = Object.assign({}, bgSettings, { enabled: false });
   // 检查是否启用背景
   if (bgSettings.enabled !== true) {
     // 如果禁用背景，将URL设为空
@@ -993,10 +989,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   return false;
 });
 
-
-
-
-
 async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, originalWord, isCustom = false) {
   // 标记tooltip创建开始
   tooltipCreationInProgress = true;
@@ -1023,7 +1015,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
     // 加载背景设置
     await loadBackgroundSettings();
     // console.log("背景设置已加载: 图片URL=", backgroundImageUrl, "是否视频=", isBackgroundVideo, "视频URL=", backgroundVideoUrl);
-
 
   word = word.toLowerCase();
   // 如果已有 tooltip，先移除，并取消之前的空格监听器和 ResizeObserver
@@ -1318,8 +1309,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
     }
   }
 
-
-
   // 立即检测
   handleTrancyConflictAndTopLayer();
 
@@ -1446,7 +1435,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
     }
   });
 
-
 //   <div class="section">
 //   <div class="section-header">
 //       <span>词典</span>
@@ -1487,9 +1475,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                             <!-- Orion模式下显示的音频元素将在JS中动态添加 -->
                         </button>
 
-
                         <span class="Notes">${originalWord}</span>
-
 
                      <div style="display: flex; align-items: center; margin-top: 5px;">
 
@@ -1521,7 +1507,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                        
                           </button>
 
-
                         <!-- 添加侧栏句子解析按钮 -->
                         <button class="sidebar-btn tooltip-action-btn" title="sidebar" cursor: pointer;">
                           <!--
@@ -1532,11 +1517,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
                     </div>
 
-
-
                         </div>
-
-
 
                 </div>  <!-- title-container 结束 -->
 
@@ -1572,12 +1553,10 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             </div>
         </div>
 
-
         <!-- 添加状态切换按钮 -->
         <button class="status-toggle-btn" style="display: none;" title="(un)know">
          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M14.287 19.255c.346 2.47.83 3.6 3.678 4.017c-2.766.363-3.428 1.805-3.678 3.866c-.458-2.084-.773-3.381-3.66-3.866c2.797-.583 3.1-1.525 3.66-4.017M10.214 9.08c.341 2.664.712 4.868 4.85 5.56c-3.737.316-4.188 2.474-4.85 5.344c-.655-2.91-.99-4.976-4.714-5.344c2.349-.849 4.221-1.568 4.714-5.56m8.887 4.828c.28 2 .673 2.917 2.98 3.255c-2.24.293-2.778 1.463-2.98 3.132c-.371-1.688-.626-2.74-2.967-3.132c2.268-.472 2.513-1.236 2.967-3.255m15.932-.58l4.443 4.35L26.281 31.43c-2.649 2.76-5.688 4.77-8.352 6l-1.761-1.627c1.12-2.893 3.288-6.388 5.697-8.876z"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M17.93 37.43c-.558.678-1.919 1.202-2.972 1.49c.203-.84.448-2.137 1.21-3.117m23.198-25.019l2.644 2.544c1.39 1.338-.47 3.539-1.954 2.117l-2.817-2.697c-1.351-1.294.528-3.502 2.127-1.964"/></svg>
         </button>
-
 
         <!-- 还原按钮 (最小化状态下显示) -->
         <button class="restore-btn-words" title="Maxmize" style="display: none;">
@@ -1593,7 +1572,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
         <button class="show-sentence-translation-btn" title="Sentense" style="display: none;">
 
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M41.188 16.517c-.063.63-.087.561.008 1.333c.1.805.647 2.38 1.197 2.913c.573.555.062 1.185-.438 1.807c.294.415-.07.94-.484 1.323c-.011.65-.606.713-.77 1.242c-.266.858-.083 1.906-1.146 2.197c-2.69.735-5.58-1.181-7.116-2.455"/><path d="M39.54 19.231c-1.517.806-2.947-.383-2.947-.383m3.314-3.392c-2.297-.647-2.916-.187-2.916-.187m4.197 1.248c-1.676.253-4.62.143-4.62.143"/><path d="M36.57 16.66c-1.259 3.274-6.814 4.632-5.932 4.103c3.846-2.307 3.498-5.48 3.498-5.48m.025 4.144c-.182 1.045-.401 3.53-.865 4.333a5.3 5.3 0 0 1-.85 1.123c-1.597 1.58-3.434.97-3.434.97s1.415-.024 2.322-2.003c1.802-3.928-.491-10.579 1.47-13.644c1.626-2.54 5.046-2.102 5.046-2.102s5.323.17 5.008 8.02c-.013.338-1.67.393-1.67.393M32.37 9.152c-1.013 1.153-1.166 2.486-1.166 2.486m.332-2.879c-1.013 1.152-1.166 2.485-1.166 2.485"/><path d="M31.127 8.366c-1.32-1.099-3.371-.884-4.667 0c-2.412 1.647-2.022 5.892-3.376 8.23c-.568.473 2.19-.736 3.105-3.022c.577-1.44.796-2.036 1.457-2.593l-.127 1.969c1.824-.64 1.268-2.11 2.867-1.812"/><path d="M37.85 8.104c-9.371-6.511-19.712-1.047-20.666 13.14c-.37 5.496-4.428 5.143-6.374 7.921c-2.327 3.322-1.883 9.125-6.31 10.416c1.995.773 2.938.19 4.427-1.291c0 0 .383 1.989-1.745 4.84c3.38-1.121 4.4-4.21 5.334-7.572c.203 5.13-.927 6.204-.965 6.441c3.286-.942 4.502-5.07 4.502-5.07s.624 1.991 2.588 4.327c-1.663-12.09 5.456-13.846 5.456-13.846m-5.264 6.729s7.283-1.9 9.816-4.482c1.245-1.27 1.945-2.23 2.155-4.913m4.219 2.028c-2.007.295-3.101 3.124-2.946 4.137c.48 3.137 2.393 5.996 2.393 5.996M39.476 8.14c.958-.972 2.623-.846 3.385 0c1.677 1.861-.53 4.053-.07 5.81"/><path d="M33.112 28.013c-1.859.174-2.883-.538-2.883-.538m-4.986 4.965c2.308 2.573 2.336 5.906 2.336 5.906m-3.817-5.599c1.064 1.28-.524 2.002-.09 2.84c.311.602 1.202.36 1.692 1.101c.559.844-.171 1.495-.171 1.495m7.042-8.467c1.303 2.32 2.089.98 3.816 2.136c1.728 1.156 2.093 2.908 2.093 2.908"/><path d="M36.366 35.946c.06-1.488-1.082-.473-1.28-.97c-.18-.454.459-1.01.242-1.445c-.232-.466-1.098-.263-1.377-.701c-.29-.456-.065-1.628-.065-1.628"/></g><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M11.438 27.953a19 19 0 0 1-1.83-8.172C9.62 13.672 12.541 7.96 17.42 4.508C9.995 7.554 5.11 14.986 5.09 23.266c0 4.09 1.502 8.216 3.516 11.399m5.532 5.645c3.071 2.092 6.513 3.183 10.462 3.182c8.845-.014 16.573-6.196 18.831-15.063c-3.1 6.08-9.198 9.895-15.852 9.915c-3.396 0-6.4-.637-9.11-2.328"/></svg>
-
 
         </button>
 
@@ -1858,7 +1836,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               align-items: center;
               justify-content: center;
               /* margin-left: 5px; */ /* Removed as it's content of the main sound button */
-              transition: transform 0.2s ease;
             `;
 
             customPlayButton.addEventListener('mouseenter', function() {
@@ -1960,7 +1937,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
     console.error('添加Orion音频元素出错:', error);
   }
 
-
 // 获取单词状 态
   let wordStatus;
   if (highlightManager.wordDetailsFromDB[word.toLowerCase()]) {
@@ -1969,7 +1945,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
   // 更新按钮颜色
   updateButtonColors(tooltipEl, wordStatus);
-
 
         // 更新收缩功能的选择器
         const collapseBtn = tooltipEl.querySelector('.expand-collapse-btn');
@@ -2054,10 +2029,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                     }
                   });
 
-
-
             } else {                // tooltipEl.querySelector('.scrollable-content').style.display = 'block';
-
 
                //.scrollable-content 第一个元素     border复原：    border: 1px solid #8f9799;
                //除了第一个元素，其他.scrollable-content下的元素全都现实出来
@@ -2140,12 +2112,10 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
                         const tag_add = e.target.value.trim();
 
-
                         //如果新旧一样，旧不操作
                         if (tagText === tag_add) {
                           return;
                         }
-
 
                         //删除旧tag
                         if (tagText) {
@@ -2175,8 +2145,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                           });
                           e.target.value = "";
                         }
-
-
 
                         // 为新标签添加点击事件
                         addTagClickEvent(newTag);
@@ -2250,7 +2218,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 });
             });
         }
-
 
         // 修改 refreshTooltipTags 函数中处理 AI 标签的部分
         function refreshTooltipTags(word, sentence) {
@@ -2392,10 +2359,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                               }
                           }
 
-
-
-
-
                   // 等待所有标签添加完成后再次刷新显示
                   Promise.all(tagPromises).then(() => {
                       chrome.runtime.sendMessage({ action: "getWordDetails", word: word }, (updatedResponse) => {
@@ -2430,7 +2393,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                   languageSquare.textContent = currentLanguage || '?';
               }
           }
-
 
         // 确保 updateTagsDisplay 使用 shadowRoot 内的元素
         function updateTagsDisplay(tagsListEl, tags, word) {
@@ -2594,7 +2556,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             }
         });
 
-
           // 为每个删除图标绑定事件
           tagsListEl.querySelectorAll(".remove-tag").forEach(span => {
               span.addEventListener('mousedown', (e) => {
@@ -2629,20 +2590,14 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
           });
         }
 
-
-
         ///---释义管理
-
 
         // 添加释义管理功能
         function initTranslationManagement() {
 
             checkAndAddDefaultInput();
 
-
         }
-
-
 
         function translate_Stauts_SententsToDb(translation, onComplete) {
           if (translation) {
@@ -2652,8 +2607,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               console.log("蓝变黄2");
               updateWordStatus(word, "1", sentence, parent, originalWord, isCustom);
             }
-
-
 
             // 原有的保存翻译逻辑
             chrome.runtime.sendMessage({ action: "addTranslation", word: originalWord, translation: translation }, (response) => {
@@ -2719,9 +2672,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 });
               }
             });
-
-
-
 
           }
         }
@@ -2844,9 +2794,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             });
         }
 
-
-
-
         // 创建释义项 数据库导入到这里来把。
         //参数解释：
         //translationList: 释义列表容器
@@ -2868,10 +2815,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             translationText.style.whiteSpace = 'pre-wrap'; // 保留空格和换行，但允许自动换行
             // translationText.style.paddingtop = '4px'; /* 微调顶部内边距 */
             // translationText.style.marginTop = '9px';
-
-
-
-
 
             // 创建操作按钮
             //解释：actions是div标签，className是translation-actions，是释义项的样式类名
@@ -2961,7 +2904,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                           // console.log("for循环：本地缓存里的当前word的释义", translation);
                           // console.log("for循环：要删除的：", translationText);
 
-
                           if (translation === translationText) {
 
                             // console.log("删除本地缓存里的当前word的释义", translation);
@@ -2970,15 +2912,11 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                             existingDetails = highlightManager.wordDetailsFromDB[word.toLowerCase()];
                             // console.log("删除之后", existingDetails);
 
-
                           }
                         }
 
-
                       }
                     }
-
-
 
                     // 检查是否还有其他非AI推荐的释义
                     const remainingItems = translationList.querySelectorAll('.translation-item:not(.ai-recommendation):not(.ai-recommendation-2)');
@@ -3019,7 +2957,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
             // e.preventDefault();
             e.stopPropagation();
-
 
               // 如果点击的是按钮区域，不触发编辑
               if (e.target.closest('.translation-actions') ||
@@ -3370,7 +3307,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               }, 50); // 50ms 延迟添加监听器
               // --- 修改结束 ---
 
-
               // --- 移除原来立即添加监听器的代码 ---
               /*
               // --- 新增：阻止键盘事件冒泡 ---
@@ -3586,7 +3522,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               // 清空现有内容
               expandedList.innerHTML = '';
 
-
               // 如果有翻译，按序号添加到列表中
               if (translations.length > 0) {
                 translations.forEach((translation, index) => {
@@ -3603,7 +3538,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                   createTranslationItem(expandedList, translationItem, translation);
                 });
 
-
                 // 为两个列表中的按钮重新绑定事件
                 initTranslationManagement();
               } else {
@@ -3611,7 +3545,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 addTranslationInput(expandedList, 1,null,false);
 
               }
-
 
               // 再添加AI推荐项
               if(freshAI){
@@ -3626,7 +3559,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                   createAIRecommendation2(expandedList, savedAIText2);
                 }
                }
-
 
             } else {
               // 如果没有获取到详情，添加默认输入框
@@ -3643,8 +3575,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
           });
         }
 
-
-
         // 检查并添加默认输入框
         function checkAndAddDefaultInput() {
             const translationLists = document.querySelectorAll('.translation-list');
@@ -3658,10 +3588,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 }
             });
         }
-
-
-
-
 
         //---AI释义---
         // 创建新的AI推荐释义 ， 添加到列表
@@ -3685,7 +3611,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             // 获取AI推荐释义元素
             const aiText = savedText !== null ? createAITextElement(savedText) : getNewAIRecommendation();
 
-
             // 创建操作按钮
             const actions = document.createElement('div');
             actions.className = 'translation-actions';
@@ -3697,10 +3622,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
 </svg>
             `;
-
-
-
-
 
             actions.appendChild(addBtn);
 
@@ -3880,16 +3801,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                     aiTranslationStatus.ai1.result = "(✿◠‿◠)";
                 }
 
-
-
-
-
             });
-
-
-
-
-
 
             // 返回元素（已创建但内容可能稍后更新）
             return aiTextElement;
@@ -3923,7 +3835,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 // 获取第二个AI推荐释义元素
                 const aiText = savedText !== null ? createAITextElement2(savedText) : getNewAIRecommendation2();
 
-
             // 创建操作按钮
             const actions = document.createElement('div');
             actions.className = 'translation-actions';
@@ -3935,10 +3846,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
 </svg>
             `;
-
-
-
-
 
             actions.appendChild(addBtn);
 
@@ -4072,7 +3979,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
         // 初始化释义管理功能
         initTranslationManagement();
 
-
       //自动添加例句到数据库
       getStorageValues(['autoAddExampleSentences', 'autoAddSentencesLimit']).then(function(result) {
         console.log("自动添加例句状态已更新:", result.autoAddExampleSentences);
@@ -4137,22 +4043,13 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                   console.log("本地缓存已更新:", highlightManager.wordDetailsFromDB[word.toLowerCase()]);
                 }
 
-
                   refreshTooltipSentences(word, sentence);
                 }
               });
             });
 
-
-
-
-
-
           }
         });
-
-
-
 
         function refreshTooltipSentences(word, sentenceFallback) {
           chrome.runtime.sendMessage({ action: "getWordDetails", word: word }, (response) => {
@@ -4238,7 +4135,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                           console.log("删除例句成功");
                           // 重新刷新例句列表
 
-
                         //添加删除本地缓存
                         if (highlightManager && highlightManager.wordDetailsFromDB) {
                           // 获取当前单词的本地缓存
@@ -4259,8 +4155,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                           }
                         }
 
-
-
                           refreshTooltipSentences(word, sentenceFallback);
                         }
                       }
@@ -4273,10 +4167,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             }
           });
         }
-
-
-
-
 
   // 添加空格键监听器
   // tooltipSpaceKeyListener = function(e) {
@@ -4305,8 +4195,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
   //       updateWordStatus(word, "5", sentence,parent,originalWord);
   //     }
 
-
-
   //     // 按下空格后移除空格键监听器
   //     document.removeEventListener("keydown", tooltipSpaceKeyListener, true); // <--- 同样在这里也用 true
   //     tooltipSpaceKeyListener = null;
@@ -4322,8 +4210,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
   //     }
   //   }
   // };
-
-
 
 // +++ 新增：定义新的动态键盘监听器 +++
 
@@ -4401,10 +4287,6 @@ currentTooltipKeydownHandler = async function(e) {
     }
 
     console.log("targetTagName targetTagNametargetTagName", targetTagName);
-
-
-
-
 
     let keyHandled = false;
     let newStatus = null;
@@ -4498,11 +4380,6 @@ currentTooltipKeydownHandler = async function(e) {
       keyHandled = true;
     }
 
-
-
-
-
-
     // --- 新增：处理完按键后，无论如何都带动画关闭 tooltip ---
     if (keyHandled) {
       closeTooltipWithAnimation();
@@ -4513,12 +4390,10 @@ currentTooltipKeydownHandler = async function(e) {
     }
     // --- 新增结束 ---
 
-
   // });
 };
 // +++ 新增结束 +++
 document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-- 使用冒泡阶段而非捕获阶段
-
 
   // document.addEventListener("keydown", tooltipSpaceKeyListener, true); // <--- 添加 true 参数 // <-- 移除旧的监听器添加
 
@@ -4577,9 +4452,6 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
       e.preventDefault();
       e.stopPropagation();
       //这里判断一下当前鼠标下面的单词是不是小窗单词，如果是就不反应
-
-
-
 
       closeTooltipWithAnimation(); // <-- 调用新函数关闭 tooltip
     });
@@ -4828,7 +4700,6 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
   const viewportHeight = window.innerHeight;
   const viewportWidth = document.documentElement.clientWidth;
 
-
   
 
   // 获取用户设置的基准DPR值
@@ -4863,7 +4734,6 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
     // zoomFactor = 1;
 
   }
-
 
   // 根据缩放比例调整tooltip的最大高度
   // 计算调整后的最大高度 = 原始高度 / 缩放比例
@@ -5117,7 +4987,6 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
     }
   }, { capture: true });
 
-
   // 添加键盘事件监听，防止空格键和Tab键事件传播到iframe
   tooltipEl.addEventListener('keydown', (e) => {
     if (e.code === "Space" || e.code === "Tab") {
@@ -5129,13 +4998,6 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
 
   // 获取 AI 单词翻译并显示
   // const aiWordTranslationSpan = tooltipEl.querySelector(".ai-word-translation");
-
-
-
-
-
-
-
 
   // 状态按钮事件
   const statusButtons = tooltipEl.querySelectorAll(".nav-buttons button");
@@ -5166,9 +5028,6 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
       }
     });
   });
-
-
-
 
 // 从数据库中删除单词的函数
 function deleteWordFromDatabase(word, originalWord, isCustom = false) {
@@ -5498,8 +5357,6 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
     console.error('未找到最小化状态下的句子解析按钮元素 .minimized-analysis-btn');
   }
 
-
-
   // 修改单词标题的点击事件处理
   const wordTitle = tooltipEl.querySelector(".word-title");
   if (wordTitle) {
@@ -5592,8 +5449,6 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
   //   updateWordStatus(word, "1", sentence);
   // }
 
-
-
   // 获取语言显示方块元素
   const languageSquare = tooltipEl.querySelector('#languageSquare');
   let currentLanguage = highlightManager.wordDetailsFromDB[word.toLowerCase()]?.language;
@@ -5628,7 +5483,6 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
     }
   }
 
-
   // 添加点击事件以修改语言
   languageSquare.addEventListener('mousedown', (e) => {
     e.preventDefault();
@@ -5651,7 +5505,6 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
       input.style.outline = 'none';
 
       languageSquare.parentNode.replaceChild(input, languageSquare);
-
 
     input.addEventListener('keydown', function(event) {
       // 尝试阻止事件进一步传播
@@ -5713,8 +5566,6 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
           });
       });
 
-
-
       // input.focus({ preventScroll: true });
       setTimeout(() => {
         // 在下一个事件循环中尝试聚焦，并阻止滚动
@@ -5722,8 +5573,6 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
            input.focus({ preventScroll: true });
         }
     }, 100); // 延迟 0 毫秒
-
-
 
   });
 
@@ -5901,7 +5750,6 @@ async function handleMouseMoveForTooltip(e,isOffscreen = false, activationContex
   let userGap = getCachedStorageValue('tooltipGap', 50);
   userGap = userGap !== undefined ? userGap : 50; // 默认值为50
 
-
   // 保存当前鼠标事件
   lastMouseEvent = e;
   // --- 新增：检查坐标的有效性 ---
@@ -6039,8 +5887,6 @@ async function handleMouseMoveForTooltip(e,isOffscreen = false, activationContex
     }
   }
 
-
-
   // console.log("hoveredRect: 2222", hoveredRect);
   // console.log("hoveredDetail 2222:", hoveredDetail);
 //
@@ -6050,20 +5896,14 @@ if (hoveredDetail) {
   const wordLower = hoveredDetail.wordLower || hoveredDetail.word.toLowerCase();
   // console.log("鼠标悬停的单词是：",wordLower);
 
-
-
 // 比较当前tooltipWord时也使用小写
   //currentTooltipWordLower 等于是 当前tooltipWord的小写版本
   const currentTooltipWordLower = currentTooltipWord ? currentTooltipWord.toLowerCase() : null;
   // console.log("当前窗口的单词是：",currentTooltipWordLower);
 
-
-
-
   //如果当前tooltipWord与鼠标悬停的单词不一致，则移除当前tooltip，并显示新的tooltip
   if (currentTooltipWordLower !== wordLower) {//如果当前tooltipWord与鼠标悬停的单词不一致，则移除当前tooltip，并判断单词是否已知
     // console.log("当前窗口的单词与鼠标悬停的单词不一致，移除当前tooltip，并判断单词是否已知");
-
 
   //如果autoRefreshTooltip为true，这里是非高亮单词，则不关闭当前小窗并继续执行显示新单词
   if (autoRefreshTooltip) {
@@ -6073,25 +5913,19 @@ if (hoveredDetail) {
     closeTooltipWithAnimation(); // <-- 调用新函数关闭 tooltip
   }
 
-
   }else{
     // console.log("当前窗口的单词与鼠标悬停的单词一致,啥也不做");
     return
   }
-
-
-
 
   //当前单词是已知单词，那就啥也不干；不显示新窗口。
   //但是没必要关闭小窗，因为鼠标移动出去范围，会自动关闭小窗
   //如果当前单词是已知单词，那就啥也不干；不显示新窗口。
   //或者不一致，也会关闭。这里没必要判断了。
 
-
      // 从缓存读取autoExpandTooltip设置 自动展开未高亮单词的小窗
      const autoExpand = getCachedStorageValue('autoExpandTooltip') || false;
      // console.log("autoExpand 为:", autoExpand);
-
 
      //这里，如果是点击触发，就显示小窗了。
      //如果是自动触发，则不显示小窗。
@@ -6130,19 +5964,14 @@ if (hoveredDetail) {
         console.log("autoExpand (用于已知单词判断):", autoExpand);
      }
 
-
      // 只有当上面的条件不满足时，才会执行到这里
      // console.log("将显示新窗口");
 
   // 检查是否为已知单词时使用小写比较，大小写就不再弹窗。
 
-
   // console.log("鼠标悬停的单词不是已知单词，也没有小窗，将打开小窗");
 
-
-
   // console.log("播放 TTS");
-
 
   // 显示扩展 tooltip，小窗显示在单词下方
 
@@ -6226,12 +6055,9 @@ if (hoveredDetail) {
     closeTooltipWithAnimation(); // <-- 调用新函数关闭 tooltip
   }
 
-
   // console.timeEnd('showEnhancedTooltipForWord');
 
-
 //否则啥也不做；这个逻辑对Q快捷键也要适用
-
 
 } else {
   // console.log("没有鼠标悬停的单词，删除空格监听");
@@ -6240,14 +6066,10 @@ if (hoveredDetail) {
   // 获取 autoCloseTooltip 设置
   // 如果 autoCloseTooltip 为 true，则删除空格监听
 
-
-
-
   // if (tooltipSpaceKeyListener) { // <-- 移除旧的判断和移除
   //   document.removeEventListener("keydown", tooltipSpaceKeyListener);
   //   tooltipSpaceKeyListener = null;
   // } // <-- 移除旧的判断和移除
-
 
   if (autoCloseTooltip) {
     // console.log("autoCloseTooltip 为 true，关闭当前小窗");
@@ -6269,31 +6091,14 @@ if (hoveredDetail) {
 
     closeTooltipWithAnimation(); // <-- 调用新函数关闭 tooltip
 
-
-
-
-
     // console.log("autoRefreshTooltip 为 false，啥也不做");
   }
-
-
-
-
-
-
-
 
   //删除空格监听
 
 }
 
-
-
-
-
   }
-
-
 
 // 创建Shadow DOM容器 - 使用保护机制
 const shadowHost = document.createElement('lingkuma-tooltip-root'); // 改用自定义标签
@@ -6333,142 +6138,6 @@ observer.observe(document.documentElement, {
 });
 
 // 这里不再需要重复声明背景变量，因为我们已经在文件开头声明了
-
-
-
-// 输出字体URL到控制台，用于调试
-const fontUrl = chrome.runtime.getURL("src/fonts/LXGWWenKaiGBLite-Regular.ttf");
-const fanwoodFontUrl = chrome.runtime.getURL("src/fonts/Fanwood.otf");
-// 使用encodeURIComponent处理文件名中的空格
-const fanwoodBoldFontUrl = chrome.runtime.getURL("src/fonts/Fanwood_Bold.otf").replace(/ /g, "%20");
-const fanwoodItalicFontUrl = chrome.runtime.getURL("src/fonts/Fanwood_Italic.otf").replace(/ /g, "%20");
-// console.log("字体URL:", fontUrl);
-// console.log("Fanwood字体URL:", fanwoodFontUrl);
-// console.log("Fanwood_Bold字体URL:", fanwoodBoldFontUrl);
-// console.log("Fanwood_Italic字体URL:", fanwoodItalicFontUrl);
-
-// 检查字体文件是否存在
-// fetch(fontUrl)
-//   .then(response => {
-//     if (response.ok) {
-//       console.log("字体文件存在并可访问");
-//     } else {
-//       console.error("字体文件不存在或无法访问:", response.status, response.statusText);
-//     }
-//   })
-//   .catch(error => {
-//     console.error("获取字体文件时出错:", error);
-//   });
-
-// 在document中添加字体样式，确保全局可用
-const globalFontStyle = document.createElement('style');
-globalFontStyle.textContent = `
-@font-face {
-    font-family: 'LXGWWenKai';
-    src: url('${fontUrl}') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Fanwood';
-    src: url('${fanwoodFontUrl}') format('opentype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Fanwood';
-    src: url('${fanwoodBoldFontUrl}') format('opentype');
-    font-weight: bold;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Fanwood';
-    src: url('${fanwoodItalicFontUrl}') format('opentype');
-    font-weight: normal;
-    font-style: italic;
-    font-display: swap;
-}
-
-`;
-document.head.appendChild(globalFontStyle);
-
-// 直接创建字体对象并加载
-const font = new FontFace('LXGWWenKai', `url('${fontUrl}')`);
-font.load().then(function(loadedFont) {
-  document.fonts.add(loadedFont);
-  // console.log('LXGWWenKai字体加载成功:', loadedFont);
-}).catch(function(error) {
-  console.error('LXGWWenKai字体加载失败:', error);
-});
-
-// 加载Fanwood字体（常规）
-const fanwoodFont = new FontFace('Fanwood', `url('${fanwoodFontUrl}')`, { weight: 'normal', style: 'normal' });
-fanwoodFont.load().then(function(loadedFont) {
-  document.fonts.add(loadedFont);
-  // console.log('Fanwood常规字体加载成功:', loadedFont);
-}).catch(function(error) {
-  console.error('Fanwood常规字体加载失败:', error);
-});
-
-// 加载Fanwood_Bold字体（粗体）
-const fanwoodBoldFont = new FontFace('Fanwood', `url('${fanwoodBoldFontUrl}')`, { weight: 'bold', style: 'normal' });
-fanwoodBoldFont.load().then(function(loadedFont) {
-  document.fonts.add(loadedFont);
-  // console.log('Fanwood粗体字体加载成功:', loadedFont);
-}).catch(function(error) {
-  console.error('Fanwood粗体字体加载失败:', error);
-});
-
-// 加载Fanwood_Italic字体（斜体）
-const fanwoodItalicFont = new FontFace('Fanwood', `url('${fanwoodItalicFontUrl}')`, { weight: 'normal', style: 'italic' });
-fanwoodItalicFont.load().then(function(loadedFont) {
-  document.fonts.add(loadedFont);
-  // console.log('Fanwood斜体字体加载成功:', loadedFont);
-}).catch(function(error) {
-  console.error('Fanwood斜体字体加载失败:', error);
-});
-
-
-
-// 在shadowRoot中也添加字体样式
-const fontStyle = document.createElement('style');
-fontStyle.textContent = `
-@font-face {
-    font-family: 'LXGWWenKai';
-    src: url('${fontUrl}') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Fanwood';
-    src: url('${fanwoodFontUrl}') format('opentype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Fanwood';
-    src: url('${fanwoodBoldFontUrl}') format('opentype');
-    font-weight: bold;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Fanwood';
-    src: url('${fanwoodItalicFontUrl}') format('opentype');
-    font-weight: normal;
-    font-style: italic;
-    font-display: swap;
-}
-
-`;
-shadowRoot.appendChild(fontStyle);
-
-
 
 // 添加主样式
 const style = document.createElement('style');
@@ -6545,12 +6214,12 @@ body {
     border-radius: 20px;
     margin: 0;
     padding: 0;
-    font-family: "Fanwood","LXGWWenKai", "PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+    font-family: "PingFang SC", "Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
 }
 
 /* 词汇弹窗容器 max-height: 727px; */
 .vocab-tooltip {
-    font-family: "Fanwood","LXGWWenKai", "PingFang SC","Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol" !important; /* <--- 添加自定义字体 */
+    font-family: "PingFang SC","Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol" !important; /* <--- 添加自定义字体 */
     max-width: 392px; /* 最大宽度 */
     height: auto;
     max-height: calc(100vh - 192px);
@@ -6565,20 +6234,13 @@ body {
     position: absolute; /* 作为弹窗定位 */
     z-index: 2147483647; /* 确保在其他元素之上 */
     border-radius: 20px;
-    opacity: 0; /* <--- 添加：初始透明度为 0 */
-    transition: opacity 0.08s ease-in-out; /* <--- 添加：透明度过渡效果 弹出动画 */
     text-indent: 0em !important;
-    /* 添加硬件加速和优化属性 */
-    will-change: opacity, transform;
-    transform: translateZ(0);
-    backface-visibility: hidden;
     -webkit-font-smoothing: subpixel-antialiased;
 }
 
 /* 在Bionic模式下禁用所有过渡效果 */
 .vocab-tooltip.bionic-active,
 .vocab-tooltip.bionic-active * {
-    transition: none !important;
     animation: none !important;
 }
 
@@ -6624,10 +6286,6 @@ body {
     border-radius: inherit; /* 继承父元素的圆角 */
 }
 
-
-
-
-
 /* 视频背景样式 */
 .tooltip-video-background {
     position: absolute;
@@ -6643,7 +6301,6 @@ body {
     pointer-events: none;
     border-radius: inherit;
 }
-
 
 /* 固定顶栏 */
 .fixed-header {
@@ -6720,7 +6377,6 @@ body {
 
 .word-title {
     margin-left: -11px;
-    font-family: 'LXGWWenKai' !important;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -6744,7 +6400,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s ease-in-out;
 }
 
 /* --- 新增：sound-icon 悬停动画 --- */
@@ -6764,7 +6419,6 @@ body {
     align-items: center;
     justify-content: center;
     border-radius: 4px;
-    transition: background-color 0.1s, color 0.1s, transform 0.1s ease-in-out;
 }
 
 .tooltip-action-btn:hover {
@@ -6772,7 +6426,6 @@ body {
     color: #007bff;
     transform: scale(1.1);
 }
-
 
 .Notes {
     cursor: pointer;
@@ -6785,16 +6438,13 @@ body {
     justify-content: center;
     border-radius: 4px;
     /* 在非Bionic模式下使用过渡效果 */
-    transition: none; /* 默认不使用过渡，由JS根据Bionic模式动态设置 */
 }
-
 
 .Notes:hover {
     /* background-color: rgba(0, 0, 0, 0.05);*/
     color: #007bff;
     transform: scale(1.1);
 }
-
 
 .tooltip-action-btn svg {
     width: 34px;
@@ -6822,7 +6472,6 @@ html[data-theme='dark'] .sound-icon svg path {
     cursor: pointer;
     border: 0 solid transparent !important;
     background: rgba(0, 0, 0, 0) !important;
-    transition: all 0.2s ease-in-out;
     padding: 4px;
     display: flex;
     align-items: center;
@@ -6861,7 +6510,6 @@ html[data-theme='dark'] .sound-icon svg path {
 .capsules-wrapper {
     opacity: 0;
     /* transform由JS控制，包含scale和translateY */
-    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
     pointer-events: none;
 }
 
@@ -6890,7 +6538,6 @@ html[data-theme='dark'] .sound-icon svg path {
     z-index: 2147483646;
     opacity: 0;
     transform: translateY(10px);
-    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
     pointer-events: none;
 }
 
@@ -6912,7 +6559,6 @@ html[data-theme='dark'] .sound-icon svg path {
     border-radius: 50%;
     border: none;
     background: rgba(0, 0, 0, 0.05);
-    transition: all 0.2s ease-in-out;
     padding: 6px;
     display: flex;
     align-items: center;
@@ -7035,7 +6681,6 @@ html[data-theme='dark'] .sound-icon svg path {
     border-radius: 50%;
     border: 0 solid transparent !important;
     background: rgba(0, 0, 0, 0) !important;
-    transition: all 0.2s ease-in-out;
     padding: 2px;
     display: flex;
     align-items: center;
@@ -7052,7 +6697,6 @@ html[data-theme='dark'] .sound-icon svg path {
 }
 
 .liquid-glass-toggle-btn svg {
-    transition: all 0.2s ease-in-out;
 }
 
 /* 液体玻璃激活状态样式 */
@@ -7318,7 +6962,6 @@ html[data-theme='dark'] .sound-icon svg path {
     background: rgba(255, 123, 0, 0.35) !important;
 }
 
-
 /* 最小化状态下的翻译项在液体玻璃激活时的样式 */
 .vocab-tooltip.liquid-glass-active.minimized .translation-item {
     background: unset !important;
@@ -7340,8 +6983,6 @@ html[data-theme='dark'] .sound-icon svg path {
 
 }
 
-
-
 .vocab-tooltip.liquid-glass-active.minimized .translation-input {
     background:unset !important;
 
@@ -7352,13 +6993,6 @@ html[data-theme='dark'] .sound-icon svg path {
 
 }
 
-
-
-
-
-
-
-
 .close-btn-words {
     cursor: pointer;
     /* padding: 4px; */
@@ -7366,7 +7000,6 @@ html[data-theme='dark'] .sound-icon svg path {
     border-radius: 50%;
     border: 0 solid transparent !important;
     background: rgba(0, 0, 0, 0) !important;
-    transition: transform 0.2s ease-in-out;
 }
 
 /* --- 新增：close-btn-words 悬停动画 --- */
@@ -7383,14 +7016,12 @@ html[data-theme='dark'] .sound-icon svg path {
     border-radius: 50%;
     border: 0 solid transparent !important;
     background: rgba(0, 0, 0, 0) !important;
-    transition: transform 0.2s ease-in-out;
     position: absolute;
     padding: 4px;
     top: 5px;
     left: 5px;
     z-index: 10;
     opacity: 0;
-    transition: opacity 0.3s ease;
 }
 
 .status-toggle-btn:hover {
@@ -7415,7 +7046,6 @@ html[data-theme='dark'] .sound-icon svg path {
     border-radius: 50%;
     border: 0 solid transparent !important;
     background: rgba(0, 0, 0, 0) !important;
-    transition: transform 0.2s ease-in-out;
 }
 
 .minimize-btn-words:hover {
@@ -7441,7 +7071,6 @@ html[data-theme='dark'] .sound-icon svg path {
     border-radius: 4px;
     border: 0 solid transparent !important;
     background: rgba(0, 0, 0, 0.1) !important;
-    transition: opacity 0.3s ease, transform 0.2s ease-in-out;
     padding: 4px;
     position: absolute;
 
@@ -7467,7 +7096,6 @@ html[data-theme='dark'] .sound-icon svg path {
     border-radius: 4px;
     border: 0 solid transparent !important;
     background: rgba(0, 0, 0, 0.1) !important;
-    transition: opacity 0.3s ease, transform 0.2s ease-in-out;
     padding: 4px;
 }
 
@@ -7483,7 +7111,6 @@ html[data-theme='dark'] .sound-icon svg path {
     border-radius: 4px;
     border: 0 solid transparent !important;
     background: rgba(0, 0, 0, 0.1) !important;
-    transition: opacity 0.3s ease, transform 0.2s ease-in-out;
     padding: 4px;
 }
 
@@ -7513,7 +7140,6 @@ html[data-theme='dark'] .sound-icon svg path {
 
 /* 标签样式 */
 .tags {
-    font-family: 'LXGWWenKai' !important;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
@@ -7554,11 +7180,6 @@ html[data-theme='dark'] .sound-icon svg path {
     display: flex; /* 鼠标悬停时显示 */
 }
 
-
-
-
-
-
 /* 当鼠标悬停在整个句子对上时，显示删除按钮 */
  /* 当鼠标悬停在整个句子对上时，显示删除按钮 */
 .example-sentence-pair:hover .delete-sentence-btn {
@@ -7574,7 +7195,6 @@ html[data-theme='dark'] .sound-icon svg path {
 .dark-mode .delete-sentence-btn svg path {
   stroke: #ffffff !important; /* 暗色模式下强制设置为白色 */
 }
-
 
 .example-sentence-pair {
     background: #eae5e3ab;
@@ -7594,22 +7214,12 @@ html[data-theme='dark'] .sound-icon svg path {
     border-radius: 10px;
 }
 
-
 .example-translation {
 
 }
 .example-translation:hover {
 
 }
-
-
-
-
-
-
-
-
-
 
 .section {
     margin-bottom: 5px;
@@ -7626,9 +7236,7 @@ html[data-theme='dark'] .sound-icon svg path {
     padding-right: 1px;
 }
 
-
 .section-header {
-    font-family: 'LXGWWenKai' !important;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -7655,7 +7263,6 @@ html[data-theme='dark'] .sound-icon svg path {
 }
 
 .section-header span:last-child {
-    transition: transform 0.3s ease;
 }
 
 .dict-links {
@@ -7666,9 +7273,6 @@ html[data-theme='dark'] .sound-icon svg path {
 .example-item, .phrase-item {
     padding: 8px 16px;
 }
-
-
-
 
 .dict-links {
     display: flex;
@@ -7691,7 +7295,6 @@ html[data-theme='dark'] .sound-icon svg path {
 
 }
 
-
 .translation-item:hover {
     position: relative;
     padding-right: 60px;
@@ -7700,7 +7303,6 @@ html[data-theme='dark'] .sound-icon svg path {
     border-radius: 10px;
     margin: 4px;
 }
-
 
 .ai-translation-text{
   padding-left: 3px;
@@ -7714,13 +7316,10 @@ html[data-theme='dark'] .sound-icon svg path {
     height: 5px;
 }
 
-
 .translation-text{
  /* padding-top :4px;  微调顶部内边距 */
  font-weight: bold;
 }
-
-
 
  /* LXGW */
 .translation-text::before {
@@ -7728,7 +7327,6 @@ html[data-theme='dark'] .sound-icon svg path {
     display: block;
     height: 5px;
 }
-
 
 .translation-item.ai-recommendation {
     display: flex;
@@ -7786,7 +7384,6 @@ html[data-theme='dark'] .sound-icon svg path {
     padding-right: 60px; /* 为按钮预留空间 */
 }
 
-
 .number-badge {
     background: #FFE591;
     color: #000;
@@ -7814,7 +7411,6 @@ html[data-theme='dark'] .sound-icon svg path {
 }
 
 .nav-btn {
-    font-family: 'LXGWWenKai' !important;
     width: 43px;
     height: 43px;
     border-radius: 50%;
@@ -7827,7 +7423,6 @@ html[data-theme='dark'] .sound-icon svg path {
     justify-content: center;
     font-size: 18px;  /* 增大字体 */
     font-weight: bold; /* 加粗 */
-    transition: transform 0.2s ease-in-out; /* <--- 添加过渡效果 --- */
 }
 
 /* --- 新增：nav-btn 悬停动画 --- */
@@ -7944,7 +7539,6 @@ mark {
     border-radius: 4px;  /* 滚动条圆角 */
     border: 2px solid transparent;  /* 透明边框 */
     background-clip: padding-box;  /* 确保背景不会延伸到边框下 */
-    transition: background-color 0.3s;  /* 添加过渡效果 */
 }
 
 /* 鼠标悬停时滚动条样式 */
@@ -7991,13 +7585,10 @@ html[data-theme='dark'] .scrollable-content::-webkit-scrollbar-thumb:hover {
     min-height: auto;
 }
 
-
-
 .examples-section{
 padding-top: 5px;
 
 }
-
 
 /* 展开/收缩按钮样式 */
 .expand-collapse-btn {
@@ -8011,7 +7602,6 @@ padding-top: 5px;
     justify-content: center;
  /*   margin-top: -12px;*/
    margin-bottom: 1px;
-    transition: transform 0.2s ease-in-out;
 }
 
 /* --- 新增：expand-collapse-btn 悬停动画 --- */
@@ -8021,7 +7611,6 @@ padding-top: 5px;
 /* --- 动画结束 --- */
 
 .expand-collapse-btn svg {
-    transition: transform 0.3s ease;
 }
 
 .expand-collapse-btn svg path {
@@ -8114,7 +7703,6 @@ padding-top: 5px;
     display: flex;
     gap: 4px;
     opacity: 0; /* 默认隐藏 */
-    transition: opacity 0.2s ease; /* 添加过渡效果 */
 }
 
 /* 鼠标悬停时显示按钮 */
@@ -8155,8 +7743,6 @@ padding-top: 5px;
     margin: 4px 0;
 }
 
-
-
   #audio-container audio {
                             width: 140px;
                             height: 40px;
@@ -8182,7 +7768,6 @@ padding-top: 5px;
                             display: none;
                         }
 
-
                         #audio-container audio::-webkit-media-controls-current-time-display {
                             display: none;
                         }
@@ -8204,7 +7789,6 @@ padding-top: 5px;
                             background-color: transparent;
                             color: #fff;
                         }
-
 
                         #audio-container audio::-internal-media-controls-overflow-button,
                         #audio-container audio::-webkit-media-controls-overflow-button,
@@ -8261,7 +7845,6 @@ padding-top: 5px;
 
                         /* --- 新增：normal-sound-icon 悬停动画 --- */
                         .normal-sound-icon {
-                            transition: transform 0.2s ease-in-out;
                         }
 
                         .normal-sound-icon:hover {
@@ -8279,22 +7862,10 @@ padding-top: 5px;
                         }
                         /* --- 修复结束 --- */
 
-
-
-
-
-
-
-
-
 </style>
 `
 
-
-
 shadowRoot.appendChild(style);
-
-
 
   // 暗色模式样式
   const darkModeStyle = document.createElement('style');
@@ -8310,7 +7881,6 @@ shadowRoot.appendChild(style);
     .dark-mode .word-title {
            --text-shadow: none; /* 暗色模式下移除描边 */
     }
-
 
     .dark-mode .fixed-header,
     .dark-mode .fixed-footer {
@@ -8356,17 +7926,12 @@ shadowRoot.appendChild(style);
       border-left: 3px solid #ff9933;
     }
 
-
-
-
-
     /* 当鼠标悬停在整个句子对上时，显示删除按钮 */
 
     .dark-mode .example-sentence-pair:hover .delete-sentence-btn {
      display: flex !important;
      align-items: center;
    }
-
 
    .dark-mode .example-sentence-pair {
        background: #2d2d2d; /* <--- 保持原有背景色，只让 section 透明 */
@@ -8392,24 +7957,18 @@ shadowRoot.appendChild(style);
     line-height: 15px;
 }
 
-
-
     .dark-mode .vocab-tooltip::before {
 
     opacity: 0.05 !important; /* 设置花纹透明度，可调整 */
 
 }
 
-
-
     .dark-mode .tag .remove-tag {
       color: rgb(77 66 66 / 80%);
     }
 
-
   /* 在你的 CSS 文件中添加或在 <style> 标签中添加 */
   .language-square {
-    font-family: 'LXGWWenKai' !important;
     display: inline-flex;
     justify-content: center;
     align-items: center;
@@ -8433,16 +7992,12 @@ shadowRoot.appendChild(style);
     border-color: #444;
   }
 
-
 /* 在你的 CSS 文件中添加或在 <style> 标签中添加 */
 .title-container {
     display: flex; /* 确保 title-container 也是 flex 容器，如果需要内部元素横向排列 */
     align-items: center; /* 垂直居中 title-container 内的元素 */
     /* 可以根据需要添加其他样式，例如 margin, padding 等 */
 }
-
-
-
 
     .dark-mode .nav-btn {
       background: #2d2d2d14;
@@ -8458,7 +8013,6 @@ shadowRoot.appendChild(style);
     background: #25171700;
 }
  */
-
 
     .dark-mode .close-btn-words svg path,
     .dark-mode .sound-icon svg path {
@@ -8550,12 +8104,6 @@ shadowRoot.appendChild(style);
   `;
   shadowRoot.appendChild(verticalProtectionStyle);
 
-
-
-
-
-
-
 function writeToClipboard() {
 
   let hoveredDetail = null;
@@ -8584,9 +8132,6 @@ function writeToClipboard() {
     }
   }
 
-
-
-
   if (hoveredDetail) {
     const {sentence, range: sentenceRange} = getSentenceForWord(hoveredDetail);
 
@@ -8599,7 +8144,6 @@ function writeToClipboard() {
     }
   }
 
-
   if (hoveredDetail) {
     const {sentence, range: sentenceRange2} = getSentenceForWord(hoveredDetail);
     highlightSpecificWords(getSentenceWordDetails(hoveredDetail), 66);
@@ -8607,9 +8151,6 @@ function writeToClipboard() {
   }
 
 }
-
-
-
 
 // // 初始化 Shadow DOM 的函数
 // function initShadowHost() {
@@ -8687,14 +8228,11 @@ function getTranslationCount(word) {
   const upperCaseWord = word.toUpperCase();
   const capitalizedWord = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 
-
   console.log("getTranslationCount:  ", highlightManager.wordDetailsFromDB[lowerCaseWord]);
    //如果没有这个条目，就返回0
   if (!highlightManager.wordDetailsFromDB[lowerCaseWord]) {
     return 0;
   }
-
-
 
   // 检查各种大小写形式的单词
   if (highlightManager.wordDetailsFromDB[lowerCaseWord] && highlightManager.wordDetailsFromDB[lowerCaseWord].translations) {
@@ -8710,12 +8248,7 @@ function getTranslationCount(word) {
   // 如果都不存在或没有translations属性,返回0
   return 0;
 
-
-
   }
-
-
-
 
    function WesternTextFix(text, index, length) {
     if(!text){
@@ -8793,7 +8326,6 @@ if (firstIndex === 0 && lastLetterEndIndex === length) {
 // 更新值
 const newText = text.substring(firstIndex, lastLetterEndIndex);
 
-
 return  newText
 
       }
@@ -8825,8 +8357,6 @@ function getWordAtPoint(x, y) {
         const word = WesternTextFix(match ? match[0] : null);
 
         return word;
-
-
 
       }
       return null;
@@ -8933,8 +8463,6 @@ function getParentAtPoint(x, y) {
   return element;
 }
 
-
-
 // // 判断文本是否为日语
 // function isJapaneseText(text) {
 //   // 检查文本中是否包含日语字符（平假名、片假名、汉字）
@@ -8942,15 +8470,12 @@ function getParentAtPoint(x, y) {
 //   return japaneseRegex.test(text);
 // }
 
-
     // 修改日语文本检测方法，避免误识别中文
     function isJapaneseText(text) {
       // return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
       // 只检测是否含有日语特有的平假名或片假名
       return /[\u3040-\u309F\u30A0-\u30FF]/.test(text);
   }
-
-
 
   // 检测文本是否为中文
   function isChinseText(text) {
@@ -8963,8 +8488,6 @@ function  isKoreanText(text) {
       // 检测是否含有韩语特有字符
       return /[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7AF]/.test(text);
   }
-
-
 
 // 获取日语单词
 function getJapaneseWordAtPoint(text, offset) {
@@ -9043,7 +8566,6 @@ function showSidebar(url, word) {
         z-index: 2147483647 !important;
         display: flex;
         flex-direction: column;
-        transition: transform 0.3s ease;
         transform: translateX(0);
       `;
 
@@ -9135,7 +8657,6 @@ function showSidebar(url, word) {
       justify-content: center;
       color: white;
       font-size: 12px;
-      transition: left 0.3s ease;
     `;
     dragHandle.textContent = '▶';
 
@@ -9328,16 +8849,6 @@ function getIntlSegmenterWordAtPoint(text, offset) {
   return getIntlSegmenterWordAtPointWithLocale(text, offset, "zh");
 }
 
-
-
-
-
-
-
-
-
-
-
 // 添加一个定时检测函数，即使鼠标不移动也能检测单词
 let lastMousePosition = { x: 0, y: 0 };
 let mouseStationaryTimer = null;
@@ -9413,7 +8924,6 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
 //   }
 // });
 
-
 // // 用于RAF优化
 // let ticking = false;
 
@@ -9456,7 +8966,6 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
 //
 //   }
 
-
 //   // if (!ticking) {
 //   //   console.log("鼠标移动触发 true requestAnimationFrame");
 //   //   window.requestAnimationFrame(() => {
@@ -9472,9 +8981,6 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
 //       throttleTimeout = null;
 //     }, 150); // 200ms的节流比RAF友好得多
 //   }
-
-
-
 
 // });
 
@@ -9568,11 +9074,6 @@ function setupMouseListeners() {
                 // ... (停留检测内部逻辑) ...
                 if (!tooltipEl) {
 
-
-
-
-
-
                     // --- 新增：创建前再次检查 lastMousePosition ---
                     // if (!Number.isFinite(lastMousePosition.x) || !Number.isFinite(lastMousePosition.y)) {
                     //     console.error('[DEBUG] Stationary check: lastMousePosition is non-finite! Aborting tooltip show.', lastMousePosition);
@@ -9602,8 +9103,6 @@ function setupMouseListeners() {
         // ... click handler ...
     });
     */
-
-
 
 ////////////////////////// 键盘事件处理
 
@@ -9798,8 +9297,6 @@ document.addEventListener('keydown', function(e) {
   });
 });
 
-
-
 ////////////////////// 添加点击事件监听器来处理tooltip的关闭
 // 改成pointerdown，兼容触控
 // Desktop keeps pointerdown behavior. Touch waits for pointerup and ignores scroll/drag.
@@ -9862,10 +9359,8 @@ function handleA4PointerActivation(e) {
   console.log('[DEBUG] Mousedown raw event coords:', { clientX: e?.clientX, clientY: e?.clientY });
   // --- 记录结束 ---
 
-
   //鼠标点击做一个鼠标移动的模拟，增加兼容性；
   //无论是否在仅点击模式下，点击都应当触发小窗检测
-
 
   // 获取当前点击的元素
 
@@ -10044,16 +9539,6 @@ async function updateTooltipAnimationSettings() {
   const shouldDisableAnimation = isBionicActive || isGlassEnabled;
 
   if (shouldDisableAnimation) {
-    // 特殊模式激活时，禁用动画
-    if (isBionicActive) {
-      console.log('Bionic模式激活，禁用弹窗动画');
-    }
-    if (isGlassEnabled) {
-      console.log('液体玻璃特效激活，禁用弹窗opacity动画');
-    }
-    tooltipEl.style.transition = 'none'; // 禁用过渡动画
-    tooltipEl.style.willChange = 'transform'; // 只保留transform的硬件加速
-
     // 添加相应的类标记
     if (isBionicActive) {
       tooltipEl.classList.add('bionic-active');
@@ -10070,10 +9555,6 @@ async function updateTooltipAnimationSettings() {
       }
     }
   } else {
-    // 恢复正常动画
-    tooltipEl.style.transition = 'opacity 0.05s ease-in-out';
-    tooltipEl.style.willChange = 'opacity, transform';
-
     // 移除特殊模式的类标记
     tooltipEl.classList.remove('bionic-active', 'liquid-glass-active', 'firefox-glass-effect');
   }
@@ -10225,7 +9706,6 @@ function cleanupTopLayerState() {
       cleanupShadowHostStyles(shadowHost);
     }
   }
-
 
 }
 

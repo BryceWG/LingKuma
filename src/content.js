@@ -99,7 +99,6 @@ function showWordLimitNotification(message) {
     display: flex;
     align-items: center;
     gap: 12px;
-    animation: slideDown 0.3s ease-out;
     max-width: 90%;
     word-wrap: break-word;
   `;
@@ -122,7 +121,6 @@ function showWordLimitNotification(message) {
     padding: 4px 8px;
     border-radius: 4px;
     margin-left: 8px;
-    transition: background 0.2s;
   `;
   closeBtn.onmouseenter = () => closeBtn.style.background = 'rgba(255, 255, 255, 0.3)';
   closeBtn.onmouseleave = () => closeBtn.style.background = 'rgba(255, 255, 255, 0.2)';
@@ -132,35 +130,11 @@ function showWordLimitNotification(message) {
   notification.appendChild(text);
   notification.appendChild(closeBtn);
 
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-      }
-    }
-    @keyframes fadeOut {
-      from {
-        opacity: 1;
-      }
-      to {
-        opacity: 0;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-
   document.body.appendChild(notification);
 
   setTimeout(() => {
     if (notification.parentElement) {
-      notification.style.animation = 'fadeOut 0.3s ease-out forwards';
-      setTimeout(() => notification.remove(), 300);
+      notification.remove();
     }
   }, 8000);
 }
@@ -1508,29 +1482,8 @@ bodyObserver.observe(document.body, {
 // 更新相关的 CSS 样式
 const analysisStyles = document.createElement('style');
 analysisStyles.textContent = `
-@font-face {
-    font-family: 'Fanwood';
-    src: url('${fanwoodFontUrl}') format('opentype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Fanwood';
-    src: url('${fanwoodBoldFontUrl}') format('opentype');
-    font-weight: bold;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Fanwood';
-    src: url('${fanwoodItalicFontUrl}') format('opentype');
-    font-weight: normal;
-    font-style: italic;
-    font-display: swap;
-}
   .analysis-window {
-    font-family: "Fanwood","LXGWWenKai", "PingFang SC","Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol" !important; /* <--- 添加自定义字体 */
+    font-family: "PingFang SC","Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol" !important; /* <--- 添加自定义字体 */
 
     /* position: fixed; */ /* 旧代码：固定定位 */
     position: absolute; /* 新代码：绝对定位 */
@@ -1547,18 +1500,11 @@ analysisStyles.textContent = `
     z-index: 2147483647;
     overflow: hidden;
     box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    transform: translate3d(0, 0, 0);
-    will-change: transform;
-    backface-visibility: hidden;
-    perspective: 1000px;
     display: flex;
     flex-direction: column;
-    opacity: 0; /* <--- 添加：初始透明度为 0 */
-    transition: opacity 0.08s ease-in-out; /* <--- 添加：透明度过渡效果 */
   }
 
   .analysis-header {
-      font-family: 'LXGWWenKai';
     padding: 10px;
     display: flex;
     justify-content: space-between;
@@ -1586,7 +1532,6 @@ analysisStyles.textContent = `
     border-radius: 50%;
     border: none;
     background: none;
-    transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1632,7 +1577,6 @@ analysisStyles.textContent = `
     z-index: 1;
     border: none;
     background: none;
-    transition: transform 0.2s ease-in-out, color 0.2s ease-in-out;
     border-radius: 50%;
   }
 
@@ -1679,7 +1623,7 @@ analysisStyles.textContent = `
     border-radius: 10px;
     line-height: 1.3;
     font-size: 17px;
-   font-family: 'Fanwood', serif !important;
+   font-family: serif !important;
     font-style: italic !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -1705,22 +1649,22 @@ analysisStyles.textContent = `
 
 
 
-  /* 使用更通用的选择器为英文文本设置Fanwood字体和特定字号 */
+  /* 使用更通用的选择器为英文文本设置字体和特定字号 */
   .analysis-result {
     /* 基本字体设置 */
-    font-family: "LXGWWenKai", "PingFang SC", sans-serif;
+    font-family: "PingFang SC", sans-serif;
     font-size: 16px;
 
   }
 
-  /* 为英文文本设置Fanwood字体和更大字号 */
+  /* 为英文文本设置更大字号 */
   .analysis-result .english-text,
   .analysis-result em,
   .analysis-result i,
   .analysis-result span[lang="en"],
   .analysis-result p[lang="en"],
   .analysis-result div[lang="en"] {
-    font-family: "Fanwood", serif !important;
+    font-family: serif !important;
     font-size: 18px !important;
   }
 
@@ -1737,24 +1681,24 @@ color:rgb(0, 0, 0);
 }
 
 
-  /* 添加一个通用类，可以手动添加到需要使用Fanwood字体的元素上 */
+  /* 添加一个通用类，可以手动添加到需要设置字体的元素上 */
   .dark-mode .analysis-result  .fanwood-text {
-    font-family: "Fanwood", serif !important;
+    font-family: serif !important;
     font-size: 21px !important;
     color: #148bf3;
   }
 
   .light-mode .analysis-result  .fanwood-text {
-    font-family: "Fanwood", serif !important;
+    font-family: serif !important;
     font-size: 21px !important;
     color: #148bf3;
   }
 
 
-  /* 确保strong元素使用Fanwood Bold字体 */
+  /* 确保strong元素使用粗体 */
   .analysis-result strong,
   .fanwood-text strong {
-    font-family: "Fanwood","LXGWWenKai", serif !important;
+    font-family: serif !important;
     font-weight: bold !important;
     font-size: 18px !important;
   }
@@ -1763,19 +1707,16 @@ color:rgb(0, 0, 0);
   .analysis-result h1 {
     font-size: 22px;
     margin: 15px 0 10px 0;
-     font-family: 'LXGWWenKai';
   }
 
   .analysis-result h2 {
     font-size: 18px;
     margin: 12px 0 8px 0;
-     font-family: 'LXGWWenKai';
   }
 
   .analysis-result h3 {
     font-size: 16px;
     margin: 10px 0 6px 0;
-     font-family: 'LXGWWenKai';
   }
 
   .analysis-result pre {
@@ -1849,7 +1790,6 @@ color:rgb(0, 0, 0);
     border-radius: 6px;
     font-size: 14px;
     outline: none;
-    transition: border-color 0.2s;
   }
 
   .analysis-input:focus {
@@ -1874,7 +1814,6 @@ color:rgb(0, 0, 0);
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
-    transition: background 0.2s;
   }
 
   .analysis-send-btn:hover {

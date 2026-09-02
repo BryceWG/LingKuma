@@ -1,51 +1,13 @@
-// 获取字体URL
-const fanwoodFontUrl = chrome.runtime.getURL("src/fonts/Fanwood.otf");
-// 使用replace处理文件名中的空格
-const fanwoodBoldFontUrl = chrome.runtime.getURL("src/fonts/Fanwood_Bold.otf").replace(/ /g, "%20");
-const fanwoodItalicFontUrl = chrome.runtime.getURL("src/fonts/Fanwood_Italic.otf").replace(/ /g, "%20");
-// 获取LXGWWenKai字体URL
-const lxgwWenKaiFontUrl = chrome.runtime.getURL("src/fonts/LXGWWenKaiGBLite-Regular.ttf");
-
 // 添加字体样式
 const fontStyle = document.createElement('style');
 fontStyle.textContent = `
-@font-face {
-    font-family: 'Fanwood';
-    src: url('${fanwoodFontUrl}') format('opentype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Fanwood';
-    src: url('${fanwoodBoldFontUrl}') format('opentype');
-    font-weight: bold;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Fanwood';
-    src: url('${fanwoodItalicFontUrl}') format('opentype');
-    font-weight: normal;
-    font-style: italic;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'LXGWWenKai';
-    src: url('${lxgwWenKaiFontUrl}') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
   /* 全局字体设置 */
   body {
-    font-family: "Fanwood","LXGWWenKai", "PingFang SC","Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol" !important;
-    transition: opacity 0.168s ease-in-out;
+    font-family: "PingFang SC","Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol" !important;
   }
 
   /* 适配header样式 */
   .header {
-    font-family: 'LXGWWenKai';
     padding: 10px;
     display: flex;
     justify-content: space-between;
@@ -107,7 +69,7 @@ fontStyle.textContent = `
     border-radius: 10px;
     line-height: 1.3;
     font-size: 17px;
-    font-family: 'Fanwood', serif !important;
+    font-family: serif !important;
     font-style: italic !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -131,22 +93,22 @@ fontStyle.textContent = `
 
 
 
-  /* 使用更通用的选择器为英文文本设置Fanwood字体和特定字号 */
+  /* 使用更通用的选择器为英文文本设置字体和特定字号 */
   .analysis-result {
     /* 基本字体设置 */
-    font-family: "LXGWWenKai", "PingFang SC", sans-serif;
+    font-family: "PingFang SC", sans-serif;
     font-size: 16px;
      color: #000000;
   }
 
-  /* 为英文文本设置Fanwood字体和更大字号 */
+  /* 为英文文本设置更大字号 */
   .analysis-result .english-text,
   .analysis-result em,
   .analysis-result i,
   .analysis-result span[lang="en"],
   .analysis-result p[lang="en"],
   .analysis-result div[lang="en"] {
-    font-family: "Fanwood", serif !important;
+    font-family: serif !important;
     font-size: 18px !important;
   }
 
@@ -163,23 +125,23 @@ fontStyle.textContent = `
 }
 
 
-  /* 添加一个通用类，可以手动添加到需要使用Fanwood字体的元素上 */
+  /* 添加一个通用类，可以手动添加到需要设置字体的元素上 */
   .dark-theme .analysis-result .fanwood-text {
-    font-family: "Fanwood", serif !important;
+    font-family: serif !important;
     font-size: 21px !important;
     color: #148bf3;
   }
 
   body:not(.dark-theme) .analysis-result .fanwood-text {
-    font-family: "Fanwood", serif !important;
+    font-family: serif !important;
     font-size: 21px !important;
     color: #148bf3;
   }
 
-  /* 确保strong元素使用Fanwood Bold字体 */
+  /* 确保strong元素使用粗体 */
   .analysis-result strong,
   .fanwood-text strong {
-    font-family: "Fanwood","LXGWWenKai", serif !important;
+    font-family: serif !important;
     font-weight: bold !important;
     font-size: 22px !important;
   }
@@ -189,19 +151,16 @@ fontStyle.textContent = `
   .analysis-result h1 {
     font-size: 22px;
     margin: 15px 0 10px 0;
-     font-family: 'LXGWWenKai';
   }
 
   .analysis-result h2 {
     font-size: 18px;
     margin: 12px 0 8px 0;
-     font-family: 'LXGWWenKai';
   }
 
   .analysis-result h3 {
     font-size: 16px;
     margin: 10px 0 6px 0;
-     font-family: 'LXGWWenKai';
   }
   .analysis-result pre {
     background: rgba(0,0,0,0.05);
@@ -255,42 +214,6 @@ fontStyle.textContent = `
   }
 `;
 document.head.appendChild(fontStyle);
-
-// 加载Fanwood字体（常规）
-const fanwoodFont = new FontFace('Fanwood', `url('${fanwoodFontUrl}')`, { weight: 'normal', style: 'normal' });
-fanwoodFont.load().then(function(loadedFont) {
-  document.fonts.add(loadedFont);
-  console.log('Sidebar.js: Fanwood常规字体加载成功:', loadedFont);
-}).catch(function(error) {
-  console.error('Sidebar.js: Fanwood常规字体加载失败:', error);
-});
-
-// 加载Fanwood_Bold字体（粗体）
-const fanwoodBoldFont = new FontFace('Fanwood', `url('${fanwoodBoldFontUrl}')`, { weight: 'bold', style: 'normal' });
-fanwoodBoldFont.load().then(function(loadedFont) {
-  document.fonts.add(loadedFont);
-  console.log('Sidebar.js: Fanwood粗体字体加载成功:', loadedFont);
-}).catch(function(error) {
-  console.error('Sidebar.js: Fanwood粗体字体加载失败:', error);
-});
-
-// 加载Fanwood_Italic字体（斜体）
-const fanwoodItalicFont = new FontFace('Fanwood', `url('${fanwoodItalicFontUrl}')`, { weight: 'normal', style: 'italic' });
-fanwoodItalicFont.load().then(function(loadedFont) {
-  document.fonts.add(loadedFont);
-  console.log('Sidebar.js: Fanwood斜体字体加载成功:', loadedFont);
-}).catch(function(error) {
-  console.error('Sidebar.js: Fanwood斜体字体加载失败:', error);
-});
-
-// 加载LXGWWenKai字体
-const lxgwWenKaiFont = new FontFace('LXGWWenKai', `url('${lxgwWenKaiFontUrl}')`);
-lxgwWenKaiFont.load().then(function(loadedFont) {
-  document.fonts.add(loadedFont);
-  console.log('Sidebar.js: LXGWWenKai字体加载成功:', loadedFont);
-}).catch(function(error) {
-  console.error('Sidebar.js: LXGWWenKai字体加载失败:', error);
-});
 
 // 全局变量：保存当前 AI 回复的 span 元素
 let currentAIResponseSpan = null;
