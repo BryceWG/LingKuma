@@ -1606,12 +1606,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
                         <!-- 添加AI推荐条目 -->
                         <div class="translation-item ai-recommendation">
-
-                            <span class="ai-badge">
-                                <svg data-slot="icon" fill="none" stroke-width="1.5" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"></path>
-                                </svg>
-                            </span>
                             <span>Hmm...</span>
                             <div class="translation-actions">
                                 <button class="translation-action-btn add-ai-translation">+</button>
@@ -1621,12 +1615,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
                         <!-- 添加第二个AI推荐条目 -->
                         <div class="translation-item ai-recommendation-2">
-
-                            <span class="ai-badge">
-                                <svg data-slot="icon" fill="none" stroke-width="1.5" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"></path>
-                                </svg>
-                            </span>
                             <span>Hmm...</span>
                             <div class="translation-actions">
                                 <button class="translation-action-btn add-ai-translation-2">+</button>
@@ -3595,15 +3583,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             // 添加样式使整个条目可点击
             aiItem.style.cursor = 'pointer';
 
-            // 创建AI徽章
-            const aiBadge = document.createElement('span');
-            aiBadge.className = 'ai-badge';
-            aiBadge.innerHTML = `
-                <svg data-slot="icon" fill="none" stroke-width="1.5" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"></path>
-                </svg>
-            `;
-
             // 获取AI推荐释义元素
             const aiText = savedText !== null ? createAITextElement(savedText) : getNewAIRecommendation();
 
@@ -3622,7 +3601,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             actions.appendChild(addBtn);
 
             // 组装AI推荐释义
-            aiItem.appendChild(aiBadge);
             aiItem.appendChild(aiText);
             aiItem.appendChild(actions);
 
@@ -3819,15 +3797,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 // 添加样式使整个条目可点击
                 aiItem.style.cursor = 'pointer';
 
-                // 创建AI徽章
-                const aiBadge = document.createElement('span');
-                aiBadge.className = 'ai-badge';
-                aiBadge.innerHTML = `
-                    <svg data-slot="icon" fill="none" stroke-width="1.5" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"></path>
-                    </svg>
-                `;
-
                 // 获取第二个AI推荐释义元素
                 const aiText = savedText !== null ? createAITextElement2(savedText) : getNewAIRecommendation2();
 
@@ -3846,7 +3815,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             actions.appendChild(addBtn);
 
             // 组装AI推荐释义
-            aiItem.appendChild(aiBadge);
             aiItem.appendChild(aiText);
             aiItem.appendChild(actions);
 
@@ -6736,40 +6704,40 @@ html[data-theme='dark'] .sound-icon svg path {
 .vocab-tooltip.firefox-glass-effect .ai-recommendation {
     margin-top: 8px;
     padding: 8px;
-    background: rgba(0, 123, 255, 0.2) !important;
+    background: rgba(70, 70, 70, 0.5) !important;
     backdrop-filter: blur(15px) !important;
     -webkit-backdrop-filter: blur(15px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: 3px solid #007bff !important; /* 保留蓝色左边框 */
+    border-left: 2px solid #6b7280 !important; /* 保留蓝色左边框 */
     border-radius: 6px;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
 
 .vocab-tooltip.firefox-glass-effect.dark-mode .ai-recommendation {
-    background: rgba(0, 123, 255, 0.25) !important;
+    background: rgba(70, 70, 70, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 3px solid #0099ff !important; /* 保留暗色模式的蓝色左边框 */
+    border-left: 2px solid #6b7280 !important; /* 保留暗色模式的蓝色左边框 */
 }
 
 /* Firefox玻璃效果下的第二个AI推荐 */
 .vocab-tooltip.firefox-glass-effect .ai-recommendation-2 {
     margin-top: 8px;
     padding: 8px;
-    background: rgba(255, 123, 0, 0.2) !important;
+    background: rgba(70, 70, 70, 0.5) !important;
     backdrop-filter: blur(15px) !important;
     -webkit-backdrop-filter: blur(15px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: 3px solid #ff7b00 !important; /* 橙色左边框 */
+    border-left: 2px solid #6b7280 !important; /* 橙色左边框 */
     border-radius: 6px;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
 
 .vocab-tooltip.firefox-glass-effect.dark-mode .ai-recommendation-2 {
-    background: rgba(255, 123, 0, 0.25) !important;
+    background: rgba(70, 70, 70, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 3px solid #ff9933 !important; /* 保留暗色模式的橙色左边框 */
+    border-left: 2px solid #6b7280 !important; /* 保留暗色模式的橙色左边框 */
 }
 
 /* Firefox玻璃效果下隐藏背景装饰 */
@@ -6822,11 +6790,11 @@ html[data-theme='dark'] .sound-icon svg path {
 .vocab-tooltip.firefox-glass-effect.minimized .ai-recommendation {
     margin-top: 8px;
     padding: 8px;
-    background: rgba(0, 123, 255, 0.2) !important;
+    background: rgba(70, 70, 70, 0.5) !important;
     backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: 3px solid #007bff !important; /* 保留蓝色左边框 */
+    border-left: 2px solid #6b7280 !important; /* 保留蓝色左边框 */
     border-radius: 6px;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
@@ -6834,19 +6802,19 @@ html[data-theme='dark'] .sound-icon svg path {
 }
 
 .vocab-tooltip.firefox-glass-effect.minimized.dark-mode .ai-recommendation {
-    background: rgba(0, 123, 255, 0.25) !important;
+    background: rgba(70, 70, 70, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 3px solid #0099ff !important; /* 保留暗色模式的蓝色左边框 */
+    border-left: 2px solid #6b7280 !important; /* 保留暗色模式的蓝色左边框 */
 }
 
 .vocab-tooltip.firefox-glass-effect.minimized .ai-recommendation-2 {
     margin-top: 8px;
     padding: 8px;
-    background: rgba(255, 123, 0, 0.2) !important;
+    background: rgba(70, 70, 70, 0.5) !important;
     backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: 3px solid #ff7b00 !important; /* 橙色左边框 */
+    border-left: 2px solid #6b7280 !important; /* 橙色左边框 */
     border-radius: 6px;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
@@ -6854,9 +6822,9 @@ html[data-theme='dark'] .sound-icon svg path {
 }
 
 .vocab-tooltip.firefox-glass-effect.minimized.dark-mode .ai-recommendation-2 {
-    background: rgba(255, 123, 0, 0.25) !important;
+    background: rgba(70, 70, 70, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 3px solid #ff9933 !important; /* 保留暗色模式的橙色左边框 */
+    border-left: 2px solid #6b7280 !important; /* 保留暗色模式的橙色左边框 */
 }
 
 /* Firefox玻璃效果下的translation-item.ai-recommendation样式 */
@@ -6866,28 +6834,28 @@ html[data-theme='dark'] .sound-icon svg path {
     margin-top: 8px;
     padding: 8px;
     padding: 2px;
-    background: rgba(0, 123, 255, 0.2) !important;
+    background: rgba(70, 70, 70, 0.5) !important;
     backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: 3px solid #007bff !important;
+    border-left: 2px solid #6b7280 !important;
     border-radius: 10px;
     position: relative;
     padding-right: 60px;
 }
 
 .vocab-tooltip.firefox-glass-effect .translation-item.ai-recommendation:hover {
-    background: rgba(0, 123, 255, 0.3) !important;
+    background: rgba(85, 85, 85, 0.6) !important;
 }
 
 .vocab-tooltip.firefox-glass-effect.dark-mode .translation-item.ai-recommendation {
-    background: rgba(0, 123, 255, 0.25) !important;
+    background: rgba(70, 70, 70, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 3px solid #0099ff !important;
+    border-left: 2px solid #6b7280 !important;
 }
 
 .vocab-tooltip.firefox-glass-effect.dark-mode .translation-item.ai-recommendation:hover {
-    background: rgba(0, 123, 255, 0.35) !important;
+    background: rgba(95, 95, 95, 0.65) !important;
 }
 
 /* Firefox玻璃效果下的translation-item.ai-recommendation-2样式 */
@@ -6897,28 +6865,28 @@ html[data-theme='dark'] .sound-icon svg path {
     margin-top: 8px;
     padding: 8px;
     padding: 2px;
-    background: rgba(255, 123, 0, 0.2) !important;
+    background: rgba(70, 70, 70, 0.5) !important;
     backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: 3px solid #ff7b00 !important;
+    border-left: 2px solid #6b7280 !important;
     border-radius: 10px;
     position: relative;
     padding-right: 60px;
 }
 
 .vocab-tooltip.firefox-glass-effect .translation-item.ai-recommendation-2:hover {
-    background: rgba(255, 123, 0, 0.3) !important;
+    background: rgba(85, 85, 85, 0.6) !important;
 }
 
 .vocab-tooltip.firefox-glass-effect.dark-mode .translation-item.ai-recommendation-2 {
-    background: rgba(255, 123, 0, 0.25) !important;
+    background: rgba(70, 70, 70, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 3px solid #ff9933 !important;
+    border-left: 2px solid #6b7280 !important;
 }
 
 .vocab-tooltip.firefox-glass-effect.dark-mode .translation-item.ai-recommendation-2:hover {
-    background: rgba(255, 123, 0, 0.35) !important;
+    background: rgba(95, 95, 95, 0.65) !important;
 }
 
 /* 最小化状态下的翻译项在液体玻璃激活时的样式 */
@@ -7293,11 +7261,9 @@ html[data-theme='dark'] .sound-icon svg path {
     margin-top: 8px;
     padding: 8px;
     padding: 2px;
-    background-color: rgb(61 122 185 / 44%);
-    backdrop-filter: blur(10px);
-
+    background-color: #f8f9fa;
     border-radius: 10px;
-    border-left: 3px solid #007bff;
+    border-left: 2px solid #8a93a0;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
@@ -7307,10 +7273,9 @@ html[data-theme='dark'] .sound-icon svg path {
     margin-top: 8px;
     padding: 8px;
     padding: 2px;
-    background-color:  rgb(85 157 231 / 78%);
+    background-color: #eef1f4;
     border-radius: 10px;
-    border-left: 3px solid #007bff;
-        backdrop-filter: blur(10px);
+    border-left: 2px solid #8a93a0;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
@@ -7321,11 +7286,9 @@ html[data-theme='dark'] .sound-icon svg path {
     margin-top: 8px;
     padding: 8px;
     padding: 2px;
-    background-color: rgb(185 122 61 / 44%);
-    backdrop-filter: blur(10px);
-
+    background-color: #f8f9fa;
     border-radius: 10px;
-    border-left: 3px solid #ff7b00;
+    border-left: 2px solid #8a93a0;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
@@ -7335,10 +7298,9 @@ html[data-theme='dark'] .sound-icon svg path {
     margin-top: 8px;
     padding: 8px;
     padding: 2px;
-    background-color:  rgb(231 157 85 / 78%);
+    background-color: #eef1f4;
     border-radius: 10px;
-    border-left: 3px solid #ff7b00;
-        backdrop-filter: blur(10px);
+    border-left: 2px solid #8a93a0;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
@@ -7584,13 +7546,13 @@ padding-top: 5px;
     transform: rotate(180deg);
 }
 
-/* AI推荐条目样式 */
+/* AI推荐条目样式（与上方主定义保持一致） */
 .ai-recommendation {
     margin-top: 8px;
     padding: 8px;
-    background-color: rgba(0, 123, 255, 0.1);
+    background-color: #f8f9fa;
     border-radius: 6px;
-    border-left: 3px solid #007bff;
+    border-left: 2px solid #8a93a0;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
@@ -7599,9 +7561,9 @@ padding-top: 5px;
 .ai-recommendation-2 {
     margin-top: 8px;
     padding: 8px;
-    background-color: rgba(255, 123, 0, 0.1);
+    background-color: #f8f9fa;
     border-radius: 6px;
-    border-left: 3px solid #ff7b00;
+    border-left: 2px solid #8a93a0;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
@@ -7876,13 +7838,13 @@ shadowRoot.appendChild(style);
     }
 
     .dark-mode .translation-item.ai-recommendation {
-      background-color: rgba(0, 123, 255, 0.15);
-      border-left: 3px solid #0099ff;
+      background-color: #2d2d2dc7;
+      border-left: 2px solid #6b7280;
     }
 
     .dark-mode .translation-item.ai-recommendation-2 {
-      background-color: rgba(255, 123, 0, 0.15);
-      border-left: 3px solid #ff9933;
+      background-color: #2d2d2dc7;
+      border-left: 2px solid #6b7280;
     }
 
     /* 当鼠标悬停在整个句子对上时，显示删除按钮 */
