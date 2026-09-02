@@ -6708,7 +6708,7 @@ html[data-theme='dark'] .sound-icon svg path {
     backdrop-filter: blur(15px) !important;
     -webkit-backdrop-filter: blur(15px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: 2px solid #6b7280 !important; /* 保留蓝色左边框 */
+    border-left: none !important; /* 保留蓝色左边框 */
     border-radius: 6px;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
@@ -6717,7 +6717,7 @@ html[data-theme='dark'] .sound-icon svg path {
 .vocab-tooltip.firefox-glass-effect.dark-mode .ai-recommendation {
     background: rgba(70, 70, 70, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 2px solid #6b7280 !important; /* 保留暗色模式的蓝色左边框 */
+    border-left: none !important; /* 保留暗色模式的蓝色左边框 */
 }
 
 /* Firefox玻璃效果下的第二个AI推荐 */
@@ -6728,7 +6728,7 @@ html[data-theme='dark'] .sound-icon svg path {
     backdrop-filter: blur(15px) !important;
     -webkit-backdrop-filter: blur(15px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: 2px solid #6b7280 !important; /* 橙色左边框 */
+    border-left: none !important; /* 橙色左边框 */
     border-radius: 6px;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
@@ -6737,7 +6737,7 @@ html[data-theme='dark'] .sound-icon svg path {
 .vocab-tooltip.firefox-glass-effect.dark-mode .ai-recommendation-2 {
     background: rgba(70, 70, 70, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 2px solid #6b7280 !important; /* 保留暗色模式的橙色左边框 */
+    border-left: none !important; /* 保留暗色模式的橙色左边框 */
 }
 
 /* Firefox玻璃效果下隐藏背景装饰 */
@@ -6794,7 +6794,7 @@ html[data-theme='dark'] .sound-icon svg path {
     backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: 2px solid #6b7280 !important; /* 保留蓝色左边框 */
+    border-left: none !important; /* 保留蓝色左边框 */
     border-radius: 6px;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
@@ -6804,7 +6804,7 @@ html[data-theme='dark'] .sound-icon svg path {
 .vocab-tooltip.firefox-glass-effect.minimized.dark-mode .ai-recommendation {
     background: rgba(70, 70, 70, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 2px solid #6b7280 !important; /* 保留暗色模式的蓝色左边框 */
+    border-left: none !important; /* 保留暗色模式的蓝色左边框 */
 }
 
 .vocab-tooltip.firefox-glass-effect.minimized .ai-recommendation-2 {
@@ -6814,7 +6814,7 @@ html[data-theme='dark'] .sound-icon svg path {
     backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: 2px solid #6b7280 !important; /* 橙色左边框 */
+    border-left: none !important; /* 橙色左边框 */
     border-radius: 6px;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
@@ -6824,7 +6824,7 @@ html[data-theme='dark'] .sound-icon svg path {
 .vocab-tooltip.firefox-glass-effect.minimized.dark-mode .ai-recommendation-2 {
     background: rgba(70, 70, 70, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 2px solid #6b7280 !important; /* 保留暗色模式的橙色左边框 */
+    border-left: none !important; /* 保留暗色模式的橙色左边框 */
 }
 
 /* Firefox玻璃效果下的translation-item.ai-recommendation样式 */
@@ -6838,7 +6838,7 @@ html[data-theme='dark'] .sound-icon svg path {
     backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: 2px solid #6b7280 !important;
+    border-left: none !important;
     border-radius: 10px;
     position: relative;
     padding-right: 60px;
@@ -6851,7 +6851,7 @@ html[data-theme='dark'] .sound-icon svg path {
 .vocab-tooltip.firefox-glass-effect.dark-mode .translation-item.ai-recommendation {
     background: rgba(70, 70, 70, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 2px solid #6b7280 !important;
+    border-left: none !important;
 }
 
 .vocab-tooltip.firefox-glass-effect.dark-mode .translation-item.ai-recommendation:hover {
@@ -6869,7 +6869,7 @@ html[data-theme='dark'] .sound-icon svg path {
     backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: 2px solid #6b7280 !important;
+    border-left: none !important;
     border-radius: 10px;
     position: relative;
     padding-right: 60px;
@@ -6882,7 +6882,7 @@ html[data-theme='dark'] .sound-icon svg path {
 .vocab-tooltip.firefox-glass-effect.dark-mode .translation-item.ai-recommendation-2 {
     background: rgba(70, 70, 70, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 2px solid #6b7280 !important;
+    border-left: none !important;
 }
 
 .vocab-tooltip.firefox-glass-effect.dark-mode .translation-item.ai-recommendation-2:hover {
@@ -7151,7 +7151,7 @@ html[data-theme='dark'] .sound-icon svg path {
 .section {
     margin-bottom: 5px;
     background: var(--background-color);
-    border: 1px solid #8f9799;
+    border: none;
     border-radius: 8px;
     overflow: hidden;
 }
@@ -7263,7 +7263,7 @@ html[data-theme='dark'] .sound-icon svg path {
     padding: 2px;
     background-color: #f8f9fa;
     border-radius: 10px;
-    border-left: 2px solid #8a93a0;
+    border-left: none;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
@@ -7275,7 +7275,7 @@ html[data-theme='dark'] .sound-icon svg path {
     padding: 2px;
     background-color: #eef1f4;
     border-radius: 10px;
-    border-left: 2px solid #8a93a0;
+    border-left: none;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
@@ -7288,7 +7288,7 @@ html[data-theme='dark'] .sound-icon svg path {
     padding: 2px;
     background-color: #f8f9fa;
     border-radius: 10px;
-    border-left: 2px solid #8a93a0;
+    border-left: none;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
@@ -7300,7 +7300,7 @@ html[data-theme='dark'] .sound-icon svg path {
     padding: 2px;
     background-color: #eef1f4;
     border-radius: 10px;
-    border-left: 2px solid #8a93a0;
+    border-left: none;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
@@ -7552,7 +7552,7 @@ padding-top: 5px;
     padding: 8px;
     background-color: #f8f9fa;
     border-radius: 6px;
-    border-left: 2px solid #8a93a0;
+    border-left: none;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
@@ -7563,7 +7563,7 @@ padding-top: 5px;
     padding: 8px;
     background-color: #f8f9fa;
     border-radius: 6px;
-    border-left: 2px solid #8a93a0;
+    border-left: none;
     position: relative;
     padding-right: 60px; /* 为按钮预留空间 */
 }
@@ -7811,7 +7811,7 @@ shadowRoot.appendChild(style);
 
     .dark-mode .section {
       background: transparent; /* <--- 修改：改为透明 */
-      border-color: #444;
+      border: none;
     }
 
     .dark-mode .section-header {
@@ -7839,12 +7839,12 @@ shadowRoot.appendChild(style);
 
     .dark-mode .translation-item.ai-recommendation {
       background-color: #2d2d2dc7;
-      border-left: 2px solid #6b7280;
+      border-left: none;
     }
 
     .dark-mode .translation-item.ai-recommendation-2 {
       background-color: #2d2d2dc7;
-      border-left: 2px solid #6b7280;
+      border-left: none;
     }
 
     /* 当鼠标悬停在整个句子对上时，显示删除按钮 */
