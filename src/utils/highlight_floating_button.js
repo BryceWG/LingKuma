@@ -447,6 +447,7 @@
         padding: 0.9em 1.3em;
         color: #fff;
         background: #1a1a1a;
+        border: 1px solid rgba(0, 0, 0, 0.25);
         cursor: grab;
         font-size: 12px;
         font-weight: 600;
@@ -460,6 +461,7 @@
       .lk-floating-highlight[data-highlight="off"] {
         color: #1a1a1a;
         background: #fff;
+        border-color: rgba(0, 0, 0, 0.35);
       }
 
       .lk-floating-stack[data-dock="top"] .lk-floating-highlight,
@@ -495,7 +497,7 @@
       .text {
         position: relative;
         z-index: 1;
-        color: #fff;
+        color: inherit;
         pointer-events: none;
       }
 

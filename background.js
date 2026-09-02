@@ -328,7 +328,10 @@ async function syncTabHighlightRuntime(tabId, options = {}) {
   if (state.enabled) {
     const wasLoaded = await isHighlightRuntimeLoaded(tabId);
     const loaded = await injectHighlightRuntime(tabId);
-    if (loaded && options.forceActivate === true && wasLoaded) {
+    // 首次注入成功（wasLoaded=false）或显式激活时，通知页面启动高亮运行时。
+    // content scripts（a1/a2/悬浮球）在 document_idle 已执行，但此时动态运行时（a4/a7 等）
+    // 尚未注入，必须补发 toggleHighlight 让 a1 重新初始化，否则新页面功能不会挂载。
+    if (loaded && (options.forceActivate === true || !wasLoaded)) {
       await sendMessageToTab(tabId, { action: 'toggleHighlight', enabled: true });
     }
   } else {
@@ -373,6 +376,38 @@ if (chrome.tabs?.onRemoved) {
     injectedHighlightTabs.delete(tabId);
     injectingHighlightTabs.delete(tabId);
     clearLegacyPageOverride(tabId);
+  });
+}
+
+// 标签页激活时兜底同步：事件页可能错过前一站的 onUpdated complete（Firefox 事件页休眠/唤醒时序），
+// 切回该标签页时重新检查并注入运行时，避免"必须点插件菜单才加载"。
+if (chrome.tabs?.onActivated) {
+  chrome.tabs.onActivated.addListener((activeInfo) => {
+    syncTabHighlightRuntime(activeInfo.tabId);
+  });
+}
+
+// 清理旧版默认胶囊（Google / Google Image）：v1.1.0 之前 popup 首次初始化会写入内置的
+// Google 搜索胶囊行，用户无法直接关闭。仅当存储值精确匹配旧默认种子时清空，不动用户自定义配置。
+const LEGACY_DEFAULT_CAPSULE_URLS = ['https://www.google.com/search?q={word}', 'https://www.google.com/search?q={word}&tbm=isch'];
+function isLegacyDefaultCustomCapsules(capsules) {
+  if (!Array.isArray(capsules) || capsules.length !== 1) {
+    return false;
+  }
+  const container = capsules[0];
+  if (!container || !Array.isArray(container.buttons) || container.buttons.length !== 2) {
+    return false;
+  }
+  const [first, second] = container.buttons;
+  return !!first && first.name === 'Google' && first.url === LEGACY_DEFAULT_CAPSULE_URLS[0]
+    && !!second && second.name === 'Google Image' && second.url === LEGACY_DEFAULT_CAPSULE_URLS[1];
+}
+function clearLegacyDefaultCapsules() {
+  storageLocalGet({ customCapsules: undefined }).then((result) => {
+    if (isLegacyDefaultCustomCapsules(result.customCapsules)) {
+      storageLocalSet({ customCapsules: [] });
+      console.log('[background.js] 已移除旧版默认 Google / Google Image 胶囊配置');
+    }
   });
 }
 
@@ -5335,6 +5370,7 @@ initCloudConfig().then(() => {
 });
 
 syncAllTabsHighlightRuntime();
+clearLegacyDefaultCapsules();
 
 // ============================================
 // WebSocket Header 修改规则（用于 Edge TTS）

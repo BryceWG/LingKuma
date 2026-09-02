@@ -491,38 +491,6 @@ function restoreOriginalBackground() {
 }
 
 /**
- * 更新液体玻璃开关按钮的外观
- */
-function updateLiquidGlassToggleButton(button, enabled) {
-  if (!button) return;
-
-  // 如果没有传入状态，从存储中读取
-  if (enabled === undefined) {
-    getStorageValue('liquidGlassEnabled').then((storedLiquidGlassEnabled) => {
-      const isEnabled = storedLiquidGlassEnabled !== undefined ? storedLiquidGlassEnabled : true;
-      updateLiquidGlassToggleButton(button, isEnabled);
-    });
-    return;
-  }
-
-  // 更新按钮图标和样式
-  const svg = button.querySelector('svg path');
-  if (svg) {
-    // if (enabled) {
-    //   // 启用状态 - 显示勾选图标
-    //   svg.setAttribute('d', 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z');
-    //   button.style.opacity = '1';
-    //   button.title = '液体玻璃效果: 已启用 (点击禁用)';
-    // } else {
-    //   // 禁用状态 - 显示禁用图标
-    //   svg.setAttribute('d', 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z');
-    //   button.style.opacity = '0.5';
-    //   button.title = '液体玻璃效果: 已禁用 (点击启用)';
-    // }
-  }
-}
-
-/**
  * 全局更新液体玻璃位置的函数
  */
 function updateLiquidGlassPosition() {
@@ -1563,11 +1531,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
                 <!-- 按钮组容器（初始隐藏） -->
                 <div class="header-buttons-container" style="display: none;">
-                   <button class="liquid-glass-toggle-btn" title="切换液体玻璃效果">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 48 48"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M42.199 23.504c-.203-.609-.576-1.705-1.621-2.436c-1.265-.877-2.942-.82-3.242-.812c-.616.024-.957.13-1.621 0c-.47-.098-1.24-.244-1.621-.812c-.324-.48-.122-.877 0-2.437c.097-1.226.138-1.843 0-2.436c-.3-1.283-1.208-2.079-1.621-2.436c-.851-.747-1.929-1.267-4.052-1.624c-1.475-.252-3.85-.487-7.295 0c-1.742.244-4.425.706-6.483 1.397a17.7 17.7 0 0 0-4.863 2.436c-.016.008-.033.016-.04.024c-2.789 1.82-4.37 5.035-4.231 8.373c.737 17.922 33.091 20.18 36.69 4.823c.073-.487.64-2.152 0-4.06m-16.85-4.775a2.24 2.24 0 0 1-2.237-2.241c0-1.243.997-2.242 2.237-2.242h2.196a2.238 2.238 0 0 1 1.58 3.825a2.23 2.23 0 0 1-1.58.658z"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M8.159 21.068a2.434 2.434 0 0 0 2.43 2.437a2.434 2.434 0 0 0 2.432-2.434v-.003a2.434 2.434 0 0 0-2.43-2.438a2.434 2.434 0 0 0-2.432 2.435zm4.051 7.308a2.434 2.434 0 0 0 2.432 2.437a2.434 2.434 0 0 0 2.432-2.436v0a2.434 2.434 0 0 0-2.43-2.438a2.434 2.434 0 0 0-2.433 2.434zm8.106 2.437a2.434 2.434 0 0 0 2.429 2.438a2.434 2.434 0 0 0 2.434-2.434v-.005a2.434 2.434 0 0 0-2.432-2.436a2.434 2.434 0 0 0-2.431 2.436zM28.42 30a2.434 2.434 0 0 0 2.43 2.439a2.434 2.434 0 0 0 2.433-2.434V30a2.434 2.434 0 0 0-2.43-2.436A2.434 2.434 0 0 0 28.42 30"/></svg>
-                   </button>
-
-                  <button class="minimize-btn-words" title="最小化">
+                   <button class="minimize-btn-words" title="最小化">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 48 48">
                       <!-- 空心横线 - 外边框 -->
                       <rect x="12" y="21" width="30" height="6" rx="4" ry="4" fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -4437,46 +4401,6 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
     return;
   }
 
-  // 绑定液体玻璃开关按钮事件
-  const liquidGlassToggleBtn = tooltipEl.querySelector(".liquid-glass-toggle-btn");
-  if (liquidGlassToggleBtn) {
-    // 初始化按钮状态
-    updateLiquidGlassToggleButton(liquidGlassToggleBtn);
-
-    liquidGlassToggleBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // 切换液体玻璃效果状态
-      getStorageValue('liquidGlassEnabled').then((storedLiquidGlassEnabled) => {
-        const currentState = storedLiquidGlassEnabled !== undefined ? storedLiquidGlassEnabled : true;
-        const newState = !currentState;
-
-        // 保存新状态
-        chrome.storage.local.set({ liquidGlassEnabled: newState }, async () => {
-          console.log('液体玻璃效果状态已更新:', newState);
-
-          // 更新按钮外观
-          updateLiquidGlassToggleButton(liquidGlassToggleBtn, newState);
-
-          if (newState) {
-            // 启用效果
-            if (await isFirefox()) {
-              applyFirefoxGlassEffect();
-            } else {
-              applyLiquidGlassEffect();
-            }
-          } else {
-            // 禁用效果
-            cleanupLiquidGlass();
-            // 恢复原始背景
-            restoreOriginalBackground();
-          }
-        });
-      });
-    });
-  }
-
   // 绑定关闭按钮事件，关闭 tooltip 时也取消空格键监听器 小窗点击关闭
   const closeBtnWords = tooltipEl.querySelector(".close-btn-words");
   if (closeBtnWords) {
@@ -6734,30 +6658,6 @@ html[data-theme='dark'] .sound-icon svg path {
     margin-right: -20px;
 }
 
-/* 液体玻璃开关按钮样式 */
-.liquid-glass-toggle-btn {
-    cursor: pointer;
-    border-radius: 50%;
-    border: 0 solid transparent !important;
-    background: rgba(0, 0, 0, 0) !important;
-    padding: 2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.liquid-glass-toggle-btn:hover {
-    transform: scale(1.1);
-   /* background: rgba(0, 0, 0, 0.1);*/
-}
-
-.dark-mode .liquid-glass-toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.liquid-glass-toggle-btn svg {
-}
-
 /* 液体玻璃激活状态样式 */
 .vocab-tooltip.liquid-glass-active {
     background-color: rgba(255, 255, 255, 0.05) !important;
@@ -8076,15 +7976,6 @@ shadowRoot.appendChild(style);
     .dark-mode .close-btn-words svg path,
     .dark-mode .sound-icon svg path {
       stroke: #e0e0e0;
-    }
-
-    /* 液体玻璃开关按钮的颜色样式 */
-    .liquid-glass-toggle-btn svg path {
-      stroke: #000000 !important; 亮色模式下为黑色 */
-    }
-
-    .dark-mode .liquid-glass-toggle-btn svg path {
-      stroke: #ffffff !important; /* 暗色模式下为白色 */
     }
 
     /* 添加特定的选择器来解决Orion浏览器中SVG图标显示蓝色的问题 */
@@ -9926,6 +9817,13 @@ function applyMinimizeStateWithoutRepositioning() {
 function minimizeTooltip() {
   if (!tooltipEl) return;
 
+  // 已经是最小化状态时，再点最小化按钮 = 还原（真正的 toggle）
+  if (tooltipEl.classList.contains('minimized')) {
+    console.log('弹窗已处于最小化状态，切换为还原');
+    restoreTooltip();
+    return;
+  }
+
   console.log('开始最小化弹窗（用户手动触发）');
 
   // 应用最小化状态
@@ -10404,7 +10302,7 @@ async function generateAllCapsules(wrapper, currentWord, shadowRoot, currentSent
     }
   }
 
-  // 1. 创建默认胶囊容器（包含液体玻璃、最小化、关闭按钮）
+  // 1. 创建默认胶囊容器（最小化、关闭按钮，液体玻璃/主题切换按钮已移除）
   const defaultCapsule = createDefaultCapsule(isDark);
   wrapper.appendChild(defaultCapsule);
 
@@ -10454,22 +10352,6 @@ function createDefaultCapsule(isDark) {
   }
 
   capsule.innerHTML = `
-    <button class="capsule-highlight-theme-btn" title="切换高亮明暗模式">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="5"/>
-        <line x1="12" y1="1" x2="12" y2="3"/>
-        <line x1="12" y1="21" x2="12" y2="23"/>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-        <line x1="1" y1="12" x2="3" y2="12"/>
-        <line x1="21" y1="12" x2="23" y2="12"/>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-      </svg>
-    </button>
-    <button class="capsule-liquid-glass-btn" title="切换液体玻璃效果">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 48 48"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M42.199 23.504c-.203-.609-.576-1.705-1.621-2.436c-1.265-.877-2.942-.82-3.242-.812c-.616.024-.957.13-1.621 0c-.47-.098-1.24-.244-1.621-.812c-.324-.48-.122-.877 0-2.437c.097-1.226.138-1.843 0-2.436c-.3-1.283-1.208-2.079-1.621-2.436c-.851-.747-1.929-1.267-4.052-1.624c-1.475-.252-3.85-.487-7.295 0c-1.742.244-4.425.706-6.483 1.397a17.7 17.7 0 0 0-4.863 2.436c-.016.008-.033.016-.04.024c-2.789 1.82-4.37 5.035-4.231 8.373c.737 17.922 33.091 20.18 36.69 4.823c.073-.487.64-2.152 0-4.06m-16.85-4.775a2.24 2.24 0 0 1-2.237-2.241c0-1.243.997-2.242 2.237-2.242h2.196a2.238 2.238 0 0 1 1.58 3.825a2.23 2.23 0 0 1-1.58.658z"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M8.159 21.068a2.434 2.434 0 0 0 2.43 2.437a2.434 2.434 0 0 0 2.432-2.434v-.003a2.434 2.434 0 0 0-2.43-2.438a2.434 2.434 0 0 0-2.432 2.435zm4.051 7.308a2.434 2.434 0 0 0 2.432 2.437a2.434 2.434 0 0 0 2.432-2.436v0a2.434 2.434 0 0 0-2.43-2.438a2.434 2.434 0 0 0-2.433 2.434zm8.106 2.437a2.434 2.434 0 0 0 2.429 2.438a2.434 2.434 0 0 0 2.434-2.434v-.005a2.434 2.434 0 0 0-2.432-2.436a2.434 2.434 0 0 0-2.431 2.436zM28.42 30a2.434 2.434 0 0 0 2.43 2.439a2.434 2.434 0 0 0 2.433-2.434V30a2.434 2.434 0 0 0-2.43-2.436A2.434 2.434 0 0 0 28.42 30"/></svg>
-    </button>
     <button class="capsule-minimize-btn" title="最小化">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 48 48">
         <rect x="12" y="21" width="30" height="6" rx="4" ry="4" fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -10557,80 +10439,6 @@ function createCustomCapsule(capsuleContainer, containerIndex, currentWord, isDa
 
 // 绑定默认胶囊按钮事件
 function bindDefaultCapsuleEvents(capsule, shadowRoot) {
-  // 绑定高亮明暗切换按钮事件
-  const highlightThemeBtn = capsule.querySelector('.capsule-highlight-theme-btn');
-  if (highlightThemeBtn) {
-    highlightThemeBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // 切换当前页面的高亮明暗模式
-      if (typeof highlightManager !== 'undefined' && highlightManager) {
-        const currentMode = highlightManager.isDarkMode;
-        const newMode = !currentMode;
-
-        console.log(`胶囊按钮：切换高亮模式从 ${currentMode ? '暗色' : '亮色'} 到 ${newMode ? '暗色' : '亮色'}`);
-
-        // 更新当前页面的高亮模式（不写入storage）
-        highlightManager.setDarkMode(newMode);
-        highlightManager.reapplyHighlights();
-
-        // 更新按钮图标
-        updateHighlightThemeButtonIcon(highlightThemeBtn, newMode);
-
-        // 如果当前tooltip主题模式是auto，需要更新tooltip和爆炸窗口的主题
-        getStorageValue('tooltipThemeMode').then((tooltipThemeMode) => {
-          const themeMode = tooltipThemeMode || 'auto';
-          if (themeMode === 'auto') {
-            // 更新当前tooltip及胶囊容器的主题
-            applyTooltipTheme('auto');
-
-            // 更新爆炸窗口的主题
-            if (typeof wordExplosionEl !== 'undefined' && wordExplosionEl) {
-              if (newMode) {
-                wordExplosionEl.classList.add('dark-mode');
-              } else {
-                wordExplosionEl.classList.remove('dark-mode');
-              }
-              console.log('[胶囊按钮] 已更新爆炸窗口主题:', newMode ? '暗色' : '亮色');
-            }
-          }
-        });
-      } else {
-        console.warn('highlightManager 未定义，无法切换高亮模式');
-      }
-    });
-
-    // 初始化按钮图标
-    if (typeof highlightManager !== 'undefined' && highlightManager) {
-      updateHighlightThemeButtonIcon(highlightThemeBtn, highlightManager.isDarkMode);
-    }
-  }
-
-  // 绑定液体玻璃按钮事件
-  const liquidGlassBtn = capsule.querySelector('.capsule-liquid-glass-btn');
-  if (liquidGlassBtn) {
-    liquidGlassBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const currentEnabled = await getLiquidGlassEnabledFast();
-      const newEnabled = !currentEnabled;
-
-      chrome.storage.local.set({ liquidGlassEnabled: newEnabled }, () => {
-        console.log('液体玻璃效果已', newEnabled ? '启用' : '禁用');
-        liquidGlassEnabledCache = null;
-        liquidGlassEnabledCacheTime = 0;
-
-        if (newEnabled) {
-          applyLiquidGlassToTooltip();
-        } else {
-          cleanupLiquidGlass();
-        }
-      });
-    });
-  }
-
   // 绑定最小化按钮事件
   const minimizeBtn = capsule.querySelector('.capsule-minimize-btn');
   if (minimizeBtn) {
@@ -10649,38 +10457,6 @@ function bindDefaultCapsuleEvents(capsule, shadowRoot) {
       e.stopPropagation();
       closeTooltipWithAnimation();
     });
-  }
-}
-
-// 更新高亮主题按钮图标
-function updateHighlightThemeButtonIcon(button, isDark) {
-  if (!button) return;
-
-  // 根据当前模式显示对应图标
-  if (isDark) {
-    // 暗色模式 - 显示月亮图标
-    button.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-      </svg>
-    `;
-    button.title = "切换到亮色高亮";
-  } else {
-    // 亮色模式 - 显示太阳图标
-    button.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="5"/>
-        <line x1="12" y1="1" x2="12" y2="3"/>
-        <line x1="12" y1="21" x2="12" y2="23"/>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-        <line x1="1" y1="12" x2="3" y2="12"/>
-        <line x1="21" y1="12" x2="23" y2="12"/>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-      </svg>
-    `;
-    button.title = "切换到暗色高亮";
   }
 }
 

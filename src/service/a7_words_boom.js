@@ -55,6 +55,7 @@ const A7_STORAGE_CACHE_KEYS = [
   'wordExplosionUnderlineThickness',
   'showExplosionSentence',
   'tooltipThemeMode',
+  'highlightPageThemeOverrides',
   'highlightChineseEnabled',
   'highlightJapaneseEnabled',
   'highlightKoreanEnabled',
@@ -346,6 +347,13 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
         applyWordExplosionTheme(wordExplosionEl);
       }
     }
+    // 悬浮球/页面主题切换（highlightPageThemeOverrides）：爆炸窗口 auto 模式跟随刷新，
+    // 与 a4 弹窗保持同一联动（a4 侧同时会广播 updateHighlightTheme，这里作为兜底）。
+    if (changes.highlightPageThemeOverrides) {
+      if (explosionThemeMode === 'auto' && wordExplosionEl) {
+        applyWordExplosionTheme(wordExplosionEl);
+      }
+    }
   }
 });
 
@@ -395,7 +403,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       // 当高亮模式改变时，如果爆炸窗口处于auto模式，需要更新主题
       if (explosionThemeMode === 'auto' && wordExplosionEl) {
         console.log('[WordExplosion] 检测到高亮模式切换，更新爆炸窗口主题');
-        applyWordExplosionTheme(wordExplosionEl);
+        applyWordExplosionTheme(wordExplosionEl, typeof message.isDark === 'boolean' ? message.isDark : null);
       }
     }
     // 监听tooltip主题模式更新消息（与tooltip保持一致）
@@ -622,7 +630,8 @@ function createWordExplosionTooltip() {
 }
 
 // 应用主题模式到爆炸窗口
-function applyWordExplosionTheme(container) {
+// forcedIsDark: 可选参数，来自 updateHighlightTheme 广播的 isDark，保证与 a4 弹窗同一时刻的状态一致
+function applyWordExplosionTheme(container, forcedIsDark = null) {
   if (!container) return;
 
   // 从Shadow DOM中获取左侧按钮容器
@@ -638,14 +647,12 @@ function applyWordExplosionTheme(container) {
     if (leftButtons) leftButtons.classList.remove('dark-mode');
   } else {
     // 自动检测模式（跟随当前页面的高亮模式）
-    if (typeof highlightManager !== 'undefined' && highlightManager && highlightManager.isDarkMode !== undefined) {
-      if (highlightManager.isDarkMode) {
-        container.classList.add('dark-mode');
-        if (leftButtons) leftButtons.classList.add('dark-mode');
-      } else {
-        container.classList.remove('dark-mode');
-        if (leftButtons) leftButtons.classList.remove('dark-mode');
-      }
+    const isDark = typeof forcedIsDark === 'boolean' ? forcedIsDark
+      : (typeof highlightManager !== 'undefined' && highlightManager && highlightManager.isDarkMode !== undefined
+          ? highlightManager.isDarkMode : false);
+    if (isDark) {
+      container.classList.add('dark-mode');
+      if (leftButtons) leftButtons.classList.add('dark-mode');
     } else {
       container.classList.remove('dark-mode');
       if (leftButtons) leftButtons.classList.remove('dark-mode');
