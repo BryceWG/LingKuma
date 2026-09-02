@@ -909,53 +909,22 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       if (tooltipEl) {
         const themeMode = message.mode || 'auto';
 
-        // 更新弹窗主题
-        if (themeMode === 'dark') {
-          // 固定暗色主题
-          tooltipEl.classList.add("dark-mode");
-        } else if (themeMode === 'light') {
-          // 固定亮色主题
-          tooltipEl.classList.remove("dark-mode");
-        } else {
-          // 自动检测模式（跟随当前页面的高亮模式）
-          if (typeof highlightManager !== 'undefined' && highlightManager && highlightManager.isDarkMode !== undefined) {
-            if (highlightManager.isDarkMode) {
-              tooltipEl.classList.add("dark-mode");
-            } else {
-              tooltipEl.classList.remove("dark-mode");
-            }
-          } else {
-            tooltipEl.classList.remove("dark-mode");
-          }
-        }
-
-        // 同时更新所有胶囊容器的主题
-        const shadowHost = document.getElementById('lingkuma-tooltip-host');
-        if (shadowHost && shadowHost.shadowRoot) {
-          const capsules = shadowHost.shadowRoot.querySelectorAll('.header-buttons-capsule');
-          capsules.forEach(capsule => {
-            if (themeMode === 'dark') {
-              capsule.classList.add("dark-mode");
-            } else if (themeMode === 'light') {
-              capsule.classList.remove("dark-mode");
-            } else {
-              // 自动模式：使用当前页面的高亮模式
-              if (typeof highlightManager !== 'undefined' && highlightManager && highlightManager.isDarkMode !== undefined) {
-                if (highlightManager.isDarkMode) {
-                  capsule.classList.add("dark-mode");
-                } else {
-                  capsule.classList.remove("dark-mode");
-                }
-              } else {
-                capsule.classList.remove("dark-mode");
-              }
-            }
-          });
-        }
+        // 更新弹窗与胶囊容器主题
+        applyTooltipTheme(themeMode);
 
         sendResponse({ success: true });
       } else {
         sendResponse({ success: false, message: "No tooltip currently displayed" });
+      }
+      return true;
+    } else if (message.action === "updateHighlightTheme") {
+      // 页面高亮明暗模式切换（popup/悬浮球触发）：auto模式下弹窗主题跟随刷新
+      if (tooltipEl) {
+        const tooltipThemeMode = getCachedStorageValue('tooltipThemeMode', 'auto');
+        const themeMode = tooltipThemeMode || 'auto';
+        if (themeMode === 'auto') {
+          applyTooltipTheme('auto');
+        }
       }
       return true;
     } else if (message.action === "toggleLiquidGlass") {
@@ -988,6 +957,88 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   // 如果不是我们处理的消息，返回false
   return false;
 });
+
+// ==================== 弹窗主题应用工具 ====================
+
+// 根据主题模式设置弹窗与胶囊容器的明暗主题
+// themeMode: 'dark' | 'light' | 'auto'（auto 跟随当前页面的高亮模式）
+function applyTooltipTheme(themeMode) {
+  let isDark = false;
+  if (themeMode === 'dark') {
+    isDark = true;
+  } else if (themeMode === 'light') {
+    isDark = false;
+  } else {
+    // 自动检测模式（跟随当前页面的高亮模式）
+    if (typeof highlightManager !== 'undefined' && highlightManager && highlightManager.isDarkMode !== undefined) {
+      isDark = highlightManager.isDarkMode;
+    } else {
+      isDark = false;
+    }
+  }
+
+  // 更新弹窗主题
+  if (tooltipEl) {
+    if (isDark) {
+      tooltipEl.classList.add('dark-mode');
+      tooltipEl.classList.remove('light-mode');
+    } else {
+      tooltipEl.classList.remove('dark-mode');
+      tooltipEl.classList.add('light-mode');
+    }
+  }
+
+  // 同时更新所有胶囊容器的主题
+  const shadowHost = document.getElementById('lingkuma-tooltip-host');
+  if (shadowHost && shadowHost.shadowRoot) {
+    const capsules = shadowHost.shadowRoot.querySelectorAll('.header-buttons-capsule');
+    capsules.forEach(capsule => {
+      if (isDark) {
+        capsule.classList.add('dark-mode');
+        capsule.classList.remove('light-mode');
+      } else {
+        capsule.classList.remove('dark-mode');
+        capsule.classList.add('light-mode');
+      }
+    });
+  }
+
+  return isDark;
+}
+
+// 让弹窗始终完整保持在视口内（右/下边缘自动避让，预留8px边距）
+function clampTooltipToViewport(el) {
+  if (!el || !el.parentNode) return;
+  const rect = el.getBoundingClientRect();
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  const margin = 8;
+
+  // 水平方向：优先避免右边缘溢出，其次避免左边缘溢出
+  let dx = 0;
+  if (rect.right > viewportWidth - margin) {
+    dx = (viewportWidth - margin) - rect.right;
+  } else if (rect.left < margin) {
+    dx = margin - rect.left;
+  }
+
+  // 垂直方向：优先避免底边缘溢出，其次避免顶边缘溢出
+  let dy = 0;
+  if (rect.bottom > viewportHeight - margin) {
+    dy = (viewportHeight - margin) - rect.bottom;
+  } else if (rect.top < margin) {
+    dy = margin - rect.top;
+  }
+
+  if (dx !== 0) {
+    const currentLeft = parseFloat(el.style.left) || 0;
+    el.style.left = (currentLeft + dx) + 'px';
+  }
+  if (dy !== 0) {
+    const currentTop = parseFloat(el.style.top) || 0;
+    el.style.top = (currentTop + dy) + 'px';
+  }
+}
 
 async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, originalWord, isCustom = false) {
   // 标记tooltip创建开始
@@ -1412,27 +1463,8 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
       console.error('tooltipEl 已被移除或tooltip正在被销毁，无法设置主题模式');
       return;
     }
-
     const themeMode = tooltipThemeMode || 'auto';
-
-    if (themeMode === 'dark') {
-      // 固定暗色主题
-      currentTooltipEl.classList.add("dark-mode");
-    } else if (themeMode === 'light') {
-      // 固定亮色主题
-      currentTooltipEl.classList.remove("dark-mode");
-    } else {
-      // 自动检测模式（跟随当前页面的高亮模式）
-      if (typeof highlightManager !== 'undefined' && highlightManager && highlightManager.isDarkMode !== undefined) {
-        if (highlightManager.isDarkMode) {
-          currentTooltipEl.classList.add("dark-mode");
-        } else {
-          currentTooltipEl.classList.remove("dark-mode");
-        }
-      } else {
-        currentTooltipEl.classList.remove("dark-mode");
-      }
-    }
+    applyTooltipTheme(themeMode);
   });
 
 //   <div class="section">
@@ -4875,6 +4907,9 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
           const newTop = wordTopAbsolute - newHeight - gap;
           tooltipEl.style.top = newTop + 'px';
           console.log(`Tooltip height changed to ${newHeight}, adjusted top to ${newTop}`);
+
+          // 高度变化后重新做视口边缘避让，确保弹窗完整可见
+          clampTooltipToViewport(tooltipEl);
         }
       });
       tooltipResizeObserver.observe(tooltipEl);
@@ -4913,11 +4948,16 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
         tooltipEl.style.left = desiredLeft + "px";
       }
 
-      // 如果向下展示，不需要ResizeObserver来调整位置
+      // 向下展示时监听弹窗高度变化，动态调整位置避免超出视口右/下边缘
       if (tooltipResizeObserver) {
         tooltipResizeObserver.disconnect();
-        tooltipResizeObserver = null;
       }
+      tooltipResizeObserver = new ResizeObserver(() => {
+        if (tooltipEl && !tooltipBeingDestroyed) {
+          clampTooltipToViewport(tooltipEl);
+        }
+      });
+      tooltipResizeObserver.observe(tooltipEl);
     }
 
     // 确保不会超出左侧边界
@@ -4961,6 +5001,8 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
 
       // 位置计算完成后，设置tooltip可见性
       if (tooltipEl) { // 确保tooltipEl仍然存在
+        // 显示前做一次视口边缘避让，确保弹窗完整可见（右/下边缘预留8px）
+        clampTooltipToViewport(tooltipEl);
         tooltipEl.style.visibility = 'visible'; // 先设为可见
 
         // 使用统一的动画设置函数，等待完成后再显示
@@ -5684,6 +5726,23 @@ if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged)
       liquidGlassEnabled = changes.liquidGlassEnabled.newValue !== undefined ? changes.liquidGlassEnabled.newValue : liquidGlassEnabled;
       liquidGlassEnabledCache = liquidGlassEnabled;
       liquidGlassEnabledCacheTime = Date.now();
+    }
+
+    if (changes.highlightPageThemeOverrides) {
+      // 悬浮球/页面主题覆盖变化：auto模式下同步当前弹窗主题，并广播给其他组件（爆炸窗口、自定义词组高亮等）
+      const tooltipThemeMode = getCachedStorageValue('tooltipThemeMode', 'auto');
+      const themeMode = tooltipThemeMode || 'auto';
+      if (themeMode === 'auto' && tooltipEl) {
+        applyTooltipTheme('auto');
+      }
+      try {
+        chrome.runtime.sendMessage({
+          action: 'updateHighlightTheme',
+          isDark: (typeof highlightManager !== 'undefined' && highlightManager && highlightManager.isDarkMode !== undefined) ? highlightManager.isDarkMode : false
+        });
+      } catch (error) {
+        console.debug('广播updateHighlightTheme失败:', error);
+      }
     }
   });
 }
@@ -10523,14 +10582,8 @@ function bindDefaultCapsuleEvents(capsule, shadowRoot) {
         getStorageValue('tooltipThemeMode').then((tooltipThemeMode) => {
           const themeMode = tooltipThemeMode || 'auto';
           if (themeMode === 'auto') {
-            // 更新当前tooltip的主题
-            if (tooltipEl) {
-              if (newMode) {
-                tooltipEl.classList.add('dark-mode');
-              } else {
-                tooltipEl.classList.remove('dark-mode');
-              }
-            }
+            // 更新当前tooltip及胶囊容器的主题
+            applyTooltipTheme('auto');
 
             // 更新爆炸窗口的主题
             if (typeof wordExplosionEl !== 'undefined' && wordExplosionEl) {
@@ -10540,19 +10593,6 @@ function bindDefaultCapsuleEvents(capsule, shadowRoot) {
                 wordExplosionEl.classList.remove('dark-mode');
               }
               console.log('[胶囊按钮] 已更新爆炸窗口主题:', newMode ? '暗色' : '亮色');
-            }
-
-            // 更新所有胶囊容器的主题
-            const shadowHost = document.getElementById('lingkuma-tooltip-host');
-            if (shadowHost && shadowHost.shadowRoot) {
-              const capsules = shadowHost.shadowRoot.querySelectorAll('.header-buttons-capsule');
-              capsules.forEach(capsule => {
-                if (newMode) {
-                  capsule.classList.add('dark-mode');
-                } else {
-                  capsule.classList.remove('dark-mode');
-                }
-              });
             }
           }
         });

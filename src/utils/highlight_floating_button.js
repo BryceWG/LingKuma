@@ -446,17 +446,20 @@
         border-radius: 2rem;
         padding: 0.9em 1.3em;
         color: #fff;
-        background: rgba(60, 60, 60, 0.55);
+        background: #1a1a1a;
         cursor: grab;
         font-size: 12px;
         font-weight: 600;
         line-height: 1;
         white-space: nowrap;
-        opacity: 0.5;
-        transition: opacity 0.15s ease;
         user-select: none;
         touch-action: none;
         -webkit-tap-highlight-color: transparent;
+      }
+
+      .lk-floating-highlight[data-highlight="off"] {
+        color: #1a1a1a;
+        background: #fff;
       }
 
       .lk-floating-stack[data-dock="top"] .lk-floating-highlight,
@@ -478,12 +481,6 @@
         top: 0;
         left: 0;
         transform: none;
-      }
-
-      .lk-floating-highlight:hover:not([data-collapse-after-click="true"]),
-      .lk-floating-highlight:focus-visible,
-      .lk-floating-highlight[data-dragging="true"] {
-        opacity: 1;
       }
 
       .lk-floating-highlight:focus-visible {
@@ -514,19 +511,16 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: rgba(60, 60, 60, 0.55);
+        background: #fff;
         cursor: pointer;
-        opacity: 0.5;
         overflow: hidden;
-        transition: opacity 0.15s ease;
         user-select: none;
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
       }
 
-      .lk-current-page-theme:hover,
-      .lk-current-page-theme:focus-visible {
-        opacity: 1;
+      .lk-current-page-theme[data-theme="dark"] {
+        background: #1a1a1a;
       }
 
       .lk-current-page-theme:focus-visible {
@@ -534,6 +528,7 @@
         outline-offset: 3px;
       }
 
+      /* 亮色主题按钮: 白底；暗色主题按钮: 深灰底（在下方 data-theme=dark 定义） */
       .lk-current-page-theme::after {
         content: "";
         position: absolute;
@@ -555,16 +550,12 @@
 
       .lk-current-page-theme .theme-sun {
         margin-left: 9px;
-        fill: #fff;
+        fill: #ff9d0a;
       }
 
       .lk-current-page-theme .theme-moon {
         margin-right: 9px;
         fill: #7e7e7e;
-      }
-
-      .lk-current-page-theme[data-theme="dark"] {
-        background: rgba(20, 20, 20, 0.55);
       }
 
       .lk-current-page-theme[data-theme="dark"]::after {

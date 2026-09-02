@@ -520,7 +520,7 @@ function createWordExplosionTooltip() {
   const ttsBtn = document.createElement('button');
   ttsBtn.className = 'word-explosion-tts-btn word-explosion-top-btn';
   ttsBtn.title = '播放句子';
-  ttsBtn.innerHTML = '🔊';
+  ttsBtn.innerHTML = '<svg data-slot="icon" fill="none" stroke-width="1.5" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="16" height="16" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H2v6h4l5 4V5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
   ttsBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     // 触发TTS播放句子
@@ -3209,7 +3209,7 @@ async function createWordItem(wordInfo, forceRefresh = false) {
   // 添加TTS喇叭按钮
   const ttsButton = document.createElement('span');
   ttsButton.className = 'word-explosion-tts-button';
-  ttsButton.innerHTML = '🔊';
+  ttsButton.innerHTML = '<svg data-slot="icon" fill="none" stroke-width="1.5" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="16" height="16" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H2v6h4l5 4V5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
   ttsButton.title = '播放发音';
   ttsButton.addEventListener('click', (e) => {
     e.stopPropagation();
