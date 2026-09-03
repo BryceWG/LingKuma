@@ -19,6 +19,8 @@ LingKuma：开源的 LingQ 替代品 —— 浏览器扩展（Chrome / Edge / Fi
 
 ## 构建
 
+用户主要在 Firefox 上进行测试，因此每次改完代码需要主动在/dist目录下构建打包。
+
 ```bash
 npm install
 npm run build        # webpack 输出到 dist/（已 gitignore），务必记得加新入口/静态资源后重新构建
