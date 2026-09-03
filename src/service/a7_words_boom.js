@@ -85,6 +85,87 @@ let explosionShadowRoot = null; // Shadow DOM 根节点
 let explosionSentenceTranslationsCache = {}; // 格式: { sentence: [translation1, translation2, ...] }
 let lastSentenceTranslationCount = 0; // 用于检测翻译数量变化
 
+// 词爆结构化批量查词缓冲：同一句里的单词在短窗口内合并成一次请求
+let explosionLookupBuffer = null;
+let explosionLookupTimer = null;
+
+function enqueueExplosionStructuredLookup(sentence, items, sentenceTranslationCount = 0) {
+  if (!sentence) return;
+  if (!explosionLookupBuffer || explosionLookupBuffer.sentence !== sentence) {
+    explosionLookupBuffer = {
+      sentence,
+      items: new Map(),
+      sentenceTranslationCount: 0
+    };
+  }
+
+  (items || []).forEach((item) => {
+    if (!item || !item.word) return;
+    const key = String(item.word).toLowerCase();
+    const incomingFields = Array.isArray(item.fields) ? item.fields.filter(Boolean) : [];
+    const existing = explosionLookupBuffer.items.get(key);
+    if (existing) {
+      const merged = new Set([...(existing.fields || []), ...incomingFields]);
+      explosionLookupBuffer.items.set(key, { word: existing.word || item.word, fields: Array.from(merged) });
+    } else {
+      explosionLookupBuffer.items.set(key, { word: item.word, fields: incomingFields });
+    }
+  });
+
+  explosionLookupBuffer.sentenceTranslationCount = Math.max(
+    explosionLookupBuffer.sentenceTranslationCount || 0,
+    Number(sentenceTranslationCount) || 0
+  );
+
+  if (explosionLookupTimer) {
+    clearTimeout(explosionLookupTimer);
+  }
+  explosionLookupTimer = setTimeout(() => {
+    flushExplosionStructuredLookup();
+  }, 200);
+}
+
+async function flushExplosionStructuredLookup() {
+  explosionLookupTimer = null;
+  const buf = explosionLookupBuffer;
+  explosionLookupBuffer = null;
+  if (!buf) return;
+
+  const items = Array.from(buf.items.values()).filter((item) => item.fields && item.fields.length);
+  const count = buf.sentenceTranslationCount || 0;
+  if (!items.length && count < 1) return;
+
+  if (typeof fetchStructuredWordLookup !== 'function') {
+    console.error('[WordExplosion] fetchStructuredWordLookup 不存在，无法批量查词');
+    return;
+  }
+
+  try {
+    const result = await fetchStructuredWordLookup({
+      sentence: buf.sentence,
+      items,
+      sentenceTranslationCount: count
+    });
+
+    if (result?.sentenceTranslations?.length) {
+      if (!explosionSentenceTranslationsCache[buf.sentence]) {
+        explosionSentenceTranslationsCache[buf.sentence] = [];
+      }
+      result.sentenceTranslations.forEach((trans) => {
+        const cleaned = String(trans || '').replace(/\*\*/g, '').trim();
+        if (cleaned && !explosionSentenceTranslationsCache[buf.sentence].includes(cleaned)) {
+          explosionSentenceTranslationsCache[buf.sentence].push(cleaned);
+        }
+      });
+      if (currentExplosionSentence === buf.sentence) {
+        refreshSentenceTranslationsUI();
+      }
+    }
+  } catch (error) {
+    console.error('[WordExplosion] 结构化批量查词失败:', error);
+  }
+}
+
 // 语言高亮开关（从storage加载，与popup中的设置同步）
 let highlightLanguageSettings = {
   highlightChineseEnabled: false, // 中文默认不高亮
@@ -2559,6 +2640,13 @@ async function extractUnknownWords(sentence, shouldTriggerQuery = true) {
     console.log('[WordExplosion] 自定义词组系统未初始化，跳过词组提取');
   }
 
+  if (shouldTriggerQuery && !explosionSentenceTranslationsCache[sentence]) {
+    getA7StorageValues(['explosionSentenceTranslationCount']).then((result) => {
+      const translationCount = result.explosionSentenceTranslationCount || 1;
+      enqueueExplosionStructuredLookup(sentence, [], translationCount);
+    });
+  }
+
   // 将 Map 转换为数组返回
   return Array.from(wordMap.values());
 }
@@ -2592,134 +2680,13 @@ async function triggerWordQuery(word, sentence) {
     }
   });
 
-  // 并发执行所有查询任务（语言检测、AI翻译、标签推荐、例句翻译）
-  // 这些任务互不依赖，可以同时进行
-  const queryTasks = [];
-
-  // 1. 语言检测任务
-  if (typeof fetchLanguageDetection === 'function') {
-    const languageTask = fetchLanguageDetection(word, sentence)
-      .then(language => {
-        console.log('[WordExplosion] 语言检测完成:', word, language);
-
-        // 更新数据库和缓存
-        if (language && language !== false) {
-          chrome.runtime.sendMessage({
-            action: 'updateWordLanguage',
-            word: wordLower,
-            language: language
-          });
-
-          // 更新highlightManager缓存
-          if (typeof highlightManager !== 'undefined' && highlightManager && highlightManager.wordDetailsFromDB) {
-            if (highlightManager.wordDetailsFromDB[wordLower]) {
-              highlightManager.wordDetailsFromDB[wordLower].language = language;
-            }
-          }
-        }
-      })
-      .catch(error => {
-        console.error('[WordExplosion] 语言检测失败:', error);
-      });
-    queryTasks.push(languageTask);
-  }
-
-  // 2. AI翻译任务（需要先获取设置）
-  const translationTask = new Promise((resolve) => {
-    getA7StorageValues(['autoRequestAITranslations']).then((settings) => {
-      if (settings.autoRequestAITranslations && typeof fetchAIWordTranslation === 'function') {
-        // fetchAIWordTranslation会自动处理数据库更新和缓存更新
-        fetchAIWordTranslation(word, sentence)
-          .then(translation => {
-            console.log('[WordExplosion] AI翻译完成:', word, translation);
-            resolve();
-          })
-          .catch(error => {
-            console.error('[WordExplosion] AI翻译失败:', error);
-            resolve();
-          });
-      } else {
-        resolve();
-      }
-    });
-  });
-  queryTasks.push(translationTask);
-
-  // 3. 标签推荐任务
-  if (typeof fetchAITags === 'function') {
-    const tagsTask = fetchAITags(word, sentence)
-      .then(tags => {
-        console.log('[WordExplosion] 标签推荐完成:', word, tags);
-
-        // 将tags存储到数据库（逐个添加）
-        if (tags && typeof tags === 'object' && Object.keys(tags).length > 0) {
-          // 将tags对象转换为数组格式，过滤掉null值
-          const tagArray = [];
-          for (const [key, value] of Object.entries(tags)) {
-            if (value !== null && value !== 'null' && value !== undefined && value !== '') {
-              // 将key:value格式化为字符串标签
-              const tagString = typeof value === 'string' || typeof value === 'number'
-                ? `${key}:${value}`
-                : `${key}:${JSON.stringify(value)}`;
-              tagArray.push(tagString);
-            }
-          }
-
-          if (tagArray.length > 0) {
-            console.log('[WordExplosion] 准备添加标签:', tagArray);
-
-            // 逐个添加标签到数据库
-            let addedCount = 0;
-            tagArray.forEach((tag) => {
-              chrome.runtime.sendMessage({
-                action: 'addTag',
-                word: wordLower,
-                tag: tag
-              }, (response) => {
-                if (response && !response.error) {
-                  addedCount++;
-                  console.log(`[WordExplosion] 标签已添加 (${addedCount}/${tagArray.length}):`, tag);
-
-                  // 当所有标签都添加完成后，更新highlightManager缓存
-                  if (addedCount === tagArray.length) {
-                    if (typeof highlightManager !== 'undefined' && highlightManager && highlightManager.wordDetailsFromDB) {
-                      if (!highlightManager.wordDetailsFromDB[wordLower]) {
-                        highlightManager.wordDetailsFromDB[wordLower] = { word: word, tags: tagArray };
-                      } else {
-                        if (!highlightManager.wordDetailsFromDB[wordLower].tags) {
-                          highlightManager.wordDetailsFromDB[wordLower].tags = [];
-                        }
-                        // 合并标签，避免重复
-                        tagArray.forEach(t => {
-                          if (!highlightManager.wordDetailsFromDB[wordLower].tags.includes(t)) {
-                            highlightManager.wordDetailsFromDB[wordLower].tags.push(t);
-                          }
-                        });
-                      }
-                    }
-                  }
-                } else {
-                  console.error('[WordExplosion] 添加标签失败:', tag, response?.error);
-                }
-              });
-            });
-          }
-        }
-      })
-      .catch(error => {
-        console.error('[WordExplosion] 标签推荐失败:', error);
-      });
-    queryTasks.push(tagsTask);
-  }
-
-  // 注意：不再在这里添加例句翻译任务
-  // 爆炸窗口已经有独立的句子翻译系统（getSentenceTranslations），避免重复请求
-
-  // 等待所有任务完成（不阻塞，仅用于日志）
-  Promise.all(queryTasks).then(() => {
-    console.log('[WordExplosion] 所有查询任务已完成:', word);
-  }).catch(error => {
-    console.error('[WordExplosion] 查询任务执行出错:', error);
+  getA7StorageValues(['autoRequestAITranslations']).then((settings) => {
+    const fields = ['language', 'tags'];
+    const autoRequest = settings.autoRequestAITranslations === undefined ? true : settings.autoRequestAITranslations;
+    if (autoRequest) {
+      fields.unshift('translation');
+    }
+    enqueueExplosionStructuredLookup(sentence, [{ word, fields }]);
   });
 }
 
@@ -2734,125 +2701,41 @@ async function triggerMissingDataQuery(word, sentence, wordDetails) {
     hasTags: !!(wordDetails?.tags?.length)
   });
 
-  // 检查是否已经在查询中（复用同一个防重复机制）
   const queryKey = `missing_${wordLower}`;
   if (window.aiTranslationInProgress && window.aiTranslationInProgress.has(queryKey)) {
     console.log('[WordExplosion] 该单词已在补充查询中，跳过:', word);
     return;
   }
 
-  // 标记为正在查询
   if (!window.aiTranslationInProgress) {
     window.aiTranslationInProgress = new Set();
   }
   window.aiTranslationInProgress.add(queryKey);
 
-  const queryTasks = [];
+  getA7StorageValues(['autoRequestAITranslations']).then((settings) => {
+    const fields = [];
+    const hasTranslations = wordDetails?.translations && wordDetails.translations.length > 0;
+    const autoRequest = settings.autoRequestAITranslations === undefined ? true : settings.autoRequestAITranslations;
+    if (!hasTranslations && autoRequest) {
+      fields.push('translation');
+    }
+    if (!wordDetails?.language) {
+      fields.push('language');
+    }
+    const hasTags = wordDetails?.tags && wordDetails.tags.length > 0;
+    if (!hasTags) {
+      fields.push('tags');
+    }
 
-  // 1. 如果缺少语言信息，补充语言检测
-  if (!wordDetails?.language && typeof fetchLanguageDetection === 'function') {
-    const languageTask = fetchLanguageDetection(word, sentence)
-      .then(language => {
-        console.log('[WordExplosion] 语言检测完成(补充):', word, language);
-        if (language && language !== false) {
-          chrome.runtime.sendMessage({
-            action: 'updateWordLanguage',
-            word: wordLower,
-            language: language
-          });
-          // 更新highlightManager缓存
-          if (typeof highlightManager !== 'undefined' && highlightManager?.wordDetailsFromDB?.[wordLower]) {
-            highlightManager.wordDetailsFromDB[wordLower].language = language;
-          }
-        }
-      })
-      .catch(error => {
-        console.error('[WordExplosion] 语言检测失败(补充):', error);
-      });
-    queryTasks.push(languageTask);
-  }
+    if (fields.length === 0) {
+      console.log('[WordExplosion] 该单词数据完整，无需补充:', word);
+      window.aiTranslationInProgress.delete(queryKey);
+      return;
+    }
 
-  // 2. 如果缺少翻译，补充AI翻译
-  const hasTranslations = wordDetails?.translations && wordDetails.translations.length > 0;
-  if (!hasTranslations) {
-    const translationTask = new Promise((resolve) => {
-      getA7StorageValues(['autoRequestAITranslations']).then((settings) => {
-        if (settings.autoRequestAITranslations && typeof fetchAIWordTranslation === 'function') {
-          fetchAIWordTranslation(word, sentence)
-            .then(translation => {
-              console.log('[WordExplosion] AI翻译完成(补充):', word, translation);
-              resolve();
-            })
-            .catch(error => {
-              console.error('[WordExplosion] AI翻译失败(补充):', error);
-              resolve();
-            });
-        } else {
-          resolve();
-        }
-      });
-    });
-    queryTasks.push(translationTask);
-  }
-
-  // 3. 如果缺少标签，补充标签推荐
-  const hasTags = wordDetails?.tags && wordDetails.tags.length > 0;
-  if (!hasTags && typeof fetchAITags === 'function') {
-    const tagsTask = fetchAITags(word, sentence)
-      .then(tags => {
-        console.log('[WordExplosion] 标签推荐完成(补充):', word, tags);
-        if (tags && typeof tags === 'object' && Object.keys(tags).length > 0) {
-          const tagArray = [];
-          for (const [key, value] of Object.entries(tags)) {
-            if (value !== null && value !== 'null' && value !== undefined && value !== '') {
-              const tagString = typeof value === 'string' || typeof value === 'number'
-                ? `${key}:${value}`
-                : `${key}:${JSON.stringify(value)}`;
-              tagArray.push(tagString);
-            }
-          }
-          if (tagArray.length > 0) {
-            tagArray.forEach((tag) => {
-              chrome.runtime.sendMessage({
-                action: 'addTag',
-                word: wordLower,
-                tag: tag
-              }, (response) => {
-                if (response && !response.error) {
-                  console.log('[WordExplosion] 标签已添加(补充):', tag);
-                  // 更新缓存
-                  if (typeof highlightManager !== 'undefined' && highlightManager?.wordDetailsFromDB?.[wordLower]) {
-                    if (!highlightManager.wordDetailsFromDB[wordLower].tags) {
-                      highlightManager.wordDetailsFromDB[wordLower].tags = [];
-                    }
-                    if (!highlightManager.wordDetailsFromDB[wordLower].tags.includes(tag)) {
-                      highlightManager.wordDetailsFromDB[wordLower].tags.push(tag);
-                    }
-                  }
-                }
-              });
-            });
-          }
-        }
-      })
-      .catch(error => {
-        console.error('[WordExplosion] 标签推荐失败(补充):', error);
-      });
-    queryTasks.push(tagsTask);
-  }
-
-  // 如果没有需要补充的数据，直接返回
-  if (queryTasks.length === 0) {
-    console.log('[WordExplosion] 该单词数据完整，无需补充:', word);
+    enqueueExplosionStructuredLookup(sentence, [{ word, fields }]);
     window.aiTranslationInProgress.delete(queryKey);
-    return;
-  }
-
-  // 等待所有任务完成
-  Promise.all(queryTasks).then(() => {
-    console.log('[WordExplosion] 缺失数据补充完成:', word);
-    window.aiTranslationInProgress.delete(queryKey);
-  }).catch(error => {
+  }).catch((error) => {
     console.error('[WordExplosion] 缺失数据补充出错:', error);
     window.aiTranslationInProgress.delete(queryKey);
   });
@@ -3428,49 +3311,17 @@ async function getSentenceTranslations(sentence, unknownWords, forceRefresh = fa
     return explosionSentenceTranslationsCache[sentence];
   }
 
-  // 如果缓存中没有翻译，获取配置并触发AI翻译
-  // 使用Promise包装以确保正确的异步流程
   return new Promise((resolve) => {
-    getA7StorageValues(['explosionSentenceTranslationCount']).then(async (result) => {
+    getA7StorageValues(['explosionSentenceTranslationCount']).then((result) => {
       const translationCount = result.explosionSentenceTranslationCount || 1;
       console.log('[WordExplosion] 需要获取', translationCount, '条翻译');
 
-      // 初始化缓存数组（避免重复触发）
       if (!explosionSentenceTranslationsCache[sentence]) {
         explosionSentenceTranslationsCache[sentence] = [];
       }
 
-      // 异步触发AI翻译（不阻塞返回）
-      if (typeof fetchSentenceTranslation === 'function') {
-        const firstWord = unknownWords[0]?.word || '';
+      enqueueExplosionStructuredLookup(sentence, [], translationCount);
 
-        // 根据配置请求多个翻译
-        for (let i = 0; i < translationCount; i++) {
-          fetchSentenceTranslation(firstWord, sentence, i + 1)
-            .then(aiTranslation => {
-              if (aiTranslation && aiTranslation !== '暂无翻译' && aiTranslation !== '翻译失败') {
-                // 移除Markdown加粗标记 **关键词** -> 关键词
-                const cleanedTranslation = aiTranslation.replace(/\*\*/g, '');
-                console.log(`[WordExplosion] AI句子翻译${i + 1}完成:`, cleanedTranslation);
-
-                // 保存到独立缓存（去重）
-                if (!explosionSentenceTranslationsCache[sentence].includes(cleanedTranslation)) {
-                  explosionSentenceTranslationsCache[sentence].push(cleanedTranslation);
-                }
-
-                // 刷新UI显示
-                if (currentExplosionSentence === sentence) {
-                  refreshSentenceTranslationsUI();
-                }
-              }
-            })
-            .catch(error => {
-              console.error(`[WordExplosion] AI句子翻译${i + 1}失败:`, error);
-            });
-        }
-      }
-
-      // 立即返回当前缓存（可能为空数组）
       resolve(explosionSentenceTranslationsCache[sentence] || []);
     });
   });

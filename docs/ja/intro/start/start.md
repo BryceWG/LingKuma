@@ -70,6 +70,7 @@ Alice iniziava a stancarsi molto di stare seduta accanto a sua sorella sulla riv
 ### 別の言語に翻訳するには？
 すべての出力は AI プロンプトに基づいているため、別の結果が必要な場合は、必要なプロンプトを手動で変更できます。
 たとえば、別の言語に翻訳する、より詳しい回答や簡潔な回答にする、より多くの例を出す、などを指定できます。
+単語ツールチップと単語爆発は、言語・語義・タグ・文の翻訳を 1 回の構造化リクエストにまとめます。各フィールドのプロンプトは追加指示です。文の精析（分析ボタン）は従来どおり単独のストリーミングです。
 ![](https://res.cloudinary.com/dux7dnl5b/image/upload/v1782620912/wfmvd5y8distxxeehikl.png)
 
 ### 既知単語リストをインポート

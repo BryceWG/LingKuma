@@ -393,12 +393,12 @@ function fetchAIWordTranslation2(word, sentence) {
 
 
 // 新增通用 AI 请求函数 - 修改为通过 background script 执行，避免 Firefox CSP 限制
-function makeAIRequest({ word, sentence, stream = false, messages, model = null, temperature = 1}) {
+function makeAIRequest({ word, sentence, stream = false, messages, model = null, temperature = 1, jsonMode = false}) {
   return new Promise((resolve, reject) => {
     // 将 AI 请求转发到 background script
     chrome.runtime.sendMessage({ 
       action: "makeAIRequest",
-      requestData: { word, sentence, stream, messages, model, temperature }
+      requestData: { word, sentence, stream, messages, model, temperature, jsonMode }
     }, (response) => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));
@@ -413,6 +413,417 @@ function makeAIRequest({ word, sentence, stream = false, messages, model = null,
       resolve(response);
     });
   });
+}
+
+const STRUCTURED_LOOKUP_CHUNK_SIZE = 12;
+const STRUCTURED_LOOKUP_STOCK_PROMPTS = {
+  aiPrompt: `# 角色 你是翻译专家，根据上下文判断单词或短语并翻译。 # 输出规则（严格执行） **情况一：固定短语** 若 {word} 在句中构成固定短语/习语，输出格式为： " 完整短语: 中文翻译 " 示例："break the ice: 打破僵局" **情况二：独立单词** 若 {word} 只是独立单词，输出格式为： " 中文翻译 " 示例："打破" # 禁止事项 - 禁止输出"单词："、"英文："、"翻译："，"中文翻译："等任何前缀标签 - 禁止输出分析、解释、语法说明 - 禁止输出引号 - 只输出翻译结果，别的什么都不要说 # 任务 判断句子 {sentence} 中，{word} 是独立单词还是固定短语的一部分，按上述格式输出翻译。`,
+  aiPrompt2: `# 角色 你是一位精通德语 日语 英语的语法解析专家，擅长根据上下文精确判断对应单词的解析精要 # 任务 根据提供的 [句子]，判断 [待解析词] 在该语境下的具体语法作用，形变规则等 # 核心规则 返回20字左右精要解析。 # 输入 - 句子: {sentence} - 待解析词: {word} # 输出格式 直接返回解析内容`,
+  aiLanguageDetectionPrompt: `请判断以下句子中单词 '{word}' 在句子'{sentence}'中所使用的语言，仅返回ISO 639-1国际标准化组织ISO 639语言代码标准(如en, de, fr等)`,
+  aiSentenceTranslationPrompt: `请将句子: '{sentence}'翻译为中文，并将句子中单词"'{word}'"对应的中文的部分用Markdown加粗显示。只返回翻译结果，不要额外说明。`,
+  aiTagAnalysisPrompt: `你将要按照下列要求，分析单词在句子中的一些信息，用作某单词的tag，请按照下列要求进行分析： 1. 词性(pos): 在句子中的词性 2. 性别(gender): 如果是名词，返回 der/die/das 3. 复数形式(plural): 如果是名词，返回其复数形式 4. 变位(conjugation): 如果是动词，返回其原形 5. 附加信息1(自定义key): 任何其他重要信息，请自行判断添加，可参考示例。 6. 附加信息2(自定义key): 任何其他重要信息，请自行判断添加，可参考示例。 7. ... ... 示例： 德语：{"pos":"n", "gender":"der", "plural":"Häuser", "conjugation":"gehen"} 英语：{"pos":"n", "plural":"houses", "conjugation":"null"} 日语：{"pos":"n", "gender":"null", "plural":"null", "conjugation":"null", "注音":"いえ、うち","罗马音":"ie,uchi"} 中文：{"pos":"n", "gender":"null", "plural":"null", "conjugation":"null", "pinyin":"fáng zi"} "请分析句子"{sentence}"中的单词"{word}"。返回JSON格式，包含： 仅返回JSON，无需解释，不要加markdown代码块标记，注意不同语言，非日语不要返回注意和罗马音和拼音。`
+};
+
+function normalizePromptForCompare(text) {
+  return String(text || '').replace(/\s+/g, ' ').trim();
+}
+
+function isCustomLookupPrompt(key, value) {
+  if (!value || !String(value).trim()) return false;
+  const stock = STRUCTURED_LOOKUP_STOCK_PROMPTS[key];
+  if (!stock) return true;
+  return normalizePromptForCompare(value) !== normalizePromptForCompare(stock);
+}
+
+function isInvalidAITranslation(text) {
+  if (text == null) return true;
+  const t = String(text).trim();
+  return !t || ['暂无翻译', '翻译失败', '翻译进行中...', 'AI 释义加载失败'].includes(t);
+}
+
+function sendRuntimeMessage(payload) {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(payload, (response) => {
+      if (chrome.runtime.lastError) {
+        resolve({ error: chrome.runtime.lastError.message });
+      } else {
+        resolve(response || {});
+      }
+    });
+  });
+}
+
+function parseStructuredLookupJson(content) {
+  if (!content || typeof content !== 'string') return null;
+  let text = content.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
+  const firstBrace = text.indexOf('{');
+  const lastBrace = text.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    text = text.slice(firstBrace, lastBrace + 1);
+  }
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    console.error('[structuredLookup] JSON 解析失败:', err, content);
+    return null;
+  }
+}
+
+function buildStructuredLookupMessages({ sentence, items, sentenceTranslationCount, extraFieldInstructions }) {
+  const itemLines = items.map((item) => {
+    const fields = Array.isArray(item.fields) ? item.fields.join(',') : '';
+    return `- ${item.word} [fields: ${fields || 'none'}]`;
+  }).join('\n');
+
+  const extraBlock = extraFieldInstructions
+    ? `\n用户自定义字段说明（仅作风格参考，仍必须遵守上面的 JSON 格式，不要改成纯文本）：\n${extraFieldInstructions}\n`
+    : '';
+
+  const promptText = `你是语言学习助手。根据句子和待查词，只返回一个 JSON 对象，不要 markdown 代码块，不要解释。
+
+句子：
+"""${sentence}"""
+
+待查词：
+${itemLines || '(无单词，仅翻译整句)'}
+
+整句翻译条数：${sentenceTranslationCount || 0}（0 表示不要 sentenceTranslations）
+
+返回格式：
+{"words":[{"word":"与输入完全一致","language":"ISO 639-1 如 en/de/ja","translation":"该词在本句中的中文释义；固定短语用「完整短语: 中文」","grammar":"约20字语法精要","tags":{"pos":"n","gender":"das或null","plural":"复数或null","conjugation":"原形或null"}}],"sentenceTranslations":["整句中文，目标词对应中文用 **加粗**"]}
+
+规则：
+- words 必须覆盖每一个输入 word，word 字段与输入一致
+- 某词 fields 未包含的键请省略，不要编造
+- translation 不要「单词：」「翻译：」等前缀，不要包引号
+- tags 无则 null；非日语不要注音/罗马音/拼音
+- sentenceTranslations 需要几条就返回几条且互不相同；条数为 0 时返回 []
+${extraBlock}`;
+
+  return [{ role: 'user', content: promptText }];
+}
+
+function collectCustomLookupInstructions(aiConfig, sentence) {
+  if (!aiConfig) return '';
+  const mapping = [
+    ['aiPrompt', 'translation'],
+    ['aiPrompt2', 'grammar'],
+    ['aiLanguageDetectionPrompt', 'language'],
+    ['aiTagAnalysisPrompt', 'tags'],
+    ['aiSentenceTranslationPrompt', 'sentenceTranslations']
+  ];
+  const parts = [];
+  mapping.forEach(([key, field]) => {
+    const raw = aiConfig[key];
+    if (!isCustomLookupPrompt(key, raw)) return;
+    const text = String(raw)
+      .replace(/\{sentence\}/g, sentence)
+      .replace(/\{word\}/g, '(对应 JSON 中的 word 字段)');
+    parts.push(`- ${field}: ${text}`);
+  });
+  return parts.join('\n');
+}
+
+function formatStructuredTagStrings(word, tags) {
+  if (!tags || typeof tags !== 'object') return [];
+
+  const isMultiWordResponse = !Object.prototype.hasOwnProperty.call(tags, 'pos') &&
+    Object.keys(tags).some((key) => tags[key] && typeof tags[key] === 'object' && !Array.isArray(tags[key]));
+
+  const tagStrings = [];
+  const pushTag = (value) => {
+    if (value == null || value === '' || value === 'null') return;
+    const text = typeof value === 'string' || typeof value === 'number'
+      ? String(value)
+      : JSON.stringify(value);
+    if (text && !tagStrings.includes(text)) tagStrings.push(text);
+  };
+
+  if (isMultiWordResponse) {
+    Object.entries(tags).forEach(([wordKey, wordData]) => {
+      if (!wordData || typeof wordData !== 'object') return;
+      Object.entries(wordData).forEach(([key, value]) => {
+        if (value == null || value === '' || value === 'null') return;
+        pushTag(`${wordKey}-${key}: ${value}`);
+      });
+    });
+    return tagStrings;
+  }
+
+  if (tags.pos != null && tags.pos !== 'null') {
+    const posTags = Array.isArray(tags.pos) ? tags.pos : [tags.pos];
+    posTags.forEach((pos) => pushTag(pos));
+  }
+  if (tags.gender != null && tags.gender !== 'null') {
+    pushTag(tags.gender);
+  }
+  if (tags.plural != null && tags.plural !== 'null') {
+    pushTag(`pl: ${tags.plural}`);
+  }
+  if (tags.conjugation != null && tags.conjugation !== 'null' && tags.conjugation !== word) {
+    pushTag(`inf: ${tags.conjugation}`);
+  }
+
+  Object.entries(tags).forEach(([key, value]) => {
+    if (['pos', 'gender', 'plural', 'conjugation'].includes(key)) return;
+    if (value == null || value === '' || value === 'null') return;
+    let formattedValue;
+    if (Array.isArray(value)) formattedValue = value.join(', ');
+    else if (typeof value === 'object') formattedValue = JSON.stringify(value);
+    else formattedValue = String(value);
+    pushTag(`${key}: ${formattedValue}`);
+  });
+
+  return tagStrings;
+}
+
+async function applyStructuredLanguage(word, language) {
+  if (!language || language === false) return null;
+  let languageValue = String(language).trim();
+  if (!languageValue) return null;
+  if (languageValue.length > 7) languageValue = '?';
+
+  await sendRuntimeMessage({
+    action: 'ChangeWordLanguage',
+    word,
+    details: { language: languageValue }
+  });
+
+  if (highlightManager && highlightManager.wordDetailsFromDB) {
+    const lower = word.toLowerCase();
+    highlightManager.wordDetailsFromDB[lower] = {
+      ...highlightManager.wordDetailsFromDB[lower],
+      language: languageValue
+    };
+  }
+  return languageValue;
+}
+
+async function applyStructuredTranslation(word, translation) {
+  if (isInvalidAITranslation(translation)) return false;
+  const aiTranslation = String(translation).trim();
+
+  const detailsResponse = await sendRuntimeMessage({ action: 'getWordDetails', word });
+  const existingTranslations = detailsResponse?.details?.translations || [];
+  const translationExists = existingTranslations.some(
+    (trans) => String(trans).toLowerCase().trim() === aiTranslation.toLowerCase()
+  );
+  if (translationExists) return false;
+
+  const persistSettings = await new Promise((resolve) => {
+    chrome.storage.local.get(['autoAddAITranslations', 'autoAddAITranslationsFromUnknown'], resolve);
+  });
+
+  let shouldPersist = persistSettings.autoAddAITranslations === true;
+  if (!shouldPersist && persistSettings.autoAddAITranslationsFromUnknown) {
+    const count = typeof getTranslationCount === 'function' ? getTranslationCount(word) : 0;
+    const status = highlightManager?.wordDetailsFromDB?.[word.toLowerCase()]?.status;
+    const statusNum = status === undefined || status === null ? 0 : parseInt(status, 10);
+    shouldPersist = count === 0 && statusNum !== 5;
+  }
+  if (!shouldPersist) return false;
+
+  const addResponse = await sendRuntimeMessage({
+    action: 'addTranslation',
+    word,
+    translation: aiTranslation
+  });
+  if (addResponse && addResponse.error) {
+    console.error('[structuredLookup] 添加翻译失败:', addResponse.error);
+    return false;
+  }
+
+  addTranslationToLocalCache(word, aiTranslation);
+  window.dispatchEvent(new CustomEvent('aiTranslationAdded', {
+    detail: { word, translation: aiTranslation }
+  }));
+  return true;
+}
+
+async function applyStructuredTags(word, tags) {
+  const tagStrings = formatStructuredTagStrings(word, tags);
+  if (!tagStrings.length) return [];
+
+  for (const tag of tagStrings) {
+    await sendRuntimeMessage({ action: 'addTag', word, tag });
+  }
+
+  if (highlightManager && highlightManager.wordDetailsFromDB) {
+    const lower = word.toLowerCase();
+    if (!highlightManager.wordDetailsFromDB[lower]) {
+      highlightManager.wordDetailsFromDB[lower] = { word, tags: [] };
+    }
+    if (!highlightManager.wordDetailsFromDB[lower].tags) {
+      highlightManager.wordDetailsFromDB[lower].tags = [];
+    }
+    tagStrings.forEach((tag) => {
+      if (!highlightManager.wordDetailsFromDB[lower].tags.includes(tag)) {
+        highlightManager.wordDetailsFromDB[lower].tags.push(tag);
+      }
+    });
+  }
+
+  window.dispatchEvent(new CustomEvent('wordCacheUpdated', {
+    detail: { word: word.toLowerCase() }
+  }));
+  return tagStrings;
+}
+
+function chunkStructuredItems(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks.length ? chunks : [[]];
+}
+
+function findStructuredWordResult(wordsMap, word) {
+  if (!wordsMap || !word) return null;
+  if (wordsMap[word]) return wordsMap[word];
+  const lower = word.toLowerCase();
+  if (wordsMap[lower]) return wordsMap[lower];
+  const match = Object.keys(wordsMap).find((key) => key.toLowerCase() === lower);
+  return match ? wordsMap[match] : null;
+}
+
+async function requestStructuredLookupChunk({ sentence, items, sentenceTranslationCount, extraFieldInstructions }) {
+  const messages = buildStructuredLookupMessages({
+    sentence,
+    items,
+    sentenceTranslationCount,
+    extraFieldInstructions
+  });
+  const firstWord = items[0]?.word || '';
+  const data = await makeAIRequest({
+    word: firstWord,
+    sentence,
+    messages,
+    stream: false,
+    jsonMode: true
+  });
+  const content = data?.choices?.[0]?.message?.content || '';
+  const parsed = parseStructuredLookupJson(content);
+  if (!parsed || typeof parsed !== 'object') {
+    return { words: {}, sentenceTranslations: [] };
+  }
+
+  const wordsArray = Array.isArray(parsed.words) ? parsed.words : [];
+  const words = {};
+  wordsArray.forEach((entry) => {
+    if (!entry || !entry.word) return;
+    words[String(entry.word).toLowerCase()] = entry;
+  });
+
+  let sentenceTranslations = [];
+  if (Array.isArray(parsed.sentenceTranslations)) {
+    sentenceTranslations = parsed.sentenceTranslations
+      .map((item) => String(item || '').trim())
+      .filter((item) => item && item !== '暂无翻译' && item !== '翻译失败');
+  } else if (parsed.sentenceTranslation) {
+    const one = String(parsed.sentenceTranslation).trim();
+    if (one) sentenceTranslations = [one];
+  }
+
+  return { words, sentenceTranslations };
+}
+
+/**
+ * 结构化批量查词：一次请求返回多个单词的释义/语法/语言/标签，以及可选整句翻译。
+ * @param {{ sentence: string, items: Array<{word: string, fields: string[]}>, sentenceTranslationCount?: number, persist?: boolean }} options
+ */
+async function fetchStructuredWordLookup({ sentence, items = [], sentenceTranslationCount = 0, persist = true } = {}) {
+  const normalizedItems = (items || [])
+    .filter((item) => item && item.word)
+    .map((item) => ({
+      word: String(item.word),
+      fields: Array.from(new Set((item.fields || []).filter(Boolean)))
+    }))
+    .filter((item) => item.fields.length > 0);
+
+  const count = Math.max(0, Number(sentenceTranslationCount) || 0);
+  if (!normalizedItems.length && count < 1) {
+    return { words: {}, sentenceTranslations: [] };
+  }
+
+  const inflightKey = `${sentence}||${normalizedItems.map((item) => `${item.word.toLowerCase()}:${item.fields.slice().sort().join(',')}`).join(';')}||${count}`;
+  if (!window.structuredLookupInflight) {
+    window.structuredLookupInflight = new Map();
+  }
+  if (window.structuredLookupInflight.has(inflightKey)) {
+    return window.structuredLookupInflight.get(inflightKey);
+  }
+
+  const lookupPromise = (async () => {
+    const aiConfig = await new Promise((resolve) => {
+      chrome.storage.local.get('aiConfig', (result) => resolve(result?.aiConfig || {}));
+    });
+    const extraFieldInstructions = collectCustomLookupInstructions(aiConfig, sentence);
+    const chunks = chunkStructuredItems(normalizedItems, STRUCTURED_LOOKUP_CHUNK_SIZE);
+    const merged = { words: {}, sentenceTranslations: [] };
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunkCount = i === 0 ? count : 0;
+      if (!chunks[i].length && chunkCount < 1) continue;
+      try {
+        const chunkResult = await requestStructuredLookupChunk({
+          sentence,
+          items: chunks[i],
+          sentenceTranslationCount: chunkCount,
+          extraFieldInstructions
+        });
+        Object.assign(merged.words, chunkResult.words);
+        if (chunkResult.sentenceTranslations?.length) {
+          chunkResult.sentenceTranslations.forEach((trans) => {
+            if (!merged.sentenceTranslations.includes(trans)) {
+              merged.sentenceTranslations.push(trans);
+            }
+          });
+        }
+      } catch (err) {
+        console.error('[structuredLookup] 分块请求失败:', err);
+      }
+    }
+
+    const resultWords = {};
+    for (const item of normalizedItems) {
+      const raw = findStructuredWordResult(merged.words, item.word) || {};
+      const wordResult = {
+        word: item.word,
+        translation: item.fields.includes('translation') ? (raw.translation ?? null) : null,
+        grammar: item.fields.includes('grammar') ? (raw.grammar ?? null) : null,
+        language: item.fields.includes('language') ? (raw.language ?? null) : null,
+        tags: item.fields.includes('tags') ? (raw.tags ?? null) : null,
+        translationPersisted: false
+      };
+
+      if (persist) {
+        if (item.fields.includes('language') && wordResult.language) {
+          const savedLanguage = await applyStructuredLanguage(item.word, wordResult.language);
+          if (savedLanguage) wordResult.language = savedLanguage;
+        }
+        if (item.fields.includes('translation') && wordResult.translation) {
+          wordResult.translationPersisted = await applyStructuredTranslation(item.word, wordResult.translation);
+        }
+        if (item.fields.includes('tags') && wordResult.tags) {
+          await applyStructuredTags(item.word, wordResult.tags);
+        }
+      }
+
+      resultWords[item.word.toLowerCase()] = wordResult;
+    }
+
+    return {
+      words: resultWords,
+      sentenceTranslations: merged.sentenceTranslations
+    };
+  })();
+
+  window.structuredLookupInflight.set(inflightKey, lookupPromise);
+  try {
+    return await lookupPromise;
+  } finally {
+    window.structuredLookupInflight.delete(inflightKey);
+  }
 }
 
 // 检查是否使用Orion TTS模式（通过用户设置）

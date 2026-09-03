@@ -1070,6 +1070,87 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
   };
   console.log("已重置AI翻译状态");
 
+  let tooltipStructuredLookupPromise = null;
+  function getTooltipStructuredLookup() {
+    if (!tooltipStructuredLookupPromise) {
+      tooltipStructuredLookupPromise = runTooltipStructuredLookup().catch((err) => {
+        console.error('结构化查词失败:', err);
+        return { words: {}, sentenceTranslations: [] };
+      });
+    }
+    return tooltipStructuredLookupPromise;
+  }
+
+  function getStructuredWordResult(result) {
+    if (!result || !result.words) return null;
+    return result.words[originalWord.toLowerCase()] || result.words[word] || result.words[word.toLowerCase()] || null;
+  }
+
+  async function runTooltipStructuredLookup() {
+    if (typeof fetchStructuredWordLookup !== 'function') {
+      return { words: {}, sentenceTranslations: [] };
+    }
+
+    const settings = await getStorageValues([
+      'autoRequestAITranslations',
+      'autoRequestAITranslations2',
+      'autoAddExampleSentences',
+      'autoAddSentencesLimit'
+    ]);
+
+    let details = highlightManager?.wordDetailsFromDB?.[word] || {};
+    if (!details.hasOwnProperty('translations') || !details.hasOwnProperty('tags') || !details.hasOwnProperty('sentences')) {
+      const response = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'getWordDetails', word }, resolve);
+      });
+      if (response?.details) {
+        details = { ...details, ...response.details };
+        if (highlightManager?.wordDetailsFromDB) {
+          highlightManager.wordDetailsFromDB[word] = {
+            ...highlightManager.wordDetailsFromDB[word],
+            ...response.details
+          };
+        }
+      }
+    }
+
+    const fields = [];
+    const autoRequest1 = settings.autoRequestAITranslations === undefined ? true : settings.autoRequestAITranslations;
+    const autoRequest2 = settings.autoRequestAITranslations2 === undefined ? true : settings.autoRequestAITranslations2;
+    if (autoRequest1) fields.push('translation');
+    if (autoRequest2) fields.push('grammar');
+
+    const lang = details.language;
+    if (!lang || lang === 'auto' || lang === '?') {
+      fields.push('language');
+    }
+
+    const validTags = (details.tags || []).filter((tag) => tag != null);
+    if (validTags.length === 0) {
+      fields.push('tags');
+    }
+
+    let sentenceTranslationCount = 0;
+    if (settings.autoAddExampleSentences) {
+      const limit = settings.autoAddSentencesLimit === undefined ? 1 : settings.autoAddSentencesLimit;
+      const sentences = details.sentences || [];
+      const exists = sentences.some((item) => item.sentence === sentence);
+      if (!exists && sentences.length < limit) {
+        sentenceTranslationCount = 1;
+      }
+    }
+
+    if (!fields.length && sentenceTranslationCount < 1) {
+      return { words: {}, sentenceTranslations: [] };
+    }
+
+    return fetchStructuredWordLookup({
+      sentence,
+      items: [{ word: originalWord, fields }],
+      sentenceTranslationCount
+    });
+  }
+
   // 检测页面是否为竖排文本模式，如果是则添加保护样式
   if (detectVerticalWritingMode()) {
     tooltipEl.classList.add("vertical-text-protection");
@@ -2089,166 +2170,47 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
         // 修改 refreshTooltipTags 函数中处理 AI 标签的部分
         function refreshTooltipTags(word, sentence) {
           chrome.runtime.sendMessage({ action: "getWordDetails", word: word }, (response) => {
-              // 添加null检查，确保tooltipEl存在且tooltip未被销毁
               if (!tooltipEl || tooltipBeingDestroyed) {
                 console.error('tooltipEl 为 null 或tooltip正在被销毁，无法刷新标签');
                 return;
               }
 
+              const tagsListEl = tooltipEl.querySelector(".tags");
+              if (!tagsListEl) return;
+
+              const applyTagsAfterLookup = () => {
+                getTooltipStructuredLookup().then(() => {
+                  if (!tooltipEl || tooltipBeingDestroyed) return;
+                  const cachedTags = (highlightManager?.wordDetailsFromDB?.[word.toLowerCase()]?.tags || [])
+                    .filter((tag) => tag != null);
+                  if (cachedTags.length > 0) {
+                    updateTagsDisplay(tagsListEl, cachedTags, word);
+                    refreshLanguageDisplay(word);
+                    return;
+                  }
+                  chrome.runtime.sendMessage({ action: "getWordDetails", word: word }, (updatedResponse) => {
+                    if (!tooltipEl || tooltipBeingDestroyed) return;
+                    const updatedTags = (updatedResponse?.details?.tags || []).filter(tag => tag !== null);
+                    updateTagsDisplay(tagsListEl, updatedTags, word);
+                    refreshLanguageDisplay(word);
+                  });
+                });
+              };
+
               if (response && response.details) {
               const tags = response.details.tags || [];
-              const tagsListEl = tooltipEl.querySelector(".tags");
-
-              // 过滤掉 null 值，并检查过滤后数组是否为空
               const validTags = tags.filter(tag => tag !== null);
 
               if (validTags.length === 0) {
-                  // 如果过滤后没有有效标签，获取AI建议
-                  fetchAITags(word, sentence).then(aiTags => {
-                      const tagPromises = [];
-
-                      console.log("处理AI标签响应:", aiTags);
-
-                      // 检查是否是词组的多单词标签响应
-                      const isMultiWordResponse = typeof aiTags === 'object' &&
-                                                  !aiTags.hasOwnProperty('pos') &&
-                                                  Object.keys(aiTags).some(key => typeof aiTags[key] === 'object');
-
-                      if (isMultiWordResponse) {
-                          // 处理词组的多单词标签
-                          console.log("检测到词组的多单词标签响应");
-                          Object.entries(aiTags).forEach(([wordKey, wordData]) => {
-                              if (typeof wordData === 'object' && wordData !== null) {
-                                  // 为词组添加每个子单词的标签信息
-                                  Object.entries(wordData).forEach(([key, value]) => {
-                                      if (value !== 'null' && value !== null && value !== '') {
-                                          const tagText = `${wordKey}-${key}: ${value}`;
-                                          tagPromises.push(
-                                              new Promise((resolve) => {
-                                                  chrome.runtime.sendMessage({
-                                                      action: "addTag",
-                                                      word: originalWord,
-                                                      tag: tagText
-                                                  }, resolve);
-                                              })
-                                          );
-                                      }
-                                  });
-                              }
-                          });
-                      } else {
-                          // 处理单个单词的标签（原有逻辑）
-                          if (aiTags.pos !== "null" && aiTags.pos !== null) {
-                              const posTags = Array.isArray(aiTags.pos) ? aiTags.pos : [aiTags.pos];
-                              posTags.forEach(pos => {
-                              tagPromises.push(
-                                  new Promise((resolve) => {
-                                  chrome.runtime.sendMessage({
-                                      action: "addTag",
-                                      word: originalWord,
-                                      tag: pos
-                                  }, resolve);
-                                  })
-                              );
-                              });
-                          }
-                      }
-
-                          // 处理单个单词的其他标签（德语性别、复数、动词变位等）
-                          if (aiTags.gender !== "null" && aiTags.gender !== null) {
-                              tagPromises.push(
-                              new Promise((resolve) => {
-                                  chrome.runtime.sendMessage({
-                                  action: "addTag",
-                                  word: originalWord,
-                                  tag: aiTags.gender
-                                  }, (response) => {
-                                    if (chrome.runtime.lastError) {
-                                      console.error('发送消息失败:', chrome.runtime.lastError);
-                                      resolve({ error: chrome.runtime.lastError.message });
-                                    } else {
-                                      resolve(response);
-                                    }
-                                  });
-                              })
-                              );
-                          }
-
-                          // 处理复数形式
-                          if (aiTags.plural !== "null" && aiTags.plural !== null) {
-                              tagPromises.push(
-                              new Promise((resolve) => {
-                                  chrome.runtime.sendMessage({
-                                  action: "addTag",
-                                  word: originalWord,
-                                  tag: `pl: ${aiTags.plural}`
-                                  }, resolve);
-                              })
-                              );
-                          }
-
-                          // 处理动词变位
-                          if (aiTags.conjugation !== "null" && aiTags.conjugation !== null && aiTags.conjugation !== word) {
-                              tagPromises.push(
-                              new Promise((resolve) => {
-                                  chrome.runtime.sendMessage({
-                                  action: "addTag",
-                                  word: originalWord,
-                                  tag: `inf: ${aiTags.conjugation}`
-                                  }, resolve);
-                              })
-                              );
-                          }
-
-                          // 处理其他附加标签
-                          const excludedKeys = ['pos', 'gender', 'plural', 'conjugation'];
-                          for (const [key, value] of Object.entries(aiTags)) {
-                              if (!excludedKeys.includes(key) && value !== 'null' && value !== null && value !== '') {
-                                  // 处理不同类型的值
-                                  let formattedValue;
-                                  if (Array.isArray(value)) {
-                                      formattedValue = value.join(', ');
-                                  } else if (typeof value === 'object' && value !== null) {
-                                      formattedValue = JSON.stringify(value);
-                                  } else {
-                                      formattedValue = String(value);
-                                  }
-
-                                  tagPromises.push(
-                                      new Promise((resolve) => {
-                                          chrome.runtime.sendMessage({
-                                              action: "addTag",
-                                              word: originalWord,
-                                              tag: `${key}: ${formattedValue}`
-                                          }, resolve);
-                                      })
-                                  );
-                              }
-                          }
-
-                  // 等待所有标签添加完成后再次刷新显示
-                  Promise.all(tagPromises).then(() => {
-                      chrome.runtime.sendMessage({ action: "getWordDetails", word: word }, (updatedResponse) => {
-                      // 添加null检查，确保tooltipEl存在且tooltip未被销毁
-                      if (!tooltipEl || tooltipBeingDestroyed) {
-                        console.error('tooltipEl 为 null 或tooltip正在被销毁，无法更新标签显示');
-                        return;
-                      }
-
-                      if (updatedResponse && updatedResponse.details) {
-                          // 过滤掉 null 值
-                          const updatedTags = (updatedResponse.details.tags || []).filter(tag => tag !== null);
-                          updateTagsDisplay(tagsListEl, updatedTags, word);
-                          refreshLanguageDisplay(word);
-                      }
-                      });
-                  });
-                  });
+                  updateTagsDisplay(tagsListEl, [], word);
+                  applyTagsAfterLookup();
               } else {
-                  // 如果有有效标签，则显示它们
-                  updateTagsDisplay(tagsListEl, validTags, word); // 传递过滤后的标签
+                  updateTagsDisplay(tagsListEl, validTags, word);
                   refreshLanguageDisplay(word);
               }
+              } else {
+                  updateTagsDisplay(tagsListEl, [], word);
+                  applyTagsAfterLookup();
               }
           });
           }
@@ -3654,76 +3616,32 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             // 异步获取设置并更新元素内容
             getStorageValue('autoRequestAITranslations').then(function(autoRequestAITranslations) {
                 if(autoRequestAITranslations) {
-                    // 异步获取AI释义
-                    fetchAIWordTranslation(word, sentence).then(translation => {
+                    getTooltipStructuredLookup().then(result => {
+                        const wordResult = getStructuredWordResult(result);
+                        const translation = wordResult?.translation ? String(wordResult.translation).trim() : "暂无翻译";
                         console.log("AI释义加载完成", translation);
-                        // 更新文本内容
                         aiTextElement.textContent = translation;
                         syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
 
-                        // 标记AI翻译1完成
                         aiTranslationStatus.ai1.completed = true;
                         aiTranslationStatus.ai1.result = translation;
+                        aiTranslationStatus.ai1.shouldRefresh = !!wordResult?.translationPersisted;
 
-                        //自动添加ai在fetchAIWordTranslation中，这里仅仅刷新而已
-                        getStorageValues(['autoAddAITranslations', 'autoAddAITranslationsFromUnknown', 'autoRequestAITranslations2']).then(function(settings) {
-                          console.log("自动添加AI释义状态已更新:", settings.autoAddAITranslations);
-
-                          let shouldRefresh = false;
-
-                          if(settings.autoAddAITranslations){
-                            shouldRefresh = true;
-                          }else{
-                            console.log("自动添加AI释义状态已更新:", ShouldAutoUpdateStatus);
-                            if( getTranslationCount(word) === 0){
-                              if(settings.autoAddAITranslationsFromUnknown){
-                                shouldRefresh = true;
-                              }
-                            }
-                          }
-
-                          // 设置shouldRefresh标志
-                          aiTranslationStatus.ai1.shouldRefresh = shouldRefresh;
-
-
-                          // 如果需要刷新，检查是否需要等待AI翻译2
-                          if(shouldRefresh) {
-                            // 检查AI翻译2是否启用
-                            if(settings.autoRequestAITranslations2) {
-                              // AI翻译2已启用，等待它完成
-                              console.log("AI翻译1完成，等待AI翻译2完成...");
+                        getStorageValue('autoRequestAITranslations2').then(function(autoRequestAITranslations2) {
+                          if (aiTranslationStatus.ai1.shouldRefresh) {
+                            if (autoRequestAITranslations2) {
                               checkAndRefreshWhenBothAIComplete();
                             } else {
-                              // AI翻译2未启用，等待数据库更新完成后再刷新
-                              console.log("AI翻译2未启用，等待数据库更新完成...");
-                              // 监听aiTranslationAdded事件，在数据库更新完成后刷新
-                              const handleTranslationAdded = (event) => {
-                                if (event.detail.word.toLowerCase() === word.toLowerCase()) {
-                                  console.log("数据库更新完成，开始刷新");
-                                  window.removeEventListener('aiTranslationAdded', handleTranslationAdded);
-                                  refreshTooltipTranslations(word, false, 'ai1');
-                                }
-                              };
-                              window.addEventListener('aiTranslationAdded', handleTranslationAdded);
-
-                              // 设置超时，如果5秒内没有收到事件，也进行刷新
-                              setTimeout(() => {
-                                window.removeEventListener('aiTranslationAdded', handleTranslationAdded);
-                                console.log("超时，强制刷新");
-                                refreshTooltipTranslations(word, false, 'ai1');
-                              }, 5000);
+                              refreshTooltipTranslationsWithAIResults(word);
                             }
                           }
                         });
-
                     }).catch(error => {
                         console.error("获取AI释义失败:", error);
                         aiTextElement.textContent = "AI 释义加载失败";
                         syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
-                        // 标记AI翻译1完成（即使失败）
                         aiTranslationStatus.ai1.completed = true;
                         aiTranslationStatus.ai1.result = "AI 释义加载失败";
-
                     });
                 } else {
                     aiTextElement.textContent = "(✿◠‿◠)";
@@ -3862,34 +3780,24 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             // 异步获取设置并更新元素内容
             getStorageValue('autoRequestAITranslations2').then(function(autoRequestAITranslations2) {
                 if(autoRequestAITranslations2) {
-                    // 异步获取第二个AI释义
-                    fetchAIWordTranslation2(word, sentence).then(translation => {
+                    getTooltipStructuredLookup().then(result => {
+                        const wordResult = getStructuredWordResult(result);
+                        const translation = wordResult?.grammar ? String(wordResult.grammar).trim() : "暂无翻译";
                         console.log("第二个AI释义加载完成", translation);
-                        // 更新文本内容
                         aiTextElement.textContent = translation;
                         syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
 
-                        // 标记AI翻译2完成
                         aiTranslationStatus.ai2.completed = true;
                         aiTranslationStatus.ai2.result = translation;
 
-
-                        // 注意：第二个AI翻译不会自动添加到数据库
-                        // 用户需要手动点击添加按钮
-
-                        // 检查是否需要刷新（当AI翻译1已完成且需要刷新时）
                         console.log("AI翻译2完成，检查是否需要刷新...");
                         checkAndRefreshWhenBothAIComplete();
-
                     }).catch(error => {
                         console.error("获取第二个AI释义失败:", error);
                         aiTextElement.textContent = "AI 释义加载失败";
                         syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
-                        // 标记AI翻译2完成（即使失败）
                         aiTranslationStatus.ai2.completed = true;
                         aiTranslationStatus.ai2.result = "AI 释义加载失败";
-
-                        // 即使失败也检查是否需要刷新
                         checkAndRefreshWhenBothAIComplete();
                     });
                 } else {
@@ -3944,8 +3852,11 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             console.log("existingDetails.sentence 不包含 sentence， 自动添加");
 
             let currentUrl =  window.top.location.href
-            // 添加例句和翻译
-            fetchSentenceTranslation(word, sentence).then(sentTranslation => {
+            getTooltipStructuredLookup().then(result => {
+              const sentTranslation = result?.sentenceTranslations?.[0];
+              if (!sentTranslation || sentTranslation === '暂无翻译' || sentTranslation === '翻译失败') {
+                return;
+              }
               chrome.runtime.sendMessage({
                 action: "addSentence",
                 word: originalWord,
@@ -5079,6 +4990,7 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
 }
 
   // 刷新标签、翻译及例句数据
+  getTooltipStructuredLookup();
   refreshTooltipTags(word, sentence);
 
   //获取翻译入口 ； 触发AI自动翻译
@@ -5341,28 +5253,23 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
   // 如果没有语言信息或语言为'auto'，触发AI语言检测
   if (!currentLanguage || currentLanguage === 'auto' || currentLanguage === '?') {
     console.log('触发AI语言检测，当前语言:', currentLanguage);
-    if (typeof fetchLanguageDetection === 'function') {
-      fetchLanguageDetection(originalWord, sentence).then(detectedLanguage => {
-        if (detectedLanguage && detectedLanguage !== false) {
-          console.log('AI语言检测完成:', detectedLanguage);
-          // 更新显示
-          if (languageSquare && !tooltipBeingDestroyed) {
-            languageSquare.textContent = detectedLanguage;
-          }
-          // 更新本地缓存
-          if (highlightManager && highlightManager.wordDetailsFromDB) {
-            highlightManager.wordDetailsFromDB[originalWord.toLowerCase()] = {
-              ...highlightManager.wordDetailsFromDB[originalWord.toLowerCase()],
-              language: detectedLanguage
-            };
-          }
+    getTooltipStructuredLookup().then(result => {
+      const detectedLanguage = getStructuredWordResult(result)?.language;
+      if (detectedLanguage && detectedLanguage !== false) {
+        console.log('AI语言检测完成:', detectedLanguage);
+        if (languageSquare && !tooltipBeingDestroyed) {
+          languageSquare.textContent = detectedLanguage;
         }
-      }).catch(error => {
-        console.error('AI语言检测失败:', error);
-      });
-    } else {
-      console.error('fetchLanguageDetection 函数不存在');
-    }
+        if (highlightManager && highlightManager.wordDetailsFromDB) {
+          highlightManager.wordDetailsFromDB[originalWord.toLowerCase()] = {
+            ...highlightManager.wordDetailsFromDB[originalWord.toLowerCase()],
+            language: detectedLanguage
+          };
+        }
+      }
+    }).catch(error => {
+      console.error('AI语言检测失败:', error);
+    });
   }
 
   // 添加点击事件以修改语言

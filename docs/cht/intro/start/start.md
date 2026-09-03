@@ -70,6 +70,7 @@ Alice iniziava a stancarsi molto di stare seduta accanto a sua sorella sulla riv
 ### 如何翻譯成不同的語言？
 所有輸出都基於 AI 提示詞，因此如果您想要任何其他結果，可以手動更改所需的提示詞。
 例如翻譯成不同語言、給出更詳細或更簡略的提示，或提供更多例子等。
+點詞彈窗與詞爆會把語言、釋義、標籤、整句翻譯合併成一次結構化請求；各欄位提示詞只作為附加說明。句子精析（點分析按鈕）仍是單獨的串流請求。
 ![](https://res.cloudinary.com/dux7dnl5b/image/upload/v1782620912/wfmvd5y8distxxeehikl.png)
 
 ### 匯入已知字庫

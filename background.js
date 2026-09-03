@@ -2650,7 +2650,7 @@ function parseCustomRequestBody(customRequestBodyStr) {
 // ============================
 // AI 请求处理函数（避免 Firefox CSP 限制）
 // ============================
-async function handleAIRequest({ word, sentence, stream = false, messages, model = null, temperature = 1, tabId = null, isSidebarRequest = false }) {
+async function handleAIRequest({ word, sentence, stream = false, messages, model = null, temperature = 1, tabId = null, isSidebarRequest = false, jsonMode = false }) {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(['aiConfig', 'customApiProfiles'], async (result) => {
       try {
@@ -2805,11 +2805,26 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
           }
         }
 
-        const response = await fetch(config.apiBaseURL, {
+        let usedJsonObject = false;
+        if (jsonMode && !stream && apiType !== 'responses' && !requestBody.response_format) {
+          requestBody.response_format = { type: "json_object" };
+          usedJsonObject = true;
+        }
+
+        const postAIRequest = (body) => fetch(config.apiBaseURL, {
           method: "POST",
           headers: headers,
-          body: JSON.stringify(requestBody)
+          body: JSON.stringify(body)
         });
+
+        let response = await postAIRequest(requestBody);
+
+        if (!response.ok && usedJsonObject && response.status !== 401 && response.status !== 403 && response.status !== 429) {
+          console.log("[background.js] json_object 可能不被支持，去掉后重试:", response.status);
+          delete requestBody.response_format;
+          usedJsonObject = false;
+          response = await postAIRequest(requestBody);
+        }
 
         if (!response.ok) {
           // 检查是否是 API Key 失效的错误
