@@ -6537,6 +6537,12 @@ html[data-theme='dark'] .sound-icon svg path {
 }
 
 /* Firefox CSS玻璃效果样式 */
+/* 性能说明：backdrop-filter 只保留在这一层（弹窗容器）。
+   原来 .scrollable-content / .translation-item / .ai-recommendation /
+   .translation-input 等后代也各自写了 backdrop-filter，
+   但它们本来就叠在已经模糊过的父层之上，视觉增益接近零，
+   而 Firefox 会为每一层单独做一次背景快照 + 模糊 pass ——
+   翻译列表有 N 项就是 N 个 backdrop 层。已全部移除，只留背景色做层次区分。 */
 .vocab-tooltip.firefox-glass-effect {
     background: rgba(255, 255, 255, 0.1) !important;
     backdrop-filter: blur(20px) saturate(180%) !important;
@@ -6554,8 +6560,6 @@ html[data-theme='dark'] .sound-icon svg path {
 /* Firefox玻璃效果下的内容区域 */
 .vocab-tooltip.firefox-glass-effect .scrollable-content {
     background: rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
     /*border-radius: 8px;*/
 }
 
@@ -6568,8 +6572,6 @@ html[data-theme='dark'] .sound-icon svg path {
     position: relative;
     padding-right: 60px;
     background: rgb(35 27 27 / 10%) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-radius: 10px;
     margin: 4px;
@@ -6593,8 +6595,7 @@ html[data-theme='dark'] .sound-icon svg path {
     margin-top: 8px;
     padding: 8px;
     background: rgba(70, 70, 70, 0.5) !important;
-    backdrop-filter: blur(15px) !important;
-    -webkit-backdrop-filter: blur(15px) !important;
+    /* backdrop-filter 已移除：父层 .firefox-glass-effect 已做模糊，此处叠加无收益 */
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-left: none !important; /* 保留蓝色左边框 */
     border-radius: 6px;
@@ -6613,8 +6614,7 @@ html[data-theme='dark'] .sound-icon svg path {
     margin-top: 8px;
     padding: 8px;
     background: rgba(70, 70, 70, 0.5) !important;
-    backdrop-filter: blur(15px) !important;
-    -webkit-backdrop-filter: blur(15px) !important;
+    /* backdrop-filter 已移除：父层 .firefox-glass-effect 已做模糊，此处叠加无收益 */
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-left: none !important; /* 橙色左边框 */
     border-radius: 6px;
@@ -6643,8 +6643,7 @@ html[data-theme='dark'] .sound-icon svg path {
     position: relative;
     padding-right: 60px;
     background: rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+    /* backdrop-filter 已移除：父层已做模糊 */
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-radius: 10px;
     margin: 4px;
@@ -6667,8 +6666,7 @@ html[data-theme='dark'] .sound-icon svg path {
 
 .vocab-tooltip.firefox-glass-effect.minimized .translation-input {
     background: rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
+    /* backdrop-filter 已移除：父层已做模糊 */
 }
 
 .vocab-tooltip.firefox-glass-effect.minimized.dark-mode .translation-input {
@@ -6679,8 +6677,7 @@ html[data-theme='dark'] .sound-icon svg path {
     margin-top: 8px;
     padding: 8px;
     background: rgba(70, 70, 70, 0.5) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+    /* backdrop-filter 已移除：父层 .firefox-glass-effect 已做模糊，此处叠加无收益 */
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-left: none !important; /* 保留蓝色左边框 */
     border-radius: 6px;
@@ -6699,8 +6696,7 @@ html[data-theme='dark'] .sound-icon svg path {
     margin-top: 8px;
     padding: 8px;
     background: rgba(70, 70, 70, 0.5) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+    /* backdrop-filter 已移除：父层 .firefox-glass-effect 已做模糊，此处叠加无收益 */
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-left: none !important; /* 橙色左边框 */
     border-radius: 6px;
@@ -6723,8 +6719,7 @@ html[data-theme='dark'] .sound-icon svg path {
     padding: 8px;
     padding: 2px;
     background: rgba(70, 70, 70, 0.5) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+    /* backdrop-filter 已移除：父层 .firefox-glass-effect 已做模糊，此处叠加无收益 */
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-left: none !important;
     border-radius: 10px;
@@ -6754,8 +6749,7 @@ html[data-theme='dark'] .sound-icon svg path {
     padding: 8px;
     padding: 2px;
     background: rgba(70, 70, 70, 0.5) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+    /* backdrop-filter 已移除：父层 .firefox-glass-effect 已做模糊，此处叠加无收益 */
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-left: none !important;
     border-radius: 10px;
@@ -6780,13 +6774,13 @@ html[data-theme='dark'] .sound-icon svg path {
 /* 最小化状态下的翻译项在液体玻璃激活时的样式 */
 .vocab-tooltip.liquid-glass-active.minimized .translation-item {
     background: unset !important;
-    backdrop-filter: blur(1px);
+    /* 原为 backdrop-filter: blur(1px)：视觉上不可辨，但仍会建立一个 backdrop 层，已移除 */
     font-weight: bold;
 }
 
 .vocab-tooltip.liquid-glass-active.minimized.dark-mode .translation-item {
     background: #2d2d2dc7 !important;
-    backdrop-filter: blur(1px);
+    /* 原为 backdrop-filter: blur(1px)：视觉上不可辨，但仍会建立一个 backdrop 层，已移除 */
     font-weight: bold;
 }
 .vocab-tooltip.liquid-glass-active.minimized.dark-mode .ai-recommendation {

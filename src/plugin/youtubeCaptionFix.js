@@ -96,20 +96,25 @@
     }
 
     // 设置URL监控
+    // 性能修复：原来是每秒轮询 window.location.href 且从不 clearInterval。
+    // YouTube 是 SPA，导航完成时会派发 yt-navigate-finish；再配 popstate 兜底
+    // 前进/后退，已经足够，不需要常驻定时器。
     function setupUrlMonitoring() {
-        // 定期检查URL变化
-        setInterval(() => {
+        const handleNavigation = () => {
             const newUrl = window.location.href;
-            if (newUrl !== currentUrl) {
-                console.log("检测到URL变化:", currentUrl, "->", newUrl);
-                currentUrl = newUrl;
+            if (newUrl === currentUrl) return;
 
-                // 延迟重新初始化，确保页面已更新
-                setTimeout(() => {
-                    initializePlugin();
-                }, 1500);
-            }
-        }, 1000);
+            console.log("检测到URL变化:", currentUrl, "->", newUrl);
+            currentUrl = newUrl;
+
+            // 延迟重新初始化，确保页面已更新
+            setTimeout(() => {
+                initializePlugin();
+            }, 1500);
+        };
+
+        window.addEventListener('yt-navigate-finish', handleNavigation);
+        window.addEventListener('popstate', handleNavigation);
     }
 
     // 监听来自popup的消息
@@ -1498,9 +1503,19 @@
                 }, 50);
 
                 // 用 setInterval 轮询，等时间到了句子结束立刻暂停
+                // 加最大轮询次数兜底：原实现如果 lastValidWord 一直为空，
+                // 这个 50ms 定时器就永远不会被清除。
+                let sentenceCheckTicks = 0;
+                const SENTENCE_CHECK_MAX_TICKS = 1200; // 50ms * 1200 = 60s
                 const checkInterval = setInterval(() => {
                     // 在 interval 内部也需要重新获取视频元素
                     const currentVideo = getVideoElement();
+
+                    if (++sentenceCheckTicks > SENTENCE_CHECK_MAX_TICKS) {
+                        clearInterval(checkInterval);
+                        console.warn("句子结束检测超时，已停止轮询");
+                        return;
+                    }
 
                     // 增加检查视频元素是否存在的判断
                     if (currentVideo) {
@@ -2115,12 +2130,18 @@
                 videoElement.addEventListener('play', playHandler);
             } else {
                 // 如果第一次没找到视频元素，尝试定期检查
+                // 等待视频元素出现。加尝试次数上限：原实现如果视频元素始终不出现，
+                // 这个 2s 定时器会永久轮询下去。
+                let videoCheckAttempts = 0;
                 const videoCheckInterval = setInterval(() => {
                     videoElement = getVideoElement();
                     if (videoElement) {
                         clearInterval(videoCheckInterval);
                         console.log('已找到视频元素并设置事件监听');
                         videoElement.addEventListener('play', playHandler);
+                    } else if (++videoCheckAttempts >= 30) { // 2s * 30 = 60s
+                        clearInterval(videoCheckInterval);
+                        console.warn('等待视频元素超时，已停止轮询');
                     }
                 }, 2000);
             }
@@ -2149,10 +2170,14 @@
                 console.warn('未找到YouTube字幕容器，先挂到body');
 
                 // 定时再尝试
+                let captionAttachAttempts = 0;
                 const checkInterval = setInterval(() => {
                     if (attachToCaptionContainer()) {
                         clearInterval(checkInterval);
                         console.log('已成功挂载到YouTube字幕容器');
+                    } else if (++captionAttachAttempts >= 30) { // 2s * 30 = 60s
+                        clearInterval(checkInterval);
+                        console.warn('等待YouTube字幕容器超时，已停止轮询');
                     }
                 }, 2000);
             } else {

@@ -463,6 +463,20 @@ async function initCloudConfig() {
   });
 }
 
+// 云端配置的首次加载 Promise（只读一次 storage）。
+// 词表查询热路径（getWordDetails / batchGetWordStatus / getAllWordStatusMap /
+// getFilteredWordDetails）原来每个请求都先 chrome.storage.local.get(['cloudConfig'])
+// 再查库——Firefox 上 storage.local 底层就是 IndexedDB，等于每次查词白付一次
+// 额外的 IndexedDB 事务。现在改为只等首次加载，之后直接读内存副本
+// （由下面的 storage.onChanged 保持同步）。
+let cloudConfigReadyPromise = null;
+function ensureCloudConfigReady() {
+  if (!cloudConfigReadyPromise) {
+    cloudConfigReadyPromise = initCloudConfig();
+  }
+  return cloudConfigReadyPromise;
+}
+
 // 创建 cloudAPI 对象（兼容 content scripts 的 CloudAPI 类）
 const cloudAPI = {
   async init() {
@@ -892,7 +906,11 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'local' && changes.cloudConfig) {
     const newConfig = changes.cloudConfig.newValue;
     if (newConfig) {
+      // 补齐 selfHosted / dataServerURL 的同步：热路径现在依赖这份内存副本，
+      // 漏同步会让自建服务器模式下的请求打错地址。
+      cloudConfig.selfHosted = newConfig.selfHosted || false;
       cloudConfig.serverURL = newConfig.serverURL || '';
+      cloudConfig.dataServerURL = newConfig.dataServerURL || '';
       cloudConfig.token = newConfig.token || '';
       cloudConfig.enabled = newConfig.cloudDbEnabled || false;
       cloudConfig.dualWrite = newConfig.cloudDualWrite !== false;
@@ -3167,8 +3185,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const word = message.word;
 
     // 检查是否启用云端数据库
-    chrome.storage.local.get(['cloudConfig'], async (result) => {
-      const cloudEnabled = result.cloudConfig?.cloudDbEnabled || false;
+    ensureCloudConfigReady().then(async () => {
+      const cloudEnabled = cloudConfig.enabled;
 
       if (cloudEnabled && cloudAPI) {
         try {
@@ -3239,8 +3257,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const words = message.words || [];
 
     // 检查是否启用云端数据库
-    chrome.storage.local.get(['cloudConfig'], async (result) => {
-      const cloudEnabled = result.cloudConfig?.cloudDbEnabled || false;
+    ensureCloudConfigReady().then(async () => {
+      const cloudEnabled = cloudConfig.enabled;
 
       if (cloudEnabled && cloudAPI) {
         try {
@@ -3284,8 +3302,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // 保留旧接口：轻量级接口 - 只返回 word + status + isCustom
   else if (message.action === 'getAllWordStatusMap') {
     // 检查是否启用云端数据库
-    chrome.storage.local.get(['cloudConfig'], async (result) => {
-      const cloudEnabled = result.cloudConfig?.cloudDbEnabled || false;
+    ensureCloudConfigReady().then(async () => {
+      const cloudEnabled = cloudConfig.enabled;
 
       if (cloudEnabled && cloudAPI) {
         try {
@@ -3374,9 +3392,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const { word, status, language, isCustom } = message;
 
     // 检查云端配置
-    chrome.storage.local.get(['cloudConfig'], async (result) => {
-      const cloudEnabled = result.cloudConfig?.cloudDbEnabled || false;
-      const dualWrite = result.cloudConfig?.cloudDualWrite !== false;
+    ensureCloudConfigReady().then(async () => {
+      const cloudEnabled = cloudConfig.enabled;
+      const dualWrite = cloudConfig.dualWrite;
 
       try {
         // 始终更新本地数据库（云端模式下也需要本地缓存）

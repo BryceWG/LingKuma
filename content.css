@@ -255,31 +255,14 @@
   color: #eee;
 }
 
-/* 优化高亮计算性能 */
-::highlight(default),
-::highlight(state1),
-::highlight(state2),
-::highlight(state3),
-::highlight(state4),
-::highlight(dark-default),
-::highlight(dark-state1),
-::highlight(dark-state2),
-::highlight(dark-state3),
-::highlight(dark-state4) {
-}
-
-:root.pdf-viewer ::highlight(default),
-:root.pdf-viewer ::highlight(state1),
-:root.pdf-viewer ::highlight(state2),
-:root.pdf-viewer ::highlight(state3),
-:root.pdf-viewer ::highlight(state4),
-:root.pdf-viewer ::highlight(dark-default),
-:root.pdf-viewer ::highlight(dark-state1),
-:root.pdf-viewer ::highlight(dark-state2),
-:root.pdf-viewer ::highlight(dark-state3),
-:root.pdf-viewer ::highlight(dark-state4) {
-  mix-blend-mode: multiply;
-}
+/* PDF 页高亮说明（性能）：
+   这里原来给全部 10 个 ::highlight() 组加了 mix-blend-mode: multiply，
+   目的是让 PDF canvas 上的字形透过高亮背景显示出来。
+   但上面 :root.pdf-viewer 的高亮色本身就是 alpha 0.2~0.3 的半透明色，
+   字形已经能透出来，multiply 属于重复保险——代价是整页高亮全部进入混合
+   渲染路径（Firefox 上尤其贵，是 PDF 阅读卡顿的主要嫌疑）。已移除。
+   如果发现 PDF 上高亮变得偏亮/字形对比度不够，把上面对应组的 alpha 调低即可，
+   不要重新引入 mix-blend-mode。 */
 
 /* ShadowHost在top layer模式下的样式 */
 #lingkuma-tooltip-host.in-top-layer {

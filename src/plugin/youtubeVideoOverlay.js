@@ -433,6 +433,10 @@
             .lk-youtube-sync {
                 --cut: 0.1em;
                 --active: 0;
+                /* 装饰动画的运行状态。默认 paused：按钮未激活时 .galaxy /
+                   .galaxy__container 的 opacity 是 0（不可见），却仍在跑 infinite
+                   动画，属于纯浪费。只有 data-overlay="on" 时才置为 running。 */
+                --play-state: paused;
                 --bg:
                     radial-gradient(
                         120% 120% at 126% 126%,
@@ -545,6 +549,8 @@
                 mask: linear-gradient(white, transparent 50%);
                 -webkit-animation: flip calc(var(--spark) * 2) infinite steps(2, end);
                 animation: flip calc(var(--spark) * 2) infinite steps(2, end);
+                -webkit-animation-play-state: var(--play-state);
+                animation-play-state: var(--play-state);
             }
 
             .spark::before {
@@ -567,6 +573,8 @@
                 transition: opacity var(--transition);
                 -webkit-animation: rotate var(--spark) linear infinite both;
                 animation: rotate var(--spark) linear infinite both;
+                -webkit-animation-play-state: var(--play-state);
+                animation-play-state: var(--play-state);
             }
 
             .spark::after {
@@ -628,6 +636,8 @@
                 transform: translate(-50%, -50%) rotate(10deg) rotate(0deg) translateY(calc(var(--distance) * 1px));
                 -webkit-animation: orbit calc(var(--duration) * 1s) calc(var(--delay) * -1s) infinite linear;
                 animation: orbit calc(var(--duration) * 1s) calc(var(--delay) * -1s) infinite linear;
+                -webkit-animation-play-state: var(--play-state);
+                animation-play-state: var(--play-state);
             }
 
             .star--static {
@@ -643,12 +653,12 @@
                 max-height: 4px;
                 filter: brightness(4);
                 opacity: 0.9;
-            }
-
-            .lk-youtube-sync[data-overlay="on"] .star--static {
+                /* 这 4 颗静态星在 .galaxy__container（opacity: var(--active)）内部，
+                   覆盖层开启时本来就是 paused，关闭时不可见，因此无条件暂停。 */
                 -webkit-animation-play-state: paused;
                 animation-play-state: paused;
             }
+
 
             .text {
                 position: relative;
@@ -1059,8 +1069,10 @@
         updateFloatButtonState();
     }
 
+    // 性能修复：原来是每秒轮询 location.href + updateFloatButtonVisibility()，
+    // 且从不 clearInterval。改为监听 YouTube SPA 导航事件。
     function setupUrlMonitoring() {
-        setInterval(() => {
+        const handleNavigation = () => {
             const newUrl = window.location.href;
             if (newUrl !== currentUrl) {
                 console.log("检测到URL变化:", currentUrl, "->", newUrl);
@@ -1070,7 +1082,12 @@
                 }, 1500);
             }
             updateFloatButtonVisibility();
-        }, 1000);
+        };
+
+        window.addEventListener('yt-navigate-finish', handleNavigation);
+        window.addEventListener('popstate', handleNavigation);
+        // 首次进入时同步一次悬浮按钮可见性
+        updateFloatButtonVisibility();
     }
 
     function waitForElement(selector, callback, checkFrequencyInMs, timeoutInMs) {

@@ -225,51 +225,30 @@ function initClipSubtitles() {
             return result;
         }
 
-        // 获取 URL 内容方法
-        async function getUrlContent() {
-            try {
-                const response = await fetch('http://localhost:2333');
-                return response.ok ? await response.text() : '';
-            } catch (error) {
-                return '';
-            }
+        let lastClipboardText = '';
+
+
+        function renderClipboardText(clipText) {
+            if (!clipText || clipText === lastClipboardText) return;
+            lastClipboardText = clipText;
+
+            const tempDiv = document.createElement('div');
+            tempDiv.textContent = clipText;
+            textElement.replaceChildren(tempDiv);
+            textElement.innerHTML = processBionicText(tempDiv);
         }
 
-        let lastClipboardText = '';
-        let lastUrlText = '';
+        // 性能修复：原实现用 setInterval(500ms) 轮询 chrome.storage.local，
+        // 每 500ms 一次跨进程 IPC（Firefox 上 storage.local 底层是 IndexedDB），
+        // 而且这个定时器从不清除。改为事件驱动。
+        chrome.storage.local.get(['clipboardContent'], (result) => {
+            renderClipboardText(result.clipboardContent || '');
+        });
 
-        // 修改为从 storage 获取剪贴板内容
-        setInterval(async () => {
-            // 从 storage 读取剪贴板内容
-            chrome.storage.local.get(['clipboardContent'], async function(result) {
-                const clipText = result.clipboardContent || '';
-
-                // 本地服务获取内容（保留原功能）
-                // const urlText = await getUrlContent();
-
-                let newText = '';
-                if (clipText && clipText !== lastClipboardText) {
-                    newText = clipText;
-                    lastClipboardText = clipText;
-                    // lastUrlText = urlText;
-                }
-                // else if (urlText && urlText !== lastUrlText) {
-                //     newText = urlText;
-                //     lastUrlText = urlText;
-                //     lastClipboardText = urlText;
-                // }
-
-                if (newText) {
-                    // const text = newText.slice(0, 300);
-
-                    const text = newText;
-                    const tempDiv = document.createElement('div');
-                    tempDiv.textContent = text;
-                    textElement.replaceChildren(tempDiv);
-                    textElement.innerHTML = processBionicText(tempDiv);
-                }
-            });
-        }, 500);
+        chrome.storage.onChanged.addListener((changes, areaName) => {
+            if (areaName !== 'local' || !changes.clipboardContent) return;
+            renderClipboardText(changes.clipboardContent.newValue || '');
+        });
     });
 }
 

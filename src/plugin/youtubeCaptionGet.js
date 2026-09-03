@@ -64,8 +64,11 @@
     capturedSubtitleUrls.add(url);
   });
 
-  // 定期检查视频切换（作为备用机制）
-  setInterval(checkVideoChange, 1000);
+  // 视频切换检测（备用机制）
+  // 性能修复：原来是 setInterval(checkVideoChange, 1000) 且从不清除。
+  // 改为监听 YouTube SPA 的导航事件 + popstate。
+  window.addEventListener('yt-navigate-finish', checkVideoChange);
+  window.addEventListener('popstate', checkVideoChange);
 
   // 提供获取字幕的函数
   window.getSubtitleUrls = function() {

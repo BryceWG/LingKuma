@@ -3,7 +3,7 @@
 
   const LINGQ_DOMAINS = ['lingq.com', 'www.lingq.com', 'app.lingq.com'];
   let isEnabled = false;
-  let modalObserverInterval = null;
+  let modalObserver = null;
 
   function isLingqSite() {
     const hostname = window.location.hostname;
@@ -63,16 +63,28 @@
 
   function startModalObserver() {
     stopModalObserver();
-    if (isEnabled) {
-      removeModalContainer();
-      modalObserverInterval = setInterval(removeModalContainer, 1000);
-    }
+    if (!isEnabled) return;
+
+    removeModalContainer();
+
+    // 性能修复：原来是 setInterval(removeModalContainer, 1000)，
+    // 即每秒无条件跑一次 querySelector。改为 MutationObserver，
+    // 只在 DOM 真的新增节点时检查。
+    modalObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.addedNodes.length > 0) {
+          removeModalContainer();
+          return;
+        }
+      }
+    });
+    modalObserver.observe(document.body, { childList: true, subtree: true });
   }
 
   function stopModalObserver() {
-    if (modalObserverInterval) {
-      clearInterval(modalObserverInterval);
-      modalObserverInterval = null;
+    if (modalObserver) {
+      modalObserver.disconnect();
+      modalObserver = null;
     }
   }
 

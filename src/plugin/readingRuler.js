@@ -68,35 +68,49 @@
   }
 
   // 优化核心逻辑，减少样式计算和重绘
+  // 性能重构要点：
+  //  1. 原来每帧都 `ruler.style.cssText +=`，这会先序列化再整体重新解析内联样式；
+  //     改为逐属性写，且只在值变化时写。
+  //  2. box-shadow 是 `0 0 0 100vh`（视口级 spread），原来每帧无条件重写一次，
+  //     等于每帧重绘一整屏遮罩。改为缓存上次的值，只在真正变化时才写——
+  //     稳定状态下每帧只剩一次 transform 写入，Firefox 可以一直复用同一图层。
+  let lastRulerWidth = null;
+  let lastRulerLeft = null;
+  let lastRulerShadow = null;
+  let lastRulerDisplay = null;
+
   function updateRulerPositionCore(e) {
     // 缓存当前鼠标位置
     const mouseX = e.clientX;
     const mouseY = e.clientY;
-    
+
     // 获取鼠标下方的元素
     const elementUnderCursor = document.elementFromPoint(mouseX, mouseY);
-    
+
     // 检查元素是否为iframe，如果是则不显示标尺
     if (!elementUnderCursor || elementUnderCursor.tagName === 'IFRAME') {
-      ruler.style.display = 'none';
+      if (lastRulerDisplay !== 'none') {
+        ruler.style.display = 'none';
+        lastRulerDisplay = 'none';
+      }
       return;
     }
-    
+
     // 如果不是iframe，确保标尺显示
-    ruler.style.display = 'block';
-    
+    if (lastRulerDisplay !== 'block') {
+      ruler.style.display = 'block';
+      lastRulerDisplay = 'block';
+    }
+
     // 计算新的垂直位置
     const newY = mouseY - (settings.height / 2);
-    
-    // 使用 transform 设置垂直位置 - 减少样式查询
-    ruler.style.transform = `translateY(${newY}px)`;
-    
+
     // 获取元素边界
     const rect = elementUnderCursor.getBoundingClientRect();
-    
+
     // 根据宽度模式调整标尺的宽度和水平位置
     let newWidth, newLeft;
-    
+
     switch (settings.widthMode) {
       case 'auto':
         newWidth = rect.width;
@@ -111,30 +125,37 @@
         newLeft = Math.max(0, mouseX - settings.customWidth / 2);
         break;
     }
-    
-    // 批量更新样式，减少重绘
-    ruler.style.cssText += `
-      width: ${newWidth}px;
-      left: ${newLeft}px;
-      transform: translateY(${newY}px);
-      will-change: transform;
-    `;
-    
+
+    // 垂直位置：唯一每帧必写的属性，走 transform（可合成）
+    ruler.style.transform = `translateY(${newY}px)`;
+
+    // 宽度/水平位置只在变化时写（这两个属性会触发 layout）
+    if (newWidth !== lastRulerWidth) {
+      ruler.style.width = `${newWidth}px`;
+      lastRulerWidth = newWidth;
+    }
+    if (newLeft !== lastRulerLeft) {
+      ruler.style.left = `${newLeft}px`;
+      lastRulerLeft = newLeft;
+    }
+
     // 处理反色模式下的遮罩效果
+    let newShadow;
     if (settings.isInverted) {
       if (settings.widthMode === 'screen') {
-        ruler.style.boxShadow = '0 0 0 100vh rgba(0, 0, 0, 0.5)';
+        newShadow = '0 0 0 100vh rgba(0, 0, 0, 0.5)';
       } else if (settings.widthMode === 'auto') {
-        ruler.style.boxShadow = `0 0 0 100vh rgba(0, 0, 0, 0.5), 
-                                ${-rect.left}px 0 0 0 rgba(0, 0, 0, 0.5), 
-                                ${window.innerWidth - rect.right}px 0 0 0 rgba(0, 0, 0, 0.5)`;
+        newShadow = `0 0 0 100vh rgba(0, 0, 0, 0.5), ${-rect.left}px 0 0 0 rgba(0, 0, 0, 0.5), ${window.innerWidth - rect.right}px 0 0 0 rgba(0, 0, 0, 0.5)`;
       } else {
-        ruler.style.boxShadow = `0 0 0 100vh rgba(0, 0, 0, 0.5), 
-                                ${-newLeft}px 0 0 0 rgba(0, 0, 0, 0.5), 
-                                ${window.innerWidth - (newLeft + newWidth)}px 0 0 0 rgba(0, 0, 0, 0.5)`;
+        newShadow = `0 0 0 100vh rgba(0, 0, 0, 0.5), ${-newLeft}px 0 0 0 rgba(0, 0, 0, 0.5), ${window.innerWidth - (newLeft + newWidth)}px 0 0 0 rgba(0, 0, 0, 0.5)`;
       }
     } else {
-      ruler.style.boxShadow = 'none';
+      newShadow = 'none';
+    }
+
+    if (newShadow !== lastRulerShadow) {
+      ruler.style.boxShadow = newShadow;
+      lastRulerShadow = newShadow;
     }
   }
 
@@ -176,15 +197,17 @@
       .reading-ruler {
         position: fixed;
         pointer-events: none;
-        transition: background-color 0.2s ease, box-shadow 0.2s ease;
         transform: translateY(0);
-        will-change: transform, width, left;
-        transition: transform 0.1s ease-out, width 0.2s ease-out, left 0.2s ease-out;
+        /* 只对可合成属性做 will-change / transition。
+           原来这里写的是 will-change: transform, width, left 和
+           transition: transform .1s, width .2s, left .2s —— width/left 都会触发
+           layout，等于每次宽度变化都跑 200ms 的布局动画，且 will-change 对它们
+           本身无效，只是白建合成层。 */
+        will-change: transform;
+        transition: transform 0.1s ease-out, background-color 0.2s ease;
         border-radius: 5px;
         backface-visibility: hidden;
-        perspective: 1000;
         -webkit-backface-visibility: hidden;
-        -webkit-perspective: 1000;
       }
       .reading-ruler.no-transition {
         transition: none;
@@ -209,27 +232,21 @@
   // 更新标尺样式
   function updateRulerStyle() {
     if (!ruler) return;
-    
-    // 保存当前的 transform、width 和 left
-    const currentTransform = ruler.style.transform;
-    const currentWidth = ruler.style.width;
-    const currentLeft = ruler.style.left;
-    
+
+    // 这里直接写 boxShadow/display，会绕过 updateRulerPositionCore 的写入缓存，
+    // 所以必须作废缓存，否则下一帧会以为值没变而不重写。
     if (settings.isInverted) {
       ruler.classList.add('inverted');
       ruler.style.height = `${settings.height}px`;
       ruler.style.boxShadow = '0 0 0 100vh rgba(0, 0, 0, 0.5)';
+      lastRulerShadow = '0 0 0 100vh rgba(0, 0, 0, 0.5)';
     } else {
       ruler.classList.remove('inverted');
       ruler.style.height = `${settings.height}px`;
       ruler.style.backgroundColor = `${settings.color}${Math.round(settings.opacity * 255).toString(16).padStart(2, '0')}`;
       ruler.style.boxShadow = 'none';
+      lastRulerShadow = 'none';
     }
-    
-    // 恢复原始的 transform、width 和 left
-    ruler.style.transform = currentTransform;
-    ruler.style.width = currentWidth;
-    ruler.style.left = currentLeft;
   }
 
   // 监控 Bionic 状态
@@ -269,6 +286,7 @@
     if (isRulerEnabled) {
       if (!ruler) createRuler();
       ruler.style.display = 'block';
+      lastRulerDisplay = 'block';
       
       // 检测 Bionic 状态并应用相应的类
       window.bionicActive = !!document.querySelector('.highlight-wrapper');
@@ -284,6 +302,7 @@
     } else {
       if (ruler) {
         ruler.style.display = 'none';
+        lastRulerDisplay = 'none';
         document.removeEventListener('mousemove', updateRulerPosition);
       }
     }
@@ -339,6 +358,7 @@
         // 当收到iframe内的鼠标移动消息时，隐藏主页面的标尺
         if (ruler) {
           ruler.style.display = 'none';
+          lastRulerDisplay = 'none';
         }
         
         // 不再模拟鼠标事件，因为我们希望iframe内部有自己的标尺
