@@ -1657,16 +1657,9 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 <div class="title-container">  <!-- 新增 title-container div -->
                     <div class="word-title">
 
-                        <button class="sound-icon orion-sound-icon-container">
-                            <!-- 普通模式下显示SVG图标  <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 48 48"> -->
-                            <svg class="normal-sound-icon" data-slot="icon" fill="none" " stroke="currentColor" viewBox="10 10 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m21.902 28.869l-4.246-3.784l-2.03-2.769v-4.615h-2.862l2.216-.83v-1.016l5.261-3.784l.553 2.954L32.7 23.331l3.877 3.323l-2.677-1.015l2.4 2.031l-4.337-1.385l9.506 6.922l2.031 2.215l-2.401-.646l-8.675-6.553h-2.861z"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m25.511 28.565l-1.625 2.15l2.954-2.263m-5.405 0l-1.471 1.709l.735-2.364"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m4.5 27.023l27.047 4.661l5.169 4.245M14.98 15.855h4.015l-3.369 1.846m16.337 8.584l-5.123-2.538l-.877-1.985l-4.938-.374l-.646-3.687l-2.723 2.261l-2.03 2.354"/></svg>
-                            <!-- Orion模式下显示的音频元素将在JS中动态添加 -->
-                        </button>
-
                         <span class="Notes">${originalWord}</span>
 
-                     <div style="display: flex; align-items: center; margin-top: 5px;">
+                     <div style="display: flex; align-items: center;">
 
                      <div class="language-square" id="languageSquare" ><!--  style="margin-right: 10px;"-->
                             <!-- 语言代码将显示在这里 -->
@@ -1676,6 +1669,13 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                             <!-- 音频元素将在需要时添加到这里 -->
                             <span style="display: none;">音频播放区域</span>
                         </div>
+
+                        <button class="sound-icon orion-sound-icon-container">
+                            <!-- 普通模式下显示SVG图标  <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 48 48"> -->
+                            <svg class="normal-sound-icon" data-slot="icon" fill="none" " stroke="currentColor" viewBox="10 10 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m21.902 28.869l-4.246-3.784l-2.03-2.769v-4.615h-2.862l2.216-.83v-1.016l5.261-3.784l.553 2.954L32.7 23.331l3.877 3.323l-2.677-1.015l2.4 2.031l-4.337-1.385l9.506 6.922l2.031 2.215l-2.401-.646l-8.675-6.553h-2.861z"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m25.511 28.565l-1.625 2.15l2.954-2.263m-5.405 0l-1.471 1.709l.735-2.364"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m4.5 27.023l27.047 4.661l5.169 4.245M14.98 15.855h4.015l-3.369 1.846m16.337 8.584l-5.123-2.538l-.877-1.985l-4.938-.374l-.646-3.687l-2.723 2.261l-2.03 2.354"/></svg>
+                            <!-- Orion模式下显示的音频元素将在JS中动态添加 -->
+                        </button>
 
                         <!-- 添加弹窗句子解析按钮 -->
                         <button class="analysis-btn tooltip-action-btn" title="Ask" cursor: pointer;">
@@ -6444,13 +6444,13 @@ body {
 }
 
 .tooltip-action-btn svg {
-    width: 34px;
-    height: 34px;
+    width: 26px;
+    height: 26px;
 }
 
 .sound-icon svg {
-    width: 42px;
-    height: 22px;
+    width: 34px;
+    height: 18px;
 }
 
 .sound-icon svg path {

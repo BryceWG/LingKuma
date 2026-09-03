@@ -571,13 +571,13 @@ function createWordExplosionTooltip() {
   // 应用主题模式
   applyWordExplosionTheme(container);
 
-  // 创建左侧按钮容器（用于解析按钮）
-  const leftButtons = document.createElement('div');
-  leftButtons.className = 'word-explosion-left-buttons';
+  // 创建外挂按钮列容器（所有小按钮都挂在弹窗右侧外部）
+  const sideButtons = document.createElement('div');
+  sideButtons.className = 'word-explosion-side-buttons';
 
-  // 添加Ask按钮到左侧
+  // Ask按钮
   const analysisBtn = document.createElement('button');
-  analysisBtn.className = 'word-explosion-analysis-btn word-explosion-left-btn';
+  analysisBtn.className = 'word-explosion-analysis-btn word-explosion-side-btn';
   analysisBtn.title = 'Ask';
   analysisBtn.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 48 48">
@@ -594,9 +594,9 @@ function createWordExplosionTooltip() {
     handleExplosionAnalysisClick();
   });
 
-  // 添加Sidebar按钮到左侧
+  // 添加Sidebar按钮
   const sidebarBtn = document.createElement('button');
-  sidebarBtn.className = 'word-explosion-sidebar-btn word-explosion-left-btn';
+  sidebarBtn.className = 'word-explosion-sidebar-btn word-explosion-side-btn';
   sidebarBtn.title = 'Sidebar';
   sidebarBtn.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 48 48">
@@ -613,9 +613,9 @@ function createWordExplosionTooltip() {
     }
   });
 
-  // 添加一键已知按钮到左侧
+  // 添加一键已知按钮
   const markAllKnownBtn = document.createElement('button');
-  markAllKnownBtn.className = 'word-explosion-mark-all-known-btn word-explosion-left-btn';
+  markAllKnownBtn.className = 'word-explosion-mark-all-known-btn word-explosion-side-btn';
   markAllKnownBtn.title = '一键已知';
   markAllKnownBtn.innerHTML = '✓';
   markAllKnownBtn.addEventListener('click', (e) => {
@@ -623,22 +623,13 @@ function createWordExplosionTooltip() {
     handleMarkAllKnownClick();
   });
 
-  // 将左侧按钮添加到左侧容器（从上到下：Ask、Sidebar、一键已知）
-  leftButtons.appendChild(analysisBtn);
-  leftButtons.appendChild(sidebarBtn);
-  leftButtons.appendChild(markAllKnownBtn);
-
-  // 确保左侧按钮容器的鼠标事件正常
-  leftButtons.addEventListener('mouseenter', () => {
+  // 确保按钮列容器的鼠标事件正常
+  sideButtons.addEventListener('mouseenter', () => {
     isMouseInsideExplosion = true;
   });
-  leftButtons.addEventListener('mouseleave', () => {
+  sideButtons.addEventListener('mouseleave', () => {
     isMouseInsideExplosion = false;
   });
-
-  // 创建右上角按钮容器
-  const topRightButtons = document.createElement('div');
-  topRightButtons.className = 'word-explosion-top-right-buttons';
 
   // 添加关闭按钮
   const closeBtn = document.createElement('button');
@@ -656,7 +647,7 @@ function createWordExplosionTooltip() {
 
   // 添加TTS喇叭按钮
   const ttsBtn = document.createElement('button');
-  ttsBtn.className = 'word-explosion-tts-btn word-explosion-top-btn';
+  ttsBtn.className = 'word-explosion-tts-btn word-explosion-side-btn';
   ttsBtn.title = '播放句子';
   ttsBtn.innerHTML = '<svg data-slot="icon" fill="none" stroke-width="1.5" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="16" height="16" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H2v6h4l5 4V5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
   ttsBtn.addEventListener('click', (e) => {
@@ -673,22 +664,24 @@ function createWordExplosionTooltip() {
     }
   });
 
-  // 添加拖动手柄（放进右上角按钮列，避免压住正文；自动/手动模式都可拖）
+  // 添加拖动手柄（放进按钮列，避免压住正文；自动/手动模式都可拖）
   const dragHandle = document.createElement('div');
   dragHandle.className = 'word-explosion-drag-handle';
   dragHandle.innerHTML = '⋮⋮';
   dragHandle.title = 'Move';
 
-  // 将按钮添加到右上角容器（从上到下：拖动手柄、关闭、TTS）
-  topRightButtons.appendChild(dragHandle);
-  topRightButtons.appendChild(closeBtn);
-  topRightButtons.appendChild(ttsBtn);
+  // 所有按钮排成一列（从上到下：拖动手柄、关闭、Ask、Sidebar、一键已知、TTS）
+  sideButtons.appendChild(dragHandle);
+  sideButtons.appendChild(closeBtn);
+  sideButtons.appendChild(analysisBtn);
+  sideButtons.appendChild(sidebarBtn);
+  sideButtons.appendChild(markAllKnownBtn);
+  sideButtons.appendChild(ttsBtn);
 
   // 内容容器
   const content = document.createElement('div');
   content.className = 'word-explosion-content';
 
-  container.appendChild(topRightButtons);
   container.appendChild(content);
 
   // 添加拖动事件
@@ -716,21 +709,21 @@ function createWordExplosionTooltip() {
   if (explosionShadowRoot) {
     explosionShadowRoot.appendChild(container);
     // 将左侧按钮单独添加到Shadow DOM，而不是作为container的子元素
-    leftButtons.id = 'word-explosion-left-buttons-wrapper';
-    explosionShadowRoot.appendChild(leftButtons);
+    sideButtons.id = 'word-explosion-side-buttons-wrapper';
+    explosionShadowRoot.appendChild(sideButtons);
 
     // 创建透明连接层，填充按钮和弹窗之间的空隙，阻止鼠标穿透
-    const leftButtonsBridge = document.createElement('div');
-    leftButtonsBridge.id = 'word-explosion-left-buttons-bridge';
-    leftButtonsBridge.className = 'word-explosion-left-buttons-bridge';
+    const sideButtonsBridge = document.createElement('div');
+    sideButtonsBridge.id = 'word-explosion-side-buttons-bridge';
+    sideButtonsBridge.className = 'word-explosion-side-buttons-bridge';
     // 添加鼠标事件，确保被认为在弹窗内
-    leftButtonsBridge.addEventListener('mouseenter', () => {
+    sideButtonsBridge.addEventListener('mouseenter', () => {
       isMouseInsideExplosion = true;
     });
-    leftButtonsBridge.addEventListener('mouseleave', () => {
+    sideButtonsBridge.addEventListener('mouseleave', () => {
       isMouseInsideExplosion = false;
     });
-    explosionShadowRoot.appendChild(leftButtonsBridge);
+    explosionShadowRoot.appendChild(sideButtonsBridge);
   } else {
     console.error('[WordExplosion] Shadow DOM未初始化');
   }
@@ -766,16 +759,16 @@ function applyWordExplosionTheme(container, forcedIsDark = null) {
   if (!container) {return;}
 
   // 从Shadow DOM中获取左侧按钮容器
-  const leftButtons = explosionShadowRoot ? explosionShadowRoot.getElementById('word-explosion-left-buttons-wrapper') : null;
+  const sideButtons = explosionShadowRoot ? explosionShadowRoot.getElementById('word-explosion-side-buttons-wrapper') : null;
 
   if (explosionThemeMode === 'dark') {
     // 固定暗色主题
     container.classList.add('dark-mode');
-    if (leftButtons) {leftButtons.classList.add('dark-mode');}
+    if (sideButtons) {sideButtons.classList.add('dark-mode');}
   } else if (explosionThemeMode === 'light') {
     // 固定亮色主题
     container.classList.remove('dark-mode');
-    if (leftButtons) {leftButtons.classList.remove('dark-mode');}
+    if (sideButtons) {sideButtons.classList.remove('dark-mode');}
   } else {
     // 自动检测模式（跟随当前页面的高亮模式）
     const isDark = typeof forcedIsDark === 'boolean' ? forcedIsDark
@@ -783,34 +776,34 @@ function applyWordExplosionTheme(container, forcedIsDark = null) {
           ? highlightManager.isDarkMode : false);
     if (isDark) {
       container.classList.add('dark-mode');
-      if (leftButtons) {leftButtons.classList.add('dark-mode');}
+      if (sideButtons) {sideButtons.classList.add('dark-mode');}
     } else {
       container.classList.remove('dark-mode');
-      if (leftButtons) {leftButtons.classList.remove('dark-mode');}
+      if (sideButtons) {sideButtons.classList.remove('dark-mode');}
     }
   }
 }
 
-// 拖动时让左侧按钮列和连接层跟着弹窗走
+// 拖动时让外挂按钮列和连接层跟着弹窗走（按钮列挂在弹窗右侧外部）
 function syncExplosionSideElementsPosition(left, top) {
   if (!explosionShadowRoot || !wordExplosionEl) {return;}
 
   const position = wordExplosionEl.style.position || 'absolute';
-  const height = wordExplosionEl.getBoundingClientRect().height;
+  const rect = wordExplosionEl.getBoundingClientRect();
 
-  const leftButtons = explosionShadowRoot.getElementById('word-explosion-left-buttons-wrapper');
-  if (leftButtons) {
-    leftButtons.style.position = position;
-    leftButtons.style.left = (left - 28) + 'px';
-    leftButtons.style.top = (top + 16) + 'px';
+  const sideButtons = explosionShadowRoot.getElementById('word-explosion-side-buttons-wrapper');
+  if (sideButtons) {
+    sideButtons.style.position = position;
+    sideButtons.style.left = (left + rect.width + 4) + 'px'; // 弹窗右边往外4px空隙
+    sideButtons.style.top = (top + 16) + 'px'; // 向下偏移16px，避免与弹窗圆角平齐
   }
 
-  const bridge = explosionShadowRoot.getElementById('word-explosion-left-buttons-bridge');
+  const bridge = explosionShadowRoot.getElementById('word-explosion-side-buttons-bridge');
   if (bridge) {
     bridge.style.position = position;
-    bridge.style.left = (left - 4) + 'px';
+    bridge.style.left = (left + rect.width) + 'px';
     bridge.style.top = top + 'px';
-    bridge.style.height = height + 'px';
+    bridge.style.height = rect.height + 'px';
   }
 }
 
@@ -874,15 +867,15 @@ function hideWordExplosion() {
 
   // 从Shadow DOM中隐藏左侧按钮
   if (explosionShadowRoot) {
-    const leftButtons = explosionShadowRoot.getElementById('word-explosion-left-buttons-wrapper');
-    if (leftButtons) {
-      leftButtons.style.display = 'none';
+    const sideButtons = explosionShadowRoot.getElementById('word-explosion-side-buttons-wrapper');
+    if (sideButtons) {
+      sideButtons.style.display = 'none';
     }
 
     // 隐藏透明连接层
-    const leftButtonsBridge = explosionShadowRoot.getElementById('word-explosion-left-buttons-bridge');
-    if (leftButtonsBridge) {
-      leftButtonsBridge.style.display = 'none';
+    const sideButtonsBridge = explosionShadowRoot.getElementById('word-explosion-side-buttons-bridge');
+    if (sideButtonsBridge) {
+      sideButtonsBridge.style.display = 'none';
     }
   }
 
@@ -1730,12 +1723,6 @@ function showWordExplosion(sentence, sentenceRect = null, sentenceInfo = null) {
     tooltip.style.visibility = 'hidden';
     tooltip.style.display = 'block';
 
-    // 拖动手柄在自动/手动模式下都可用
-    const dragHandle = tooltip.querySelector('.word-explosion-drag-handle');
-    if (dragHandle) {
-      dragHandle.style.display = 'flex';
-    }
-
     // 使用requestAnimationFrame确保浏览器已完成渲染，再进行精确定位
     requestAnimationFrame(async () => {
       await positionWordExplosion(sentenceRect);
@@ -1857,34 +1844,22 @@ async function positionWordExplosion(sentenceRect = null) {
     wordExplosionEl.style.left = wordExplosionSavedPosition.x + 'px';
     wordExplosionEl.style.top = wordExplosionSavedPosition.y + 'px';
 
-    // 手动模式下也需要定位左侧按钮
+    // 手动模式下也需要定位外挂按钮列
     if (explosionShadowRoot) {
-      const leftButtons = explosionShadowRoot.getElementById('word-explosion-left-buttons-wrapper');
-      const leftButtonsBridge = explosionShadowRoot.getElementById('word-explosion-left-buttons-bridge');
-      if (leftButtons) {
-        // 显示左侧按钮
-        leftButtons.style.display = 'flex';
-        // 同步弹窗的暗色模式类到左侧按钮容器
+      const sideButtons = explosionShadowRoot.getElementById('word-explosion-side-buttons-wrapper');
+      const sideButtonsBridge = explosionShadowRoot.getElementById('word-explosion-side-buttons-bridge');
+      if (sideButtons) {
+        sideButtons.style.display = 'flex';
+        // 同步弹窗的暗色模式类到按钮列容器
         if (wordExplosionEl.classList.contains('dark-mode')) {
-          leftButtons.classList.add('dark-mode');
+          sideButtons.classList.add('dark-mode');
         } else {
-          leftButtons.classList.remove('dark-mode');
+          sideButtons.classList.remove('dark-mode');
         }
-        // 手动模式使用fixed定位
-        leftButtons.style.position = 'fixed';
-        leftButtons.style.left = (wordExplosionSavedPosition.x - 28) + 'px';
-        leftButtons.style.top = (wordExplosionSavedPosition.y + 16) + 'px';
-
-        // 定位透明连接层
-        if (leftButtonsBridge) {
-          leftButtonsBridge.style.display = 'block';
-          leftButtonsBridge.style.position = 'fixed';
-          leftButtonsBridge.style.left = (wordExplosionSavedPosition.x - 4) + 'px';
-          leftButtonsBridge.style.top = wordExplosionSavedPosition.y + 'px';
-          // 获取弹窗高度
-          const explosionRect = wordExplosionEl.getBoundingClientRect();
-          leftButtonsBridge.style.height = explosionRect.height + 'px';
+        if (sideButtonsBridge) {
+          sideButtonsBridge.style.display = 'block';
         }
+        syncExplosionSideElementsPosition(wordExplosionSavedPosition.x, wordExplosionSavedPosition.y);
       }
     }
     return;
@@ -2137,34 +2112,25 @@ async function positionWordExplosion(sentenceRect = null) {
     // console.log('[WordExplosion] 向下定位 - top:', explosionTop, 'maxHeight:', maxHeight);
   }
 
-  // 从Shadow DOM中定位左侧按钮
+  // 从Shadow DOM中定位外挂按钮列
   if (explosionShadowRoot) {
-    const leftButtons = explosionShadowRoot.getElementById('word-explosion-left-buttons-wrapper');
-    const leftButtonsBridge = explosionShadowRoot.getElementById('word-explosion-left-buttons-bridge');
-    if (leftButtons) {
-      // 显示左侧按钮
-      leftButtons.style.display = 'flex';
-      // 同步弹窗的暗色模式类到左侧按钮容器
+    const sideButtons = explosionShadowRoot.getElementById('word-explosion-side-buttons-wrapper');
+    const sideButtonsBridge = explosionShadowRoot.getElementById('word-explosion-side-buttons-bridge');
+    if (sideButtons) {
+      sideButtons.style.display = 'flex';
+      // 同步弹窗的暗色模式类到按钮列容器
       if (wordExplosionEl.classList.contains('dark-mode')) {
-        leftButtons.classList.add('dark-mode');
+        sideButtons.classList.add('dark-mode');
       } else {
-        leftButtons.classList.remove('dark-mode');
+        sideButtons.classList.remove('dark-mode');
       }
-      // 根据弹窗位置定位左侧按钮
-      const explosionRect = wordExplosionEl.getBoundingClientRect();
-      leftButtons.style.position = wordExplosionEl.style.position; // 与弹窗使用相同的position模式
-      leftButtons.style.left = (parseFloat(wordExplosionEl.style.left) - 28) + 'px'; // 24px按钮 + 4px空隙 = 28px
-      leftButtons.style.top = (parseFloat(wordExplosionEl.style.top) + 16) + 'px'; // 向下偏移16px，避免与弹窗圆角平齐
-
-      // 定位透明连接层，填充按钮和弹窗之间的空隙
-      if (leftButtonsBridge) {
-        leftButtonsBridge.style.display = 'block';
-        leftButtonsBridge.style.position = wordExplosionEl.style.position;
-        leftButtonsBridge.style.left = (parseFloat(wordExplosionEl.style.left) - 4) + 'px'; // 从弹窗左边往外-4px
-        leftButtonsBridge.style.top = wordExplosionEl.style.top;
-        // 高度与弹窗一致
-        leftButtonsBridge.style.height = explosionRect.height + 'px';
+      if (sideButtonsBridge) {
+        sideButtonsBridge.style.display = 'block';
       }
+      syncExplosionSideElementsPosition(
+        parseFloat(wordExplosionEl.style.left),
+        parseFloat(wordExplosionEl.style.top)
+      );
     }
   }
 }
@@ -2195,21 +2161,8 @@ function repositionExplosionWhenAbove() {
   // 更新top位置
   wordExplosionEl.style.top = finalTop + 'px';
 
-  // 从Shadow DOM中同步更新左侧按钮和连接层的位置
-  if (explosionShadowRoot) {
-    const leftButtons = explosionShadowRoot.getElementById('word-explosion-left-buttons-wrapper');
-    const leftButtonsBridge = explosionShadowRoot.getElementById('word-explosion-left-buttons-bridge');
-
-    if (leftButtons) {
-      leftButtons.style.top = (finalTop + 16) + 'px'; // 向下偏移16px，避免与弹窗圆角平齐
-    }
-
-    if (leftButtonsBridge) {
-      leftButtonsBridge.style.top = finalTop + 'px';
-      // 更新连接层高度
-      leftButtonsBridge.style.height = currentHeight + 'px';
-    }
-  }
+  // 同步更新外挂按钮列和连接层的位置
+  syncExplosionSideElementsPosition(parseFloat(wordExplosionEl.style.left), finalTop);
 
   console.log('[WordExplosion] 重新定位(向上) - 当前高度:', currentHeight, '新top:', finalTop, '底部位置(期望):', explosionBottomInPage);
 }
@@ -5096,8 +5049,8 @@ function injectExplosionStyles() {
 
     /* 爆炸窗口容器可交互 */
     .word-explosion-container,
-    #word-explosion-left-buttons-wrapper,
-    .word-explosion-left-buttons-bridge {
+    #word-explosion-side-buttons-wrapper,
+    .word-explosion-side-buttons-bridge {
       pointer-events: auto !important;
     }
 
@@ -5129,43 +5082,34 @@ function injectExplosionStyles() {
       box-shadow: none;
     }
 
-    /* 左侧按钮容器（外挂在弹窗左侧） */
-    .word-explosion-left-buttons {
+    /* 外挂按钮列（挂在弹窗右侧外部，实际 left/top 由 JS 按弹窗位置计算） */
+    .word-explosion-side-buttons {
       position: absolute;
-      top: 24px;
-      left: -28px; /* 定位在弹窗左侧外部，24px按钮+4px空隙 */
       display: flex;
       flex-direction: column;
-      gap: 6px; /* 与右侧按钮保持一致 */
+      gap: 6px;
+      /* 共用一层背景遮罩，与主弹窗同款描边和阴影 */
+      background: #FBFAF5;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      padding: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       z-index: 2147483647; /* 确保在最上层 */
       pointer-events: auto; /* 确保按钮可以点击 */
       visibility: visible; /* 强制可见 */
     }
 
-    /* 透明连接层，填充按钮和弹窗之间的空隙 */
-    .word-explosion-left-buttons-bridge {
+
+    /* 透明连接层，填充按钮列和弹窗之间的空隙（left/top/height 由 JS 计算） */
+    .word-explosion-side-buttons-bridge {
       position: absolute;
-      top: 8px;
-      left: -4px; /* 从弹窗左边往外-4px */
       width: 4px; /* 填充空隙 */
-      /* 高度由JS动态设置与弹窗一致 */
       background: transparent; /* 完全透明 */
       z-index: 2147483647; /* 与按钮同层 */
       pointer-events: auto; /* 阻止鼠标穿透 */
       display: none;
     }
 
-    /* 右上角按钮容器 */
-    .word-explosion-top-right-buttons {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      align-items: flex-end;
-      z-index: 100;
-    }
 
     /* 关闭按钮 */
     .word-explosion-close-btn {
@@ -5192,12 +5136,12 @@ function injectExplosionStyles() {
       color: #ff0000;
     }
 
-    /* 左侧按钮样式（Ask和Sidebar） */
-    .word-explosion-left-btn {
+    /* 侧边按钮样式：背景交给外层遮罩，按钮自身只在 hover 时着色 */
+    .word-explosion-side-btn {
       width: 24px;
       height: 24px;
       border: none;
-      background: #f5f5f5;
+      background: transparent;
       border-radius: 7px;
       cursor: pointer;
       padding: 2px;
@@ -5207,48 +5151,20 @@ function injectExplosionStyles() {
       justify-content: center;
     }
 
-    .word-explosion-left-btn:hover {
+
+    .word-explosion-side-btn:hover {
       background: #e0e0e0;
       color: #333;
       transform: scale(1.05);
     }
 
-    .word-explosion-left-btn:active {
+    .word-explosion-side-btn:active {
       transform: scale(0.95);
     }
 
-    .word-explosion-left-btn svg {
+    .word-explosion-side-btn svg {
       width: 20px;
       height: 20px;
-    }
-
-    /* 右上角按钮样式 */
-    .word-explosion-top-btn {
-      position: relative;
-      top: 0;
-      right: 0;
-      width: 24px;
-      height: 24px;
-      border: none;
-      background: #f5f5f5;
-      border-radius: 7px;
-      cursor: pointer;
-      padding: 2px;
-      color: #666;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .word-explosion-top-btn:hover {
-      background: #e0e0e0;
-      color: #333;
-      transform: scale(1.05);
-    }
-
-    .word-explosion-top-btn svg {
-      width: 18px;
-      height: 18px;
     }
 
     /* TTS按钮特殊样式（使用emoji） */
@@ -5270,7 +5186,7 @@ function injectExplosionStyles() {
       color: #2E7D32;
     }
 
-    /* 拖动手柄（位于右上角按钮列顶部） */
+    /* 拖动手柄（位于按钮列顶部） */
     .word-explosion-drag-handle {
       width: 24px;
       height: 24px;
@@ -5624,73 +5540,52 @@ function injectExplosionStyles() {
       box-shadow: none;
     }
 
-    /* 暗色主题 - 关闭按钮 */
-    .word-explosion-container.dark-mode .word-explosion-close-btn {
+    /* 暗色主题 - 外挂按钮列（在弹窗外部，只能用 wrapper 作用域） */
+    #word-explosion-side-buttons-wrapper.dark-mode {
+      background: #1e1e1e;
+      border-color: #444;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    #word-explosion-side-buttons-wrapper.dark-mode .word-explosion-side-btn {
+      background: transparent;
+      color: #aaa;
+    }
+
+    #word-explosion-side-buttons-wrapper.dark-mode .word-explosion-side-btn:hover {
+      background: #3a3a3a;
+      color: #ddd;
+    }
+
+
+    #word-explosion-side-buttons-wrapper.dark-mode .word-explosion-close-btn {
       color: #aaa;
       background-color: #ffffff00;
     }
 
-    .word-explosion-container.dark-mode .word-explosion-close-btn:hover {
+    #word-explosion-side-buttons-wrapper.dark-mode .word-explosion-close-btn:hover {
       background: #33333300;
       color: #ff6666;
     }
 
-    /* 暗色主题 - 左侧按钮（弹窗内） */
-    .word-explosion-container.dark-mode .word-explosion-left-btn {
-      background: #2a2a2a;
-      color: #aaa;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    }
-
-    .word-explosion-container.dark-mode .word-explosion-left-btn:hover {
-      background: #3a3a3a;
-      color: #ddd;
-      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
-    }
-
-    /* 暗色主题 - 左侧悬挂按钮容器（独立于弹窗外部） */
-    #word-explosion-left-buttons-wrapper.dark-mode .word-explosion-left-btn {
-      background: #2a2a2a;
-      color: #aaa;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    }
-
-    #word-explosion-left-buttons-wrapper.dark-mode .word-explosion-left-btn:hover {
-      background: #3a3a3a;
-      color: #ddd;
-      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
-    }
-
-    /* 暗色主题 - 右上角按钮 */
-    .word-explosion-container.dark-mode .word-explosion-top-btn {
-      background: #2a2a2a;
-      color: #aaa;
-    }
-
-    .word-explosion-container.dark-mode .word-explosion-top-btn:hover {
-      background: #3a3a3a;
-      color: #ddd;
-    }
-
-    /* 暗色主题 - 一键已知按钮 */
-    .word-explosion-container.dark-mode .word-explosion-mark-all-known-btn {
+    #word-explosion-side-buttons-wrapper.dark-mode .word-explosion-mark-all-known-btn {
       color: #66BB6A;
     }
 
-    .word-explosion-container.dark-mode .word-explosion-mark-all-known-btn:hover {
+    #word-explosion-side-buttons-wrapper.dark-mode .word-explosion-mark-all-known-btn:hover {
       background: #1b5e20;
       color: #81C784;
     }
 
-    /* 暗色主题 - 拖动手柄 */
-    .word-explosion-container.dark-mode .word-explosion-drag-handle {
+    #word-explosion-side-buttons-wrapper.dark-mode .word-explosion-drag-handle {
       color: #4FC3F7;
     }
 
-    .word-explosion-container.dark-mode .word-explosion-drag-handle:hover {
+    #word-explosion-side-buttons-wrapper.dark-mode .word-explosion-drag-handle:hover {
       color: #4FC3F7;
       background: #3a3a3a;
     }
+
 
     /* 暗色主题 - 原句 */
     .word-explosion-container.dark-mode .word-explosion-sentence {
