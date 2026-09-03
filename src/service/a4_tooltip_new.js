@@ -2459,9 +2459,10 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
         // 添加释义管理功能
         function initTranslationManagement() {
-
-            checkAndAddDefaultInput();
-
+            const list = tooltipEl?.querySelector('.scrollable-content .translation-list');
+            if (list) {
+                ensureAddTranslationEntry(list);
+            }
         }
 
         function translate_Stauts_SententsToDb(translation, onComplete) {
@@ -2543,6 +2544,12 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
         // 添加释义输入框
         function addTranslationInput(translationList, number, beforeElement = null,focusIn = true) {
+            // 进入输入态时收起「添加释义」入口
+            const leftoverEntry = translationList.querySelector('.add-translation-entry');
+            if (leftoverEntry) {
+                leftoverEntry.remove();
+            }
+
             // 创建输入框容器
             const inputContainer = document.createElement('div');
             inputContainer.className = 'translation-item';
@@ -2550,7 +2557,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             // --- 修改：创建 textarea 而不是 input ---
             const textarea = document.createElement('textarea');
             textarea.className = 'translation-input'; // 使用相同的类名
-            textarea.placeholder = 'Schreiben Sie hier';
+            textarea.placeholder = '输入释义';
             // --- 添加样式以支持换行和自适应高度 ---
             textarea.style.width = '100%';
             textarea.style.minHeight = '16px'; // 设置最小高度为 16px
@@ -2637,19 +2644,15 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               e.stopPropagation();
           });
           // --
-            // 处理输入框失焦事件 (保持不变)
+            // 处理输入框失焦事件
             textarea.addEventListener('blur', function() {
                 setTimeout(() => {
                     if (this.value.trim() === '') {
-                        // 如果输入为空，检查是否还有其他释义
-                        const items = translationList.querySelectorAll('.translation-item:not(.ai-recommendation):not(.ai-recommendation-2)');
-                        if (items.length > 1 || (items.length === 1 && items[0] !== inputContainer)) {
-                            // 如果有其他释义，移除输入框
-                            if (inputContainer.parentNode) {
-                                inputContainer.parentNode.removeChild(inputContainer);
-                            }
+                        // 空输入：移除输入框；若没有其他释义，恢复「添加释义」入口
+                        if (inputContainer.parentNode) {
+                            inputContainer.parentNode.removeChild(inputContainer);
                         }
-                        // 如果只有这一个输入框，保留它
+                        ensureAddTranslationEntry(translationList);
                     } else if (inputContainer.parentNode) {
                         // 如果有输入内容，转换为正式释义
                         createTranslationItem(translationList, inputContainer, this.value.trim());
@@ -2783,14 +2786,8 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                       }
                     }
 
-                    // 检查是否还有其他非AI推荐的释义
-                    const remainingItems = translationList.querySelectorAll('.translation-item:not(.ai-recommendation):not(.ai-recommendation-2)');
-                    if (remainingItems.length === 0) {
-                        // 如果没有释义了，添加一个输入框
-                        addTranslationInput(translationList, 1);
-                    } else {
-
-                    }
+                    // 没有释义时显示「添加释义」，不再自动弹出输入框
+                    ensureAddTranslationEntry(translationList);
 
                 }
             });
@@ -3305,8 +3302,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 // 为两个列表中的按钮重新绑定事件
                 initTranslationManagement();
               } else {
-                // 如果没有翻译，添加默认输入框
-                addTranslationInput(expandedList, 1, null, false);
+                ensureAddTranslationEntry(expandedList);
               }
 
               // 添加AI推荐项，使用保存的结果
@@ -3316,10 +3312,10 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               }
 
             } else {
-              // 如果没有获取到详情，添加默认输入框
               const expandedList = tooltipEl.querySelector('.scrollable-content .translation-list');
-
-              if (expandedList) addTranslationInput(expandedList, 1);
+              if (expandedList) {
+                ensureAddTranslationEntry(expandedList);
+              }
             }
 
             // 清理刷新进行中的标记
@@ -3405,10 +3401,6 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
                 // 为两个列表中的按钮重新绑定事件
                 initTranslationManagement();
-              } else {
-                // 如果没有翻译，添加默认输入框
-                addTranslationInput(expandedList, 1,null,false);
-
               }
 
               // 再添加AI推荐项
@@ -3425,11 +3417,15 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 }
                }
 
-            } else {
-              // 如果没有获取到详情，添加默认输入框
-              const expandedList = tooltipEl.querySelector('.scrollable-content .translation-list');
+              if (translations.length === 0) {
+                ensureAddTranslationEntry(expandedList);
+              }
 
-              if (expandedList) addTranslationInput(expandedList, 1);
+            } else {
+              const expandedList = tooltipEl.querySelector('.scrollable-content .translation-list');
+              if (expandedList) {
+                ensureAddTranslationEntry(expandedList);
+              }
 
             }
 
@@ -3440,18 +3436,58 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
           });
         }
 
-        // 检查并添加默认输入框
-        function checkAndAddDefaultInput() {
-            const translationLists = document.querySelectorAll('.translation-list');
+        // 无已存释义、也没有正在编辑的输入框时，显示「添加释义」入口（点击后才出现输入框）
+        function ensureAddTranslationEntry(translationList = null) {
+            if (!tooltipEl || tooltipBeingDestroyed) {
+                return;
+            }
+            const list = translationList || tooltipEl.querySelector('.scrollable-content .translation-list');
+            if (!list) {
+                return;
+            }
 
-            translationLists.forEach(list => {
-                // 检查是否有非AI推荐的释义
-                const items = list.querySelectorAll('.translation-item:not(.ai-recommendation):not(.ai-recommendation-2)');
-                if (items.length === 0) {
-                    // 如果没有释义，添加一个输入框
-                    addTranslationInput(list, 1);
+            const existingEntry = list.querySelector('.add-translation-entry');
+            const hasInput = !!list.querySelector('textarea.translation-input');
+            const hasSavedTranslation = !!list.querySelector(
+                '.translation-item:not(.ai-recommendation):not(.ai-recommendation-2):not(.add-translation-entry) .translation-text'
+            );
+
+            if (hasInput || hasSavedTranslation) {
+                if (existingEntry) {
+                    existingEntry.remove();
                 }
+                return;
+            }
+
+            if (existingEntry) {
+                return;
+            }
+
+            const entry = document.createElement('div');
+            entry.className = 'translation-item add-translation-entry';
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'add-translation-entry-btn';
+            btn.textContent = '+ 添加释义';
+            btn.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (entry.parentNode) {
+                    entry.parentNode.removeChild(entry);
+                }
+                const aiItem = list.querySelector('.ai-recommendation');
+                addTranslationInput(list, 1, aiItem || null, true);
             });
+
+            entry.appendChild(btn);
+
+            const aiItem = list.querySelector('.ai-recommendation');
+            if (aiItem) {
+                list.insertBefore(entry, aiItem);
+            } else {
+                list.appendChild(entry);
+            }
         }
 
         //---AI释义---
@@ -3610,7 +3646,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
         function getNewAIRecommendation() {
             // 先创建元素，无论如何都会返回这个元素
             const aiTextElement = document.createElement('span');
-            aiTextElement.textContent = "Hmm...";
+            aiTextElement.textContent = "加载中...";
             aiTextElement.className = "ai-translation-text";
 
             // 异步获取设置并更新元素内容
@@ -3646,6 +3682,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
                           // 设置shouldRefresh标志
                           aiTranslationStatus.ai1.shouldRefresh = shouldRefresh;
+
 
                           // 如果需要刷新，检查是否需要等待AI翻译2
                           if(shouldRefresh) {
@@ -3684,6 +3721,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                         // 标记AI翻译1完成（即使失败）
                         aiTranslationStatus.ai1.completed = true;
                         aiTranslationStatus.ai1.result = "AI 释义加载失败";
+
                     });
                 } else {
                     aiTextElement.textContent = "(✿◠‿◠)";
@@ -3691,6 +3729,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                     // 标记AI翻译1完成（未启用）
                     aiTranslationStatus.ai1.completed = true;
                     aiTranslationStatus.ai1.result = "(✿◠‿◠)";
+
                 }
 
             });
@@ -3815,7 +3854,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
         function getNewAIRecommendation2() {
             // 先创建元素，无论如何都会返回这个元素
             const aiTextElement = document.createElement('span');
-            aiTextElement.textContent = "Hmm...";
+            aiTextElement.textContent = "加载中...";
             aiTextElement.className = "ai-translation-text-2";
 
             // 异步获取设置并更新元素内容
@@ -3832,6 +3871,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                         aiTranslationStatus.ai2.completed = true;
                         aiTranslationStatus.ai2.result = translation;
 
+
                         // 注意：第二个AI翻译不会自动添加到数据库
                         // 用户需要手动点击添加按钮
 
@@ -3846,6 +3886,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                         // 标记AI翻译2完成（即使失败）
                         aiTranslationStatus.ai2.completed = true;
                         aiTranslationStatus.ai2.result = "AI 释义加载失败";
+
                         // 即使失败也检查是否需要刷新
                         checkAndRefreshWhenBothAIComplete();
                     });
@@ -3855,6 +3896,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                     // 标记AI翻译2完成（未启用）
                     aiTranslationStatus.ai2.completed = true;
                     aiTranslationStatus.ai2.result = "(✿◠‿◠)";
+
                     // AI翻译2未启用时也需要检查是否需要刷新
                     checkAndRefreshWhenBothAIComplete();
                 }
@@ -7450,6 +7492,29 @@ padding-top: 5px;
     background-color: var(--background-color);
     color: var(--text-color);
     margin: 4px 0;
+}
+
+.translation-item.add-translation-entry {
+    padding-right: 0;
+}
+
+.add-translation-entry-btn {
+    border: none;
+    background: transparent;
+    color: #8a8a8a;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    cursor: pointer;
+    padding: 2px 0;
+    margin: 0;
+    font-family: inherit;
+}
+
+.add-translation-entry-btn:hover,
+.add-translation-entry-btn:focus-visible {
+    color: #007bff;
+    outline: none;
 }
 
   #audio-container audio {
