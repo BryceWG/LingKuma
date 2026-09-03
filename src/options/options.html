@@ -13,6 +13,13 @@
   <script src="/src/utils/tgs-player.min.js"></script>
 
   <style>
+    .structured-lookup-hint {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #888;
+      line-height: 1.5;
+    }
+
     :root {
       --primary-color: #007aff;
       --secondary-color: #5ac8fa;
@@ -4055,7 +4062,7 @@ max_tokens=4096" style="width: 100%; padding: 8px; min-height: 80px; resize: ver
           <textarea id="aiLanguageDetectionPrompt" data-auto-save="true" data-storage-key="aiLanguageDetectionPrompt" data-storage-area="aiConfig" style="width: 100%; box-sizing: border-box;"></textarea>
           <span class="save-status" style="display: none; color: green; font-size: 12px; margin-top: 5px;">Automatic save complete.</span>
           <button id="restore-aiLanguageDetectionPrompt" style="margin-top: 5px; padding: 3px 8px; font-size: 12px;" data-i18n="restoreDefault">恢复默认</button>
-          <p class="structured-lookup-hint" style="margin-top: 8px; font-size: 12px; color: #888; line-height: 1.5;">点词弹窗与词爆会将语言/释义/标签/整句翻译合并为一次结构化 JSON 请求；此处提示词仅作为该字段的附加说明。句子精析仍单独流式请求。</p>
+          <div class="structured-lookup-hint" data-i18n="structuredLookupHint">点词弹窗与词爆会将语言/释义/标签/整句翻译合并为一次结构化 JSON 请求；此处提示词仅作为该字段的附加说明。句子精析仍单独流式请求。</div>
         </div>
       </div>
 
@@ -4106,7 +4113,7 @@ max_tokens=4096" style="width: 100%; padding: 8px; min-height: 80px; resize: ver
             style="width: 100%; box-sizing: border-box;"></textarea>
           <span class="save-status" style="display: none; color: green; font-size: 12px; margin-top: 5px;">Automatic save complete.</span>
           <button id="restore-aiTagAnalysisPrompt" style="margin-top: 5px; padding: 3px 8px; font-size: 12px;" data-i18n="restoreDefault">恢复默认</button>
-          <p class="structured-lookup-hint" style="margin-top: 8px; font-size: 12px; color: #888; line-height: 1.5;">点词弹窗与词爆会将语言/释义/标签/整句翻译合并为一次结构化 JSON 请求；此处提示词仅作为该字段的附加说明。句子精析仍单独流式请求。</p>
+          <div class="structured-lookup-hint" data-i18n="structuredLookupHint">点词弹窗与词爆会将语言/释义/标签/整句翻译合并为一次结构化 JSON 请求；此处提示词仅作为该字段的附加说明。句子精析仍单独流式请求。</div>
         </div>
       </div>
 
@@ -4194,7 +4201,7 @@ max_tokens=4096" style="width: 100%; padding: 8px; min-height: 80px; resize: ver
           <textarea id="aiPrompt" data-auto-save="true" data-storage-key="aiPrompt" data-storage-area="aiConfig" style="width: 100%; box-sizing: border-box;"></textarea>
           <span class="save-status" style="display: none; color: green; font-size: 12px; margin-top: 5px;">Automatic save complete.</span>
           <button id="restore-aiPrompt" style="margin-top: 5px; padding: 3px 8px; font-size: 12px;" data-i18n="restoreDefault">恢复默认</button>
-          <p class="structured-lookup-hint" style="margin-top: 8px; font-size: 12px; color: #888; line-height: 1.5;">点词弹窗与词爆会将语言/释义/标签/整句翻译合并为一次结构化 JSON 请求；此处提示词仅作为该字段的附加说明。句子精析仍单独流式请求。</p>
+          <div class="structured-lookup-hint" data-i18n="structuredLookupHint">点词弹窗与词爆会将语言/释义/标签/整句翻译合并为一次结构化 JSON 请求；此处提示词仅作为该字段的附加说明。句子精析仍单独流式请求。</div>
         </div>
       </div>
 
@@ -4265,7 +4272,7 @@ max_tokens=4096" style="width: 100%; padding: 8px; min-height: 80px; resize: ver
           <textarea id="aiPrompt2" data-auto-save="true" data-storage-key="aiPrompt2" data-storage-area="aiConfig" style="width: 100%; box-sizing: border-box;"></textarea>
           <span class="save-status" style="display: none; color: green; font-size: 12px; margin-top: 5px;">Automatic save complete.</span>
           <button id="restore-aiPrompt2" style="margin-top: 5px; padding: 3px 8px; font-size: 12px;" data-i18n="restoreDefault">恢复默认</button>
-          <p class="structured-lookup-hint" style="margin-top: 8px; font-size: 12px; color: #888; line-height: 1.5;">点词弹窗与词爆会将语言/释义/标签/整句翻译合并为一次结构化 JSON 请求；此处提示词仅作为该字段的附加说明。句子精析仍单独流式请求。</p>
+          <div class="structured-lookup-hint" data-i18n="structuredLookupHint">点词弹窗与词爆会将语言/释义/标签/整句翻译合并为一次结构化 JSON 请求；此处提示词仅作为该字段的附加说明。句子精析仍单独流式请求。</div>
         </div>
       </div>
 
@@ -4312,7 +4319,7 @@ max_tokens=4096" style="width: 100%; padding: 8px; min-height: 80px; resize: ver
           <textarea id="aiSentenceTranslationPrompt" data-auto-save="true" data-storage-key="aiSentenceTranslationPrompt" data-storage-area="aiConfig" style="width: 100%; box-sizing: border-box;"></textarea>
           <span class="save-status" style="display: none; color: green; font-size: 12px; margin-top: 5px;">Automatic save complete.</span>
           <button id="restore-aiSentenceTranslationPrompt" style="margin-top: 5px; padding: 3px 8px; font-size: 12px;" data-i18n="restoreDefault">恢复默认</button>
-          <p class="structured-lookup-hint" style="margin-top: 8px; font-size: 12px; color: #888; line-height: 1.5;">点词弹窗与词爆会将语言/释义/标签/整句翻译合并为一次结构化 JSON 请求；此处提示词仅作为该字段的附加说明。句子精析仍单独流式请求。</p>
+          <div class="structured-lookup-hint" data-i18n="structuredLookupHint">点词弹窗与词爆会将语言/释义/标签/整句翻译合并为一次结构化 JSON 请求；此处提示词仅作为该字段的附加说明。句子精析仍单独流式请求。</div>
         </div>
       </div>
 

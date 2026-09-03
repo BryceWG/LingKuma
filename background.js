@@ -55,23 +55,23 @@ const injectedHighlightTabs = new Set();
 const injectingHighlightTabs = new Map();
 
 function storageLocalGet(defaults) {
-  return new Promise(resolve => chrome.storage.local.get(defaults, resolve));
+  return new Promise((resolve) => chrome.storage.local.get(defaults, resolve));
 }
 
 function storageLocalSet(values) {
-  return new Promise(resolve => chrome.storage.local.set(values, resolve));
+  return new Promise((resolve) => chrome.storage.local.set(values, resolve));
 }
 
 function queryTabs(queryInfo) {
-  return new Promise(resolve => chrome.tabs.query(queryInfo, resolve));
+  return new Promise((resolve) => chrome.tabs.query(queryInfo, resolve));
 }
 
 function getTabById(tabId) {
-  return new Promise(resolve => chrome.tabs.get(tabId, tab => resolve(chrome.runtime.lastError ? null : tab)));
+  return new Promise((resolve) => chrome.tabs.get(tabId, (tab) => resolve(chrome.runtime.lastError ? null : tab)));
 }
 
 function sendMessageToTab(tabId, message) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     if (!tabId) {
       resolve(false);
       return;
@@ -148,7 +148,7 @@ async function getHighlightRuntimeMissingFrameIds(tabId) {
     }
     const results = await chrome.scripting.executeScript({
       target: getHighlightRuntimeTarget(tab),
-      func: sentinel => globalThis[sentinel] === true,
+      func: (sentinel) => globalThis[sentinel] === true,
       args: [HIGHLIGHT_RUNTIME_SENTINEL]
     });
 
@@ -190,7 +190,7 @@ async function markHighlightRuntimeLoaded(tabId, frameIds = null) {
     }
     await chrome.scripting.executeScript({
       target: getHighlightRuntimeTarget(tab, frameIds),
-      func: sentinel => {
+      func: (sentinel) => {
         globalThis[sentinel] = true;
       },
       args: [HIGHLIGHT_RUNTIME_SENTINEL]
@@ -555,12 +555,12 @@ async function cloudRequest(endpoint, options = {}) {
 
   if (!response.ok) {
     const errorMessage = data.message || `HTTP ${response.status}`;
-    
+
     if (errorMessage.includes('Word limit reached') || errorMessage.includes('单词限制')) {
       console.log('[CloudDB] Word limit reached, sending notification to all tabs');
-      
+
       chrome.tabs.query({}, function(tabs) {
-        tabs.forEach(tab => {
+        tabs.forEach((tab) => {
           chrome.tabs.sendMessage(tab.id, {
             action: "showWordLimitNotification",
             message: errorMessage
@@ -569,7 +569,7 @@ async function cloudRequest(endpoint, options = {}) {
         });
       });
     }
-    
+
     throw new Error(errorMessage);
   }
 
@@ -656,13 +656,13 @@ async function cloudSaveWord(wordData, mergeMode = 'merge') {
             // 对于sentences，需要更复杂的去重逻辑（基于sentence字段）
             const sentenceMap = new Map();
             // 先添加云端的句子
-            cloudSentences.forEach(s => {
+            cloudSentences.forEach((s) => {
               if (s && s.sentence) {
                 sentenceMap.set(s.sentence, s);
               }
             });
             // 再添加本地的句子（如果不存在）
-            localSentences.forEach(s => {
+            localSentences.forEach((s) => {
               if (s && s.sentence && !sentenceMap.has(s.sentence)) {
                 sentenceMap.set(s.sentence, s);
               }
@@ -717,12 +717,12 @@ async function cloudSaveWord(wordData, mergeMode = 'merge') {
             const localSentences = wordData.sentences || [];
             const cloudSentences = cloudData.sentences || [];
             const sentenceMap = new Map();
-            cloudSentences.forEach(s => {
+            cloudSentences.forEach((s) => {
               if (s && s.sentence) {
                 sentenceMap.set(s.sentence, s);
               }
             });
-            localSentences.forEach(s => {
+            localSentences.forEach((s) => {
               if (s && s.sentence && !sentenceMap.has(s.sentence)) {
                 sentenceMap.set(s.sentence, s);
               }
@@ -761,14 +761,14 @@ async function cloudSaveWord(wordData, mergeMode = 'merge') {
 
 // 更新本地单词的版本号
 function updateLocalWordVersion(word, version, id, userId) {
-  if (!db) return;
+  if (!db) {return;}
 
   const key = word.toLowerCase();
   const tx = db.transaction("wordDetails", "readwrite");
   const store = tx.objectStore("wordDetails");
   const getReq = store.get(key);
 
-  getReq.onsuccess = event => {
+  getReq.onsuccess = (event) => {
     const record = event.target.result;
     if (record) {
       record.__v = version;
@@ -940,7 +940,7 @@ let clipboardAutoCloseTimeout = null;
 function openDatabase() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(dbName, dbVersion);
-    request.onupgradeneeded = event => {
+    request.onupgradeneeded = (event) => {
       const db = event.target.result;
       const oldVersion = event.oldVersion;
       console.log(`数据库升级: 从版本 ${oldVersion} 到版本 ${dbVersion}`);
@@ -969,7 +969,7 @@ function openDatabase() {
       }
     };
     // 如果数据库存在，则打开数据库
-    request.onsuccess = event => {
+    request.onsuccess = (event) => {
       db = event.target.result;
       dbReady = true;
       console.log("数据库初始化成功，处理待处理请求...");
@@ -978,7 +978,7 @@ function openDatabase() {
       resolve(db);
     };
     // 如果数据库打开失败，则拒绝请求
-    request.onerror = event => {
+    request.onerror = (event) => {
       console.error("打开数据库失败:", event.target.error);
       reject(event.target.error);
     };
@@ -991,8 +991,8 @@ function processPendingRequests() {
     const request = pendingRequests.shift();
     try {
       request.execute()
-        .then(result => request.resolve(result))
-        .catch(error => request.reject(error));
+        .then((result) => request.resolve(result))
+        .catch((error) => request.reject(error));
     } catch (error) {
       console.error("处理请求失败:", error);
       request.reject(error);
@@ -1021,11 +1021,11 @@ function ensureDB(operation) {
       // 如果数据库尚未初始化，则初始化
       if (!db) {
         console.log("尝试初始化数据库...");
-        openDatabase().catch(err => {
+        openDatabase().catch((err) => {
           console.error("数据库初始化失败:", err);
           // 通知所有待处理请求失败
           const failedRequests = pendingRequests.splice(0, pendingRequests.length);
-          failedRequests.forEach(req => {
+          failedRequests.forEach((req) => {
             req.reject(new Error("数据库初始化失败"));
           });
         });
@@ -1039,7 +1039,7 @@ function openCustomPhrasesDatabase() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(customPhrasesDBName, customPhrasesDBVersion);
 
-    request.onupgradeneeded = event => {
+    request.onupgradeneeded = (event) => {
       const db = event.target.result;
       const oldVersion = event.oldVersion;
       console.log(`自定义词组数据库升级: 从版本 ${oldVersion} 到版本 ${customPhrasesDBVersion}`);
@@ -1053,7 +1053,7 @@ function openCustomPhrasesDatabase() {
       }
     };
 
-    request.onsuccess = event => {
+    request.onsuccess = (event) => {
       customPhrasesDB = event.target.result;
       customPhrasesDBReady = true;
       console.log("自定义词组数据库初始化成功，处理待处理请求...");
@@ -1064,13 +1064,13 @@ function openCustomPhrasesDatabase() {
       migrateCustomPhrasesToNewDB().then(() => {
         console.log("自定义词组数据迁移完成");
         resolve(customPhrasesDB);
-      }).catch(err => {
+      }).catch((err) => {
         console.error("自定义词组数据迁移失败:", err);
         resolve(customPhrasesDB); // 即使迁移失败也继续
       });
     };
 
-    request.onerror = event => {
+    request.onerror = (event) => {
       console.error("打开自定义词组数据库失败:", event.target.error);
       reject(event.target.error);
     };
@@ -1083,8 +1083,8 @@ function processCustomPhrasesPendingRequests() {
     const request = customPhrasesPendingRequests.shift();
     try {
       request.execute()
-        .then(result => request.resolve(result))
-        .catch(error => request.reject(error));
+        .then((result) => request.resolve(result))
+        .catch((error) => request.reject(error));
     } catch (error) {
       console.error("处理自定义词组请求失败:", error);
       request.reject(error);
@@ -1112,11 +1112,11 @@ function ensureCustomPhrasesDB(operation) {
       // 如果数据库尚未初始化，则初始化
       if (!customPhrasesDB) {
         console.log("尝试初始化自定义词组数据库...");
-        openCustomPhrasesDatabase().catch(err => {
+        openCustomPhrasesDatabase().catch((err) => {
           console.error("自定义词组数据库初始化失败:", err);
           // 通知所有待处理请求失败
           const failedRequests = customPhrasesPendingRequests.splice(0, customPhrasesPendingRequests.length);
-          failedRequests.forEach(req => {
+          failedRequests.forEach((req) => {
             req.reject(new Error("自定义词组数据库初始化失败"));
           });
         });
@@ -1129,8 +1129,8 @@ function ensureCustomPhrasesDB(operation) {
 async function migrateCustomPhrasesToNewDB() {
   // 检查是否已经迁移过
   const migrationKey = 'customPhrasesMigrated';
-  const migrated = await new Promise(resolve => {
-    chrome.storage.local.get([migrationKey], result => {
+  const migrated = await new Promise((resolve) => {
+    chrome.storage.local.get([migrationKey], (result) => {
       resolve(result[migrationKey] || false);
     });
   });
@@ -1152,9 +1152,9 @@ async function migrateCustomPhrasesToNewDB() {
     const store = tx.objectStore("wordDetails");
     const request = store.getAll();
 
-    request.onsuccess = event => {
+    request.onsuccess = (event) => {
       const allWords = event.target.result || [];
-      const customWords = allWords.filter(word => word.isCustom === true);
+      const customWords = allWords.filter((word) => word.isCustom === true);
 
       console.log(`找到 ${customWords.length} 个自定义词组需要迁移`);
 
@@ -1170,7 +1170,7 @@ async function migrateCustomPhrasesToNewDB() {
       const customStore = customTx.objectStore("customPhrases");
       let migratedCount = 0;
 
-      customWords.forEach(wordData => {
+      customWords.forEach((wordData) => {
         const customPhraseRecord = {
           word: wordData.word,
           status: wordData.status || '1',
@@ -1187,13 +1187,13 @@ async function migrateCustomPhrasesToNewDB() {
             resolve();
           }
         };
-        putReq.onerror = e => {
+        putReq.onerror = (e) => {
           console.error("迁移自定义词组失败:", e.target.error);
         };
       });
     };
 
-    request.onerror = event => {
+    request.onerror = (event) => {
       console.error("读取主数据库失败:", event.target.error);
       reject(event.target.error);
     };
@@ -1210,7 +1210,7 @@ openDatabase()
   .then(() => {
     console.log("自定义词组数据库初始化完成");
   })
-  .catch(err => {
+  .catch((err) => {
     console.error("数据库初始化失败:", err);
   });
 
@@ -1227,9 +1227,9 @@ function mergeWordRecords(localRecord, remoteRecord, word) {
 
   // 合并翻译数组
   if (remoteRecord.translations && Array.isArray(remoteRecord.translations)) {
-    if (!mergedRecord.translations) mergedRecord.translations = [];
+    if (!mergedRecord.translations) {mergedRecord.translations = [];}
 
-    remoteRecord.translations.forEach(translation => {
+    remoteRecord.translations.forEach((translation) => {
       if (translation && translation.trim() && !mergedRecord.translations.includes(translation.trim())) {
         mergedRecord.translations.push(translation.trim());
         hasChanges = true;
@@ -1240,9 +1240,9 @@ function mergeWordRecords(localRecord, remoteRecord, word) {
 
   // 合并标签数组
   if (remoteRecord.tags && Array.isArray(remoteRecord.tags)) {
-    if (!mergedRecord.tags) mergedRecord.tags = [];
+    if (!mergedRecord.tags) {mergedRecord.tags = [];}
 
-    remoteRecord.tags.forEach(tag => {
+    remoteRecord.tags.forEach((tag) => {
       if (tag && tag.trim() && !mergedRecord.tags.includes(tag.trim())) {
         mergedRecord.tags.push(tag.trim());
         hasChanges = true;
@@ -1253,11 +1253,11 @@ function mergeWordRecords(localRecord, remoteRecord, word) {
 
   // 合并例句数组
   if (remoteRecord.sentences && Array.isArray(remoteRecord.sentences)) {
-    if (!mergedRecord.sentences) mergedRecord.sentences = [];
+    if (!mergedRecord.sentences) {mergedRecord.sentences = [];}
 
-    remoteRecord.sentences.forEach(sentenceObj => {
+    remoteRecord.sentences.forEach((sentenceObj) => {
       if (sentenceObj && sentenceObj.sentence) {
-        const exists = mergedRecord.sentences.some(existing =>
+        const exists = mergedRecord.sentences.some((existing) =>
           existing.sentence === sentenceObj.sentence
         );
         if (!exists) {
@@ -1271,9 +1271,9 @@ function mergeWordRecords(localRecord, remoteRecord, word) {
 
   // 合并状态历史（如果远程有更新的状态变化）
   if (remoteRecord.statusHistory && typeof remoteRecord.statusHistory === 'object') {
-    if (!mergedRecord.statusHistory) mergedRecord.statusHistory = {};
+    if (!mergedRecord.statusHistory) {mergedRecord.statusHistory = {};}
 
-    Object.keys(remoteRecord.statusHistory).forEach(timestamp => {
+    Object.keys(remoteRecord.statusHistory).forEach((timestamp) => {
       if (!mergedRecord.statusHistory[timestamp]) {
         mergedRecord.statusHistory[timestamp] = remoteRecord.statusHistory[timestamp];
         hasChanges = true;
@@ -1302,13 +1302,13 @@ function mergeWordRecords(localRecord, remoteRecord, word) {
   }
 
   // 确保必要字段存在
-  if (!mergedRecord.word) mergedRecord.word = word.toLowerCase();
-  if (!mergedRecord.term) mergedRecord.term = word;
+  if (!mergedRecord.word) {mergedRecord.word = word.toLowerCase();}
+  if (!mergedRecord.term) {mergedRecord.term = word;}
 
   // 如果有变化，打印详细信息
   if (hasChanges) {
     console.log(`合并单词: ${word}`);
-    changeDetails.forEach(detail => console.log(`  - ${detail}`));
+    changeDetails.forEach((detail) => console.log(`  - ${detail}`));
   }
 
   return hasChanges ? mergedRecord : localRecord;
@@ -1316,14 +1316,14 @@ function mergeWordRecords(localRecord, remoteRecord, word) {
 
 // 获取状态历史中最后更新的时间戳
 function getLastStatusUpdateTime(statusHistory) {
-  if (!statusHistory || typeof statusHistory !== 'object') return 0;
+  if (!statusHistory || typeof statusHistory !== 'object') {return 0;}
 
-  const timestamps = Object.keys(statusHistory).map(ts => parseInt(ts)).filter(ts => !isNaN(ts));
+  const timestamps = Object.keys(statusHistory).map((ts) => parseInt(ts)).filter((ts) => !isNaN(ts));
   return timestamps.length > 0 ? Math.max(...timestamps) : 0;
 }
 
 // 获取单词详情
-//对于您的代码，现在使用highlightManager.wordDetailsFromDB对象缓存是一个很好的性能优化。
+// 对于您的代码，现在使用highlightManager.wordDetailsFromDB对象缓存是一个很好的性能优化。
 // 特别是在检查单词状态这种频繁操作中，使用本地对象可以使界面响应更加流畅，避免不必要的数据库查询延迟。
 function getWordDetailsFromDB(word) {
   const key = word.toLowerCase();
@@ -1333,8 +1333,8 @@ function getWordDetailsFromDB(word) {
         const tx = db.transaction("wordDetails", "readonly");
         const store = tx.objectStore("wordDetails");
         const req = store.get(key);
-        req.onsuccess = event => resolve(event.target.result || {});
-        req.onerror = event => reject(event.target.error);
+        req.onsuccess = (event) => resolve(event.target.result || {});
+        req.onerror = (event) => reject(event.target.error);
       } catch (error) {
         reject(error);
       }
@@ -1364,7 +1364,7 @@ function getWordCount() {
         resolve(countRequest.result);
       };
 
-      countRequest.onerror = event => reject(event.target.error);
+      countRequest.onerror = (event) => reject(event.target.error);
     });
   });
 }
@@ -1384,7 +1384,7 @@ function batchGetWordStatus(words) {
         return;
       }
 
-      words.forEach(word => {
+      words.forEach((word) => {
         const request = store.get(word.toLowerCase());
 
         request.onsuccess = () => {
@@ -1423,10 +1423,10 @@ function getAllWordStatusMap() {
       const tx = db.transaction("wordDetails", "readonly");
       const store = tx.objectStore("wordDetails");
       const req = store.getAll();
-      req.onsuccess = event => {
+      req.onsuccess = (event) => {
         const detailsArr = event.target.result;
         const statusMap = {};
-        detailsArr.forEach(item => {
+        detailsArr.forEach((item) => {
           // 只保留高亮系统必需的字段
           statusMap[item.word] = {
             word: item.word,
@@ -1436,7 +1436,7 @@ function getAllWordStatusMap() {
         });
         resolve(statusMap);
       };
-      req.onerror = event => reject(event.target.error);
+      req.onerror = (event) => reject(event.target.error);
     });
   });
 }
@@ -1447,10 +1447,10 @@ function getAllWordDetailsFromDB() {
       const tx = db.transaction("wordDetails", "readonly");
       const store = tx.objectStore("wordDetails");
       const req = store.getAll();
-      req.onsuccess = event => {
+      req.onsuccess = (event) => {
         const detailsArr = event.target.result;
         const details = {};
-        detailsArr.forEach(item => {
+        detailsArr.forEach((item) => {
           let createdAtValue = null;
           let warningMessage = null;
 
@@ -1458,7 +1458,7 @@ function getAllWordDetailsFromDB() {
             let earliestCreateTime = Infinity;
             let foundValidCreateTimeInHistory = false;
 
-            Object.values(item.statusHistory).forEach(historyEntry => {
+            Object.values(item.statusHistory).forEach((historyEntry) => {
               if (historyEntry &&
                   typeof historyEntry.createTime === 'number' &&
                   !isNaN(historyEntry.createTime) &&
@@ -1496,7 +1496,7 @@ function getAllWordDetailsFromDB() {
         });
         resolve(details);
       };
-      req.onerror = event => reject(event.target.error);
+      req.onerror = (event) => reject(event.target.error);
     });
   });
 }
@@ -1511,10 +1511,10 @@ function addTranslationToDB(word, translation) {
     const tx = db.transaction("wordDetails", "readwrite");
     const store = tx.objectStore("wordDetails");
     const getReq = store.get(key);
-    getReq.onsuccess = event => {
+    getReq.onsuccess = (event) => {
       let record = event.target.result || { word: key, translations: [], tags: [], term: word };
-      if (!record.term) record.term = word;
-      if (!record.translations) record.translations = [];
+      if (!record.term) {record.term = word;}
+      if (!record.translations) {record.translations = [];}
       if (!record.translations.includes(trimmedTranslation)) {
         record.translations.push(trimmedTranslation);
       }
@@ -1529,7 +1529,7 @@ function addTranslationToDB(word, translation) {
               console.log('[CloudDB] Cloud sync completed successfully');
               resolve();
             })
-            .catch(err => {
+            .catch((err) => {
               console.error('[CloudDB] Failed to sync translation:', err);
               // 即使云端同步失败，也resolve（因为本地已保存成功）
               resolve();
@@ -1539,9 +1539,9 @@ function addTranslationToDB(word, translation) {
           resolve();
         }
       };
-      putReq.onerror = e => reject(e.target.error);
+      putReq.onerror = (e) => reject(e.target.error);
     };
-    getReq.onerror = e => reject(e.target.error);
+    getReq.onerror = (e) => reject(e.target.error);
   });
 }
 
@@ -1552,11 +1552,11 @@ function removeTranslationFromDB(word, translation) {
     const tx = db.transaction("wordDetails", "readwrite");
     const store = tx.objectStore("wordDetails");
     const getReq = store.get(key);
-    getReq.onsuccess = event => {
+    getReq.onsuccess = (event) => {
       let record = event.target.result || { word: key, translations: [], tags: [], term: word };
-      if (!record.term) record.term = word;
+      if (!record.term) {record.term = word;}
       if (record.translations) {
-        record.translations = record.translations.filter(t => t !== translation);
+        record.translations = record.translations.filter((t) => t !== translation);
       }
       const putReq = store.put(record);
       putReq.onsuccess = () => {
@@ -1564,12 +1564,12 @@ function removeTranslationFromDB(word, translation) {
         if (cloudConfig.enabled && cloudConfig.dualWrite && cloudConfig.token) {
           // 等待云端同步完成后再resolve
           console.log('[CloudDB] Waiting for cloud sync to complete (remove translation)...');
-          cloudSaveWord(record, 'overwrite')  // 使用overwrite模式，不合并云端数据
+          cloudSaveWord(record, 'overwrite') // 使用overwrite模式，不合并云端数据
             .then(() => {
               console.log('[CloudDB] Cloud sync completed successfully (remove translation)');
               resolve();
             })
-            .catch(err => {
+            .catch((err) => {
               console.error('[CloudDB] Failed to sync translation removal:', err);
               // 即使云端同步失败，也resolve（因为本地已保存成功）
               resolve();
@@ -1579,9 +1579,9 @@ function removeTranslationFromDB(word, translation) {
           resolve();
         }
       };
-      putReq.onerror = e => reject(e.target.error);
+      putReq.onerror = (e) => reject(e.target.error);
     };
-    getReq.onerror = e => reject(e.target.error);
+    getReq.onerror = (e) => reject(e.target.error);
   });
 }
 
@@ -1592,10 +1592,10 @@ function addTagToDB(word, tag) {
     const tx = db.transaction("wordDetails", "readwrite");
     const store = tx.objectStore("wordDetails");
     const getReq = store.get(key);
-    getReq.onsuccess = event => {
+    getReq.onsuccess = (event) => {
       let record = event.target.result || { word: key, translations: [], tags: [], term: word };
-      if (!record.term) record.term = word;
-      if (!record.tags) record.tags = [];
+      if (!record.term) {record.term = word;}
+      if (!record.tags) {record.tags = [];}
       if (!record.tags.includes(tag)) {
         record.tags.push(tag);
         const putReq = store.put(record);
@@ -1609,7 +1609,7 @@ function addTagToDB(word, tag) {
                 console.log('[CloudDB] Cloud sync completed successfully (add tag)');
                 resolve();
               })
-              .catch(err => {
+              .catch((err) => {
                 console.error('[CloudDB] Failed to sync tag:', err);
                 // 即使云端同步失败，也resolve（因为本地已保存成功）
                 resolve();
@@ -1619,28 +1619,28 @@ function addTagToDB(word, tag) {
             resolve();
           }
         };
-        putReq.onerror = e => reject(e.target.error);
+        putReq.onerror = (e) => reject(e.target.error);
       } else {
         resolve(); // 如果标签已存在，直接返回成功
       }
     };
-    getReq.onerror = e => reject(e.target.error);
+    getReq.onerror = (e) => reject(e.target.error);
   });
 }
 
 // 删除标签
 function removeTagFromDB(word, tag) {
-  console.log("删除标签：",word,tag);
+  console.log("删除标签：", word, tag);
   return new Promise((resolve, reject) => {
     const key = word.toLowerCase();
     const tx = db.transaction("wordDetails", "readwrite");
     const store = tx.objectStore("wordDetails");
     const getReq = store.get(key);
-    getReq.onsuccess = event => {
+    getReq.onsuccess = (event) => {
       let record = event.target.result || { word: key, translations: [], tags: [], term: word };
-      if (!record.term) record.term = word;
+      if (!record.term) {record.term = word;}
       if (record.tags) {
-        record.tags = record.tags.filter(t => t !== tag);
+        record.tags = record.tags.filter((t) => t !== tag);
       }
       const putReq = store.put(record);
       putReq.onsuccess = () => {
@@ -1648,12 +1648,12 @@ function removeTagFromDB(word, tag) {
         if (cloudConfig.enabled && cloudConfig.dualWrite && cloudConfig.token) {
           // 等待云端同步完成后再resolve
           console.log('[CloudDB] Waiting for cloud sync to complete (remove tag)...');
-          cloudSaveWord(record, 'overwrite')  // 使用overwrite模式，不合并云端数据
+          cloudSaveWord(record, 'overwrite') // 使用overwrite模式，不合并云端数据
             .then(() => {
               console.log('[CloudDB] Cloud sync completed successfully (remove tag)');
               resolve();
             })
-            .catch(err => {
+            .catch((err) => {
               console.error('[CloudDB] Failed to sync tag removal:', err);
               // 即使云端同步失败，也resolve（因为本地已保存成功）
               resolve();
@@ -1663,9 +1663,9 @@ function removeTagFromDB(word, tag) {
           resolve();
         }
       };
-      putReq.onerror = e => reject(e.target.error);
+      putReq.onerror = (e) => reject(e.target.error);
     };
-    getReq.onerror = e => reject(e.target.error);
+    getReq.onerror = (e) => reject(e.target.error);
   });
 }
 
@@ -1689,14 +1689,14 @@ function updateCustomPhraseInDB(word, status, language) {
 
         // 云端同步
         if (cloudConfig.enabled && cloudConfig.dualWrite && cloudConfig.token) {
-          cloudSavePhrase(customPhraseRecord).catch(err => {
+          cloudSavePhrase(customPhraseRecord).catch((err) => {
             console.error('[CloudDB] Failed to sync custom phrase:', err);
           });
         }
 
         resolve();
       };
-      putReq.onerror = e => {
+      putReq.onerror = (e) => {
         console.error(`写入自定义词组 "${word}" 失败:`, e.target.error);
         reject(e.target.error);
       };
@@ -1712,7 +1712,7 @@ function updateWordStatusInDB(word, status, language, isCustom = false) {
     const store = tx.objectStore("wordDetails");
     const getReq = store.get(key);
 
-    getReq.onsuccess = event => {
+    getReq.onsuccess = (event) => {
       let record = event.target.result || {
         word: key,
         term: word,
@@ -1720,9 +1720,9 @@ function updateWordStatusInDB(word, status, language, isCustom = false) {
         isCustom: false // 默认不是自定义词组
       };
 
-      if (!record.term) record.term = word;
-      if (!record.statusHistory) record.statusHistory = {};
-      if (record.isCustom === undefined) record.isCustom = false;
+      if (!record.term) {record.term = word;}
+      if (!record.statusHistory) {record.statusHistory = {};}
+      if (record.isCustom === undefined) {record.isCustom = false;}
 
       // 更新当前状态
       record.status = status;
@@ -1760,7 +1760,7 @@ function updateWordStatusInDB(word, status, language, isCustom = false) {
                 console.log('自定义词组数据库更新成功');
 
                 // 通知内容脚本增量更新高亮
-                chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                   if (tabs[0]) {
                     // 判断是新增还是状态更新
                     const isNewWord = !event.target.result; // 如果原来没有记录，说明是新增
@@ -1781,7 +1781,7 @@ function updateWordStatusInDB(word, status, language, isCustom = false) {
 
                 resolve();
               })
-              .catch(err => {
+              .catch((err) => {
                 console.error('自定义词组数据库更新失败:', err);
                 // 即使自定义词组数据库更新失败，主数据库已成功，仍然resolve
                 resolve();
@@ -1798,7 +1798,7 @@ function updateWordStatusInDB(word, status, language, isCustom = false) {
             .then(() => {
               console.log('[CloudDB] Word synced to cloud successfully');
             })
-            .catch(err => {
+            .catch((err) => {
               console.error('[CloudDB] Failed to sync to cloud:', err);
               // 云端同步失败不影响本地操作
             })
@@ -1809,29 +1809,29 @@ function updateWordStatusInDB(word, status, language, isCustom = false) {
           handleSuccess();
         }
       };
-      putReq.onerror = e => reject(e.target.error);
+      putReq.onerror = (e) => reject(e.target.error);
     };
 
-    getReq.onerror = e => reject(e.target.error);
+    getReq.onerror = (e) => reject(e.target.error);
   });
 }
 
 // 新增函数：添加例句到数据库
-function addSentenceToDB(word, sentence, translation,url) {
+function addSentenceToDB(word, sentence, translation, url) {
   return new Promise((resolve, reject) => {
     const key = word.toLowerCase();
     const tx = db.transaction("wordDetails", "readwrite");
     const store = tx.objectStore("wordDetails");
     const getReq = store.get(key);
-    getReq.onsuccess = event => {
+    getReq.onsuccess = (event) => {
       // 如果记录不存在，则创建包含 sentences 数组的新记录
       let record = event.target.result || { word: key, translations: [], tags: [], sentences: [], term: word };
-      if (!record.term) record.term = word;
-      if (!record.sentences) record.sentences = [];
+      if (!record.term) {record.term = word;}
+      if (!record.sentences) {record.sentences = [];}
       // 检查该例句是否已存在（避免重复添加）
-      const exists = record.sentences.some(item => item.sentence === sentence);
+      const exists = record.sentences.some((item) => item.sentence === sentence);
       if (!exists) {
-        record.sentences.push({ sentence: sentence, translation: translation,url:url });
+        record.sentences.push({ sentence: sentence, translation: translation, url: url });
       }
       const putReq = store.put(record);
       putReq.onsuccess = () => {
@@ -1844,7 +1844,7 @@ function addSentenceToDB(word, sentence, translation,url) {
               console.log('[CloudDB] Cloud sync completed successfully (add sentence)');
               resolve();
             })
-            .catch(err => {
+            .catch((err) => {
               console.error('[CloudDB] Failed to sync sentence:', err);
               // 即使云端同步失败，也resolve（因为本地已保存成功）
               resolve();
@@ -1854,9 +1854,9 @@ function addSentenceToDB(word, sentence, translation,url) {
           resolve();
         }
       };
-      putReq.onerror = e => reject(e.target.error);
+      putReq.onerror = (e) => reject(e.target.error);
     };
-    getReq.onerror = e => reject(e.target.error);
+    getReq.onerror = (e) => reject(e.target.error);
   });
 }
 
@@ -1867,12 +1867,12 @@ function removeSentenceFromDB(word, sentence) {
     const tx = db.transaction("wordDetails", "readwrite");
     const store = tx.objectStore("wordDetails");
     const getReq = store.get(key);
-    getReq.onsuccess = event => {
+    getReq.onsuccess = (event) => {
       let record = event.target.result;
       if (record && record.sentences) {
         console.log("[background.js] 删除例句前，例句列表:", record.sentences); // 添加日志
         // 过滤掉要删除的例句
-        record.sentences = record.sentences.filter(item => item.sentence !== sentence);
+        record.sentences = record.sentences.filter((item) => item.sentence !== sentence);
         console.log("[background.js] 删除例句后，例句列表:", record.sentences); // 添加日志
         const putReq = store.put(record);
         putReq.onsuccess = () => {
@@ -1880,12 +1880,12 @@ function removeSentenceFromDB(word, sentence) {
           if (cloudConfig.enabled && cloudConfig.dualWrite && cloudConfig.token) {
             // 等待云端同步完成后再resolve
             console.log('[CloudDB] Waiting for cloud sync to complete (remove sentence)...');
-            cloudSaveWord(record, 'overwrite')  // 使用overwrite模式，不合并云端数据
+            cloudSaveWord(record, 'overwrite') // 使用overwrite模式，不合并云端数据
               .then(() => {
                 console.log('[CloudDB] Cloud sync completed successfully (remove sentence)');
                 resolve();
               })
-              .catch(err => {
+              .catch((err) => {
                 console.error('[CloudDB] Failed to sync sentence removal:', err);
                 // 即使云端同步失败，也resolve（因为本地已保存成功）
                 resolve();
@@ -1895,12 +1895,12 @@ function removeSentenceFromDB(word, sentence) {
             resolve();
           }
         };
-        putReq.onerror = e => reject(e.target.error);
+        putReq.onerror = (e) => reject(e.target.error);
       } else {
         resolve(); // 若没有记录也直接返回成功
       }
     };
-    getReq.onerror = e => reject(e.target.error);
+    getReq.onerror = (e) => reject(e.target.error);
   });
 }
 
@@ -1917,14 +1917,14 @@ function deleteCustomPhraseFromDB(word) {
 
         // 云端同步删除
         if (cloudConfig.enabled && cloudConfig.dualWrite && cloudConfig.token) {
-          cloudDeletePhrase(key).catch(err => {
+          cloudDeletePhrase(key).catch((err) => {
             console.error('[CloudDB] Failed to sync custom phrase deletion:', err);
           });
         }
 
         resolve();
       };
-      deleteReq.onerror = e => {
+      deleteReq.onerror = (e) => {
         console.error(`删除自定义词组 ${word} 失败:`, e.target.error);
         reject(e.target.error);
       };
@@ -1941,7 +1941,7 @@ function deleteWordFromDB(word) {
 
     // 先获取记录，检查是否是自定义词组
     const getReq = store.get(key);
-    getReq.onsuccess = event => {
+    getReq.onsuccess = (event) => {
       const record = event.target.result;
       const isCustom = record && record.isCustom === true;
 
@@ -1953,7 +1953,7 @@ function deleteWordFromDB(word) {
         // 云端同步删除
         const syncToCloud = () => {
           if (cloudConfig.enabled && cloudConfig.dualWrite && cloudConfig.token) {
-            cloudDeleteWord(key).catch(err => {
+            cloudDeleteWord(key).catch((err) => {
               console.error('[CloudDB] Failed to sync word deletion:', err);
             });
           }
@@ -1967,7 +1967,7 @@ function deleteWordFromDB(word) {
               syncToCloud();
               resolve();
             })
-            .catch(err => {
+            .catch((err) => {
               console.error(`删除自定义词组数据库记录失败:`, err);
               // 即使自定义词组数据库删除失败，主数据库已删除，仍然resolve
               syncToCloud();
@@ -1978,9 +1978,9 @@ function deleteWordFromDB(word) {
           resolve();
         }
       };
-      deleteReq.onerror = e => reject(e.target.error);
+      deleteReq.onerror = (e) => reject(e.target.error);
     };
-    getReq.onerror = e => reject(e.target.error);
+    getReq.onerror = (e) => reject(e.target.error);
   });
 }
 
@@ -1992,7 +1992,7 @@ function deleteWordExactFromDB(word) {
 
     // 先获取记录，检查是否是自定义词组
     const getReq = store.get(word);
-    getReq.onsuccess = event => {
+    getReq.onsuccess = (event) => {
       const record = event.target.result;
       const isCustom = record && record.isCustom === true;
 
@@ -2008,7 +2008,7 @@ function deleteWordExactFromDB(word) {
               console.log(`自定义词组原型 ${word} 已从两个数据库中完全删除`);
               resolve();
             })
-            .catch(err => {
+            .catch((err) => {
               console.error(`删除自定义词组数据库记录失败:`, err);
               // 即使自定义词组数据库删除失败，主数据库已删除，仍然resolve
               resolve();
@@ -2017,9 +2017,9 @@ function deleteWordExactFromDB(word) {
           resolve();
         }
       };
-      deleteReq.onerror = e => reject(e.target.error);
+      deleteReq.onerror = (e) => reject(e.target.error);
     };
-    getReq.onerror = e => reject(e.target.error);
+    getReq.onerror = (e) => reject(e.target.error);
   });
 }
 
@@ -2051,7 +2051,7 @@ async function ohMyGptGetToken(code) {
     }
     const result = await response.json(); // 假设 API 返回 JSON 格式
     console.log("OhMyGPT getToken 成功:", result);
-    return result
+    return result;
   } catch (error) {
     console.error("调用 OhMyGPT getToken API 时出错:", error);
     return { success: false, error: error.message };
@@ -2079,7 +2079,7 @@ async function ohMyGptAddDays(userId, token) {
     }
     const result = await response.json(); // 假设 API 返回 JSON
     console.log("OhMyGPT addDays 成功:", result);
-    return result
+    return result;
   } catch (error) {
     console.error("调用 OhMyGPT addDays API 时出错:", error);
     return { success: false, error: error.message };
@@ -2107,7 +2107,7 @@ async function ohMyGptSendDollar(token, amount) {
     }
     const result = await response.json(); // 假设 API 返回 JSON
     console.log("OhMyGPT sendDollar 成功:", result);
-    return result
+    return result;
   } catch (error) {
     console.error("调用 OhMyGPT sendDollar API 时出错:", error);
     return { success: false, error: error.message };
@@ -2164,7 +2164,7 @@ async function ohMyGptGetDays(userId) {
     console.log(`OhMyGPT 状态已更新，本地存储 isOhMyGptValid: ${isValid}`);
     // --- 修改代码结束 ---
 
-    return result // 返回原始 API 结果
+    return result; // 返回原始 API 结果
   } catch (error) {
     console.error("调用 OhMyGPT getDays API 时出错:", error);
     // 捕获到任何错误，设置状态为无效
@@ -2191,15 +2191,15 @@ async function getBlockedApiKeys() {
 async function blockApiKey(apiKey, reason = '') {
   const blockedKeys = await getBlockedApiKeys();
   const keyHash = hashApiKey(apiKey); // 使用哈希避免存储完整key
-  
-  if (!blockedKeys.find(item => item.keyHash === keyHash)) {
+
+  if (!blockedKeys.find((item) => item.keyHash === keyHash)) {
     blockedKeys.push({
       keyHash: keyHash,
       keyPreview: apiKey.substring(0, 8) + '...', // 只存储前8位用于识别
       blockedAt: Date.now(),
       reason: reason
     });
-    
+
     // await chrome.storage.local.set({ blockedApiKeys: blockedKeys });
     console.log(`[background.js] API Key 已屏蔽: ${apiKey.substring(0, 8)}... 原因: ${reason}`);
   }
@@ -2209,8 +2209,8 @@ async function blockApiKey(apiKey, reason = '') {
 async function unblockApiKey(apiKey) {
   const blockedKeys = await getBlockedApiKeys();
   const keyHash = hashApiKey(apiKey);
-  
-  const filteredKeys = blockedKeys.filter(item => item.keyHash !== keyHash);
+
+  const filteredKeys = blockedKeys.filter((item) => item.keyHash !== keyHash);
   await chrome.storage.local.set({ blockedApiKeys: filteredKeys });
   console.log(`[background.js] API Key 已解除屏蔽: ${apiKey.substring(0, 8)}...`);
 }
@@ -2219,7 +2219,7 @@ async function unblockApiKey(apiKey) {
 async function isApiKeyBlocked(apiKey) {
   const blockedKeys = await getBlockedApiKeys();
   const keyHash = hashApiKey(apiKey);
-  return blockedKeys.some(item => item.keyHash === keyHash);
+  return blockedKeys.some((item) => item.keyHash === keyHash);
 }
 
 // 简单的哈希函数（用于存储key的标识）
@@ -2244,7 +2244,7 @@ async function selectValidApiKey(apiKeys) {
 
   for (const key of apiKeys) {
     const keyHash = hashApiKey(key);
-    if (!blockedKeys.some(item => item.keyHash === keyHash)) {
+    if (!blockedKeys.some((item) => item.keyHash === keyHash)) {
       validKeys.push(key);
     }
   }
@@ -2276,7 +2276,7 @@ async function selectValidApiConfig(apiPools) {
     // 遍历该平台的所有 keys
     for (const key of platformConfig.keys) {
       const keyHash = hashApiKey(key);
-      if (!blockedKeys.some(item => item.keyHash === keyHash)) {
+      if (!blockedKeys.some((item) => item.keyHash === keyHash)) {
         validConfigs.push({
           platform: platformName,
           baseURL: platformConfig.baseURL,
@@ -2320,7 +2320,7 @@ async function applyDefaultConfig(config, responseConfig, temperature, reject) {
           atob("ODUwZTNlMmEzYmVkNDg2N2I2MGIzZWI2NmUyMDAyNjMuYWhSOGhxYkJvaG1wRG81eg=="),
           atob("MGZmMDYwNTZlODhhNGNlMmI1ZTA4NzIxZTNjNGNkNmQuMnV0djhRaDVlZU1jcnJHcA=="),
           atob("YzZhYzJlYjllMTJiNGJiNWEwZDczYzliNzZkODEzNzAuRnpITlNoZnFteEx4MHV4WA=="),
-          atob("ZjAwMmZlNTUzNGQ4NDYxNWEyM2VjOTlhODM1ZDZiM2UuR2h1NVRrSmVDS0xiSGhMZA=="),
+          atob("ZjAwMmZlNTUzNGQ4NDYxNWEyM2VjOTlhODM1ZDZiM2UuR2h1NVRrSmVDS0xiSGhMZA==")
         ]
       }
     };
@@ -2350,13 +2350,13 @@ async function applyDefaultConfig(config, responseConfig, temperature, reject) {
  * @returns {'responses'|'chat'} - 返回 API 类型
  */
 function detectApiType(url) {
-  if (!url) return 'chat';
-  
+  if (!url) {return 'chat';}
+
   // Responses API 的 URL 通常包含 /v1/responses 或 /responses
   if (url.includes('/v1/responses') || url.includes('/responses')) {
     return 'responses';
   }
-  
+
   // Chat Completions API 的 URL 通常包含 /v1/chat/completions 或 /chat/completions
   // 其他情况默认使用 chat 格式
   return 'chat';
@@ -2371,7 +2371,7 @@ function convertMessagesToInput(messages) {
   if (!messages || messages.length === 0) {
     return [];
   }
-  
+
   // Responses API 要求 input 必须是数组格式
   // 始终返回消息数组，不返回裸字符串
   return messages;
@@ -2390,16 +2390,16 @@ function extractResponsesContent(data) {
   // - type: "message" (实际消息)
   if (data.output && Array.isArray(data.output) && data.output.length > 0) {
     // 优先查找 type: "message" 的 output 对象
-    let messageOutput = data.output.find(o => o.type === 'message');
-    
+    let messageOutput = data.output.find((o) => o.type === 'message');
+
     // 如果没有找到 message 类型，使用第一个 output
     if (!messageOutput) {
       messageOutput = data.output[0];
     }
-    
+
     if (messageOutput && messageOutput.content && Array.isArray(messageOutput.content) && messageOutput.content.length > 0) {
       // 查找 type: "output_text" 的 content 项
-      const contentItem = messageOutput.content.find(c => c.type === 'output_text' && c.text);
+      const contentItem = messageOutput.content.find((c) => c.type === 'output_text' && c.text);
       if (contentItem) {
         return contentItem.text;
       }
@@ -2419,7 +2419,7 @@ function extractAITextContent(content) {
   }
 
   if (Array.isArray(content)) {
-    return content.map(item => extractAITextContent(item)).join('');
+    return content.map((item) => extractAITextContent(item)).join('');
   }
 
   if (content && typeof content === 'object') {
@@ -2609,10 +2609,10 @@ function parseCustomRequestBody(customRequestBodyStr) {
   if (!customRequestBodyStr || typeof customRequestBodyStr !== 'string') {
     return result;
   }
-  
+
   // 按行分割（不再按逗号分割，因为JSON对象内部可能有逗号）
-  const lines = customRequestBodyStr.split(/\n/).map(line => line.trim()).filter(line => line);
-  
+  const lines = customRequestBodyStr.split(/\n/).map((line) => line.trim()).filter((line) => line);
+
   for (const line of lines) {
     // 匹配 key="value" 格式
     const stringMatch = line.match(/^(\w+)="([^"]*)"$/);
@@ -2624,7 +2624,7 @@ function parseCustomRequestBody(customRequestBodyStr) {
     const jsonObjectMatch = line.match(/^(\w+)=(\{.*\})$/);
     // 匹配 key=[...] 格式（JSON数组）
     const jsonArrayMatch = line.match(/^(\w+)=(\[.*\])$/);
-    
+
     if (stringMatch) {
       result[stringMatch[1]] = stringMatch[2];
     } else if (numberMatch) {
@@ -2653,7 +2653,7 @@ function parseCustomRequestBody(customRequestBodyStr) {
       if (simpleMatch) {
         let value = simpleMatch[2].trim();
         // 移除可能的引号
-        if ((value.startsWith('"') && value.endsWith('"')) || 
+        if ((value.startsWith('"') && value.endsWith('"')) ||
             (value.startsWith("'") && value.endsWith("'"))) {
           value = value.slice(1, -1);
         }
@@ -2661,14 +2661,24 @@ function parseCustomRequestBody(customRequestBodyStr) {
       }
     }
   }
-  
+
   return result;
 }
 
 // ============================
 // AI 请求处理函数（避免 Firefox CSP 限制）
 // ============================
-async function handleAIRequest({ word, sentence, stream = false, messages, model = null, temperature = 1, tabId = null, isSidebarRequest = false, jsonMode = false }) {
+async function handleAIRequest({
+  word,
+  sentence,
+  stream = false,
+  messages,
+  model = null,
+  temperature = 1,
+  tabId = null,
+  isSidebarRequest = false,
+  jsonMode = false
+}) {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(['aiConfig', 'customApiProfiles'], async (result) => {
       try {
@@ -2708,12 +2718,12 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
           // 如果不是 ohmygpt 通道，判断是否轮询
           if (enablePolling && result.customApiProfiles?.profiles?.length > 1) {
             const profiles = result.customApiProfiles.profiles;
-            const pollingProfiles = profiles.filter(p => p.enablePolling !== false);
-            
+            const pollingProfiles = profiles.filter((p) => p.enablePolling !== false);
+
             if (pollingProfiles.length > 0) {
               const selectedProfile = pollingProfiles[apiPollingIndex % pollingProfiles.length];
               apiPollingIndex = (apiPollingIndex + 1) % pollingProfiles.length;
-              
+
               if (selectedProfile?.apiBaseURL?.trim()) {
                 config.apiBaseURL = selectedProfile.apiBaseURL;
                 config.apiModel = selectedProfile.apiModel || "";
@@ -2736,8 +2746,8 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
             // 非轮询模式：优先使用 customApiProfiles 中的激活配置
             const profiles = result.customApiProfiles?.profiles || [];
             const activeProfileId = result.customApiProfiles?.activeProfileId;
-            const activeProfile = profiles.find(p => p.id === activeProfileId);
-            
+            const activeProfile = profiles.find((p) => p.id === activeProfileId);
+
             if (activeProfile?.apiBaseURL?.trim()) {
               config.apiBaseURL = activeProfile.apiBaseURL;
               config.apiModel = activeProfile.apiModel || "";
@@ -2779,9 +2789,9 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
 
         const headers = {
           "Content-Type": "application/json",
-          "x-gemini-legacy-support": "true",
+          "x-gemini-legacy-support": "true"
         };
-        
+
         if (config.apiKey) {
           headers["Authorization"] = `Bearer ${config.apiKey}`;
         }
@@ -2823,10 +2833,18 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
           }
         }
 
+        // jsonMode：要求服务端返回严格 JSON。Chat Completions 与 Responses API 参数名不同，需分别注入
         let usedJsonObject = false;
-        if (jsonMode && !stream && apiType !== 'responses' && !requestBody.response_format) {
-          requestBody.response_format = { type: "json_object" };
-          usedJsonObject = true;
+        if (jsonMode && !stream) {
+          if (apiType === 'responses') {
+            if (!requestBody.text) {
+              requestBody.text = { format: { type: "json_object" } };
+              usedJsonObject = true;
+            }
+          } else if (!requestBody.response_format) {
+            requestBody.response_format = { type: "json_object" };
+            usedJsonObject = true;
+          }
         }
 
         const postAIRequest = (body) => fetch(config.apiBaseURL, {
@@ -2837,26 +2855,36 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
 
         let response = await postAIRequest(requestBody);
 
-        if (!response.ok && usedJsonObject && response.status !== 401 && response.status !== 403 && response.status !== 429) {
-          console.log("[background.js] json_object 可能不被支持，去掉后重试:", response.status);
-          delete requestBody.response_format;
-          usedJsonObject = false;
-          response = await postAIRequest(requestBody);
+        // 仅当错误确实由 JSON 约束参数引起时才去掉参数重试，避免 5xx / 限流被放大成两次计费请求
+        if (!response.ok && usedJsonObject) {
+          const firstErrorText = await response.clone().text().catch(() => '');
+          const isJsonModeUnsupported = [400, 404, 422, 500].includes(response.status) &&
+            /response_format|json_object|json_schema|text\.format/i.test(firstErrorText);
+          if (isJsonModeUnsupported) {
+            console.log("[background.js] json_object 不被支持，去掉后重试:", response.status, firstErrorText.slice(0, 300));
+            delete requestBody.response_format;
+            delete requestBody.text;
+            usedJsonObject = false;
+            response = await postAIRequest(requestBody);
+          }
         }
 
         if (!response.ok) {
           // 检查是否是 API Key 失效的错误
           const shouldBlockKey = response.status === 401 || // 未授权
                                  response.status === 403 || // 禁止访问
-                                 response.status === 429;   // 请求过多（可能是配额用尽）
-          
+                                 response.status === 429; // 请求过多（可能是配额用尽）
+
           if (shouldBlockKey && config.apiKey) {
             const errorReason = `HTTP ${response.status}: ${response.statusText}`;
             await blockApiKey(config.apiKey, errorReason);
             console.error(`[background.js] API Key 因错误被屏蔽: ${errorReason}`);
           }
-          
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
+          // 带上响应体，避免真实错误原因丢失（drop_console 后日志不可用，只能靠 Error message）
+          const errorBody = await response.text().catch(() => '');
+          console.error(`[background.js] AI 请求失败 HTTP ${response.status}:`, errorBody);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}${errorBody ? ` - ${errorBody.slice(0, 300)}` : ''}`);
         }
 
         if (stream) {
@@ -2880,7 +2908,7 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
                     content: content,
                     isFirstChunk: true
                   }
-                }).catch(err => console.log("发送侧栏非流式数据失败:", err));
+                }).catch((err) => console.log("发送侧栏非流式数据失败:", err));
               } else if (tabId) {
                 chrome.tabs.sendMessage(tabId, {
                   action: "streamChunk",
@@ -2889,7 +2917,7 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
                     isFirstChunk: true,
                     isDone: true
                   }
-                }).catch(err => console.log("发送非流式数据失败:", err));
+                }).catch((err) => console.log("发送非流式数据失败:", err));
               }
             }
 
@@ -2897,14 +2925,14 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
               chrome.tabs.sendMessage(tabId, {
                 action: "streamComplete",
                 data: { word, sentence }
-              }).catch(err => console.log("发送完成信号失败:", err));
+              }).catch((err) => console.log("发送完成信号失败:", err));
             }
 
             if (isSidebarRequest) {
               chrome.runtime.sendMessage({
                 action: "streamComplete",
                 data: { word, sentence }
-              }).catch(err => console.log("发送侧边栏完成信号失败:", err));
+              }).catch((err) => console.log("发送侧边栏完成信号失败:", err));
             }
 
             resolve({ success: true, stream: true });
@@ -2955,7 +2983,7 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
                               content: content,
                               isFirstChunk: false
                             }
-                          }).catch(err => console.log("发送侧栏流式数据失败:", err));
+                          }).catch((err) => console.log("发送侧栏流式数据失败:", err));
                         } else if (tabId) {
                           // 发送流式数据到content script
                           chrome.tabs.sendMessage(tabId, {
@@ -2965,7 +2993,7 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
                               isFirstChunk: false,
                               isDone: true
                             }
-                          }).catch(err => console.log("发送流式数据失败:", err));
+                          }).catch((err) => console.log("发送流式数据失败:", err));
                         }
                       }
                     } catch (e) {
@@ -2978,14 +3006,14 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
                     chrome.tabs.sendMessage(tabId, {
                       action: "streamComplete",
                       data: { word, sentence }
-                    }).catch(err => console.log("发送完成信号失败:", err));
+                    }).catch((err) => console.log("发送完成信号失败:", err));
                   }
-                  
+
                   if (isSidebarRequest) {
                     chrome.runtime.sendMessage({
                       action: "streamComplete",
                       data: { word, sentence }
-                    }).catch(err => console.log("发送侧边栏完成信号失败:", err));
+                    }).catch((err) => console.log("发送侧边栏完成信号失败:", err));
                   }
 
                   resolve({ success: true, stream: true });
@@ -3021,7 +3049,7 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
                               content: content,
                               isFirstChunk: isFirstChunk
                             }
-                          }).catch(err => console.log("发送侧栏流式数据失败:", err));
+                          }).catch((err) => console.log("发送侧栏流式数据失败:", err));
                         } else if (tabId) {
                           // 发送流式数据到content script
                           chrome.tabs.sendMessage(tabId, {
@@ -3031,7 +3059,7 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
                               isFirstChunk: isFirstChunk,
                               isDone: false
                             }
-                          }).catch(err => console.log("发送流式数据失败:", err));
+                          }).catch((err) => console.log("发送流式数据失败:", err));
                         }
 
                         if (isFirstChunk) {
@@ -3054,12 +3082,12 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
                     content: `错误: ${error.message}`,
                     isFirstChunk: true
                   }
-                }).catch(err => console.log("发送侧栏错误失败:", err));
+                }).catch((err) => console.log("发送侧栏错误失败:", err));
               } else if (tabId) {
                 chrome.tabs.sendMessage(tabId, {
                   action: "streamError",
                   data: { error: error.message }
-                }).catch(err => console.log("发送错误信号失败:", err));
+                }).catch((err) => console.log("发送错误信号失败:", err));
               }
               reject(error);
             }
@@ -3076,7 +3104,7 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
           } else {
             // 正常的非流式响应
             data = await response.json();
-            
+
             // 根据 API 类型转换响应格式
             if (apiType === 'responses') {
               // 将 Responses API 格式转换为 Chat Completions 格式，保持兼容性
@@ -3103,7 +3131,7 @@ async function handleAIRequest({ word, sentence, stream = false, messages, model
               console.log("[background.js] Responses API 响应已转换为 Chat Completions 格式");
             }
           }
-          
+
           resolve(data);
         }
       } catch (error) {
@@ -3125,7 +3153,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     setGlobalHighlightEnabled(enabled).then(() => {
       sendResponse({ success: true, enabled });
-    }).catch(error => {
+    }).catch((error) => {
       console.error('[background.js] set global highlight failed:', error);
       sendResponse({ success: false, enabled, error: error?.message || String(error) });
     });
@@ -3139,9 +3167,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false;
     }
 
-    getHighlightControlState(tabId).then(state => {
+    getHighlightControlState(tabId).then((state) => {
       sendResponse(state);
-    }).catch(error => {
+    }).catch((error) => {
       console.error('[background.js] get highlight control state failed:', error);
       sendResponse({ scope: 'page', enabled: false, globalEnabled: false });
     });
@@ -3155,9 +3183,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false;
     }
 
-    syncTabHighlightRuntime(tabId).then(() => getHighlightControlState(tabId)).then(state => {
+    syncTabHighlightRuntime(tabId).then(() => getHighlightControlState(tabId)).then((state) => {
       sendResponse({ success: true, ...state });
-    }).catch(error => {
+    }).catch((error) => {
       console.error('[background.js] ensure highlight runtime failed:', error);
       sendResponse({ success: false, error: error?.message || String(error) });
     });
@@ -3172,9 +3200,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     const requestedEnabled = message.enabled === true;
-    setHighlightFromFloatingButton(tabId, requestedEnabled).then(state => {
+    setHighlightFromFloatingButton(tabId, requestedEnabled).then((state) => {
       sendResponse({ success: true, ...state });
-    }).catch(error => {
+    }).catch((error) => {
       console.error('[background.js] floating highlight toggle failed:', error);
       sendResponse({ success: false, error: error?.message || String(error) });
     });
@@ -3207,9 +3235,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
       } else {
         // 使用本地数据库
-        getWordDetailsFromDB(word).then(details => {
+        getWordDetailsFromDB(word).then((details) => {
           sendResponse({ details });
-        }).catch(err => {
+        }).catch((err) => {
           console.error("获取单词详情失败:", err);
           sendResponse({ details: {} });
         });
@@ -3220,11 +3248,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   else if (message.action === 'getAllWordDetails') {
     console.log("[background.js] 开始获取所有单词详情, dbReady:", dbReady, "db:", !!db);
-    getAllWordDetailsFromDB().then(details => {
+    getAllWordDetailsFromDB().then((details) => {
       // const detailsCount = Object.keys(details).length;
       // console.log("[background.js] 成功获取所有单词详情, 数量:", detailsCount);
       sendResponse({ details });
-    }).catch(err => {
+    }).catch((err) => {
       console.error("[background.js] 获取所有单词详情失败:", err);
       sendResponse({ details: {} });
     });
@@ -3234,9 +3262,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   else if (message.action === 'getFilteredWordDetails') {
     const filters = message.filters || {};
     console.log("[background.js] 开始获取筛选后的单词详情, filters:", filters);
-    getFilteredWordDetails(filters).then(details => {
+    getFilteredWordDetails(filters).then((details) => {
       sendResponse({ details });
-    }).catch(err => {
+    }).catch((err) => {
       console.error("[background.js] 获取筛选后的单词详情失败:", err);
       sendResponse({ details: {} });
     });
@@ -3244,9 +3272,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   // 新增：获取数据库单词总数
   else if (message.action === 'getWordCount') {
-    getWordCount().then(count => {
+    getWordCount().then((count) => {
       sendResponse({ count });
-    }).catch(err => {
+    }).catch((err) => {
       console.error("获取单词总数失败:", err);
       sendResponse({ count: 0 });
     });
@@ -3269,7 +3297,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           // 转换为 statusMap 格式
           const statusMap = {};
           if (response.success && response.data && Array.isArray(response.data)) {
-            response.data.forEach(item => {
+            response.data.forEach((item) => {
               const wordLower = item.word.toLowerCase();
               statusMap[wordLower] = {
                 word: item.word,
@@ -3288,9 +3316,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
       } else {
         // 使用本地数据库
-        batchGetWordStatus(words).then(statusMap => {
+        batchGetWordStatus(words).then((statusMap) => {
           sendResponse({ statusMap });
-        }).catch(err => {
+        }).catch((err) => {
           console.error("批量查询单词状态失败:", err);
           sendResponse({ statusMap: {} });
         });
@@ -3314,7 +3342,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           // 转换为 statusMap 格式
           const statusMap = {};
           if (response.data && Array.isArray(response.data)) {
-            response.data.forEach(item => {
+            response.data.forEach((item) => {
               statusMap[item.word.toLowerCase()] = {
                 word: item.word,
                 status: item.status,
@@ -3337,9 +3365,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
       } else {
         // 使用本地数据库
-        getAllWordStatusMap().then(statusMap => {
+        getAllWordStatusMap().then((statusMap) => {
           sendResponse({ statusMap });
-        }).catch(err => {
+        }).catch((err) => {
           console.error("获取单词状态映射失败:", err);
           sendResponse({ statusMap: {} });
         });
@@ -3352,7 +3380,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const { word, translation } = message;
     addTranslationToDB(word, translation).then(() => {
       sendResponse({ success: true });
-    }).catch(err => {
+    }).catch((err) => {
       console.error("添加翻译失败:", err);
       sendResponse({ error: err });
     });
@@ -3362,7 +3390,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const { word, translation } = message;
     removeTranslationFromDB(word, translation).then(() => {
       sendResponse({ success: true });
-    }).catch(err => {
+    }).catch((err) => {
       console.error("删除翻译失败:", err);
       sendResponse({ error: err });
     });
@@ -3372,7 +3400,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const { word, tag } = message;
     addTagToDB(word, tag).then(() => {
       sendResponse({ success: true });
-    }).catch(err => {
+    }).catch((err) => {
       console.error("添加标签失败:", err);
       sendResponse({ error: err });
     });
@@ -3382,7 +3410,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const { word, tag } = message;
     removeTagFromDB(word, tag).then(() => {
       sendResponse({ success: true });
-    }).catch(err => {
+    }).catch((err) => {
       console.error("删除标签失败:", err);
       sendResponse({ error: err });
     });
@@ -3434,7 +3462,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // 从 Chrome 存储中获取用户设置的配置
     chrome.storage.local.get(['aiConfig'], function(result) {
       console.log("[background.js] 获取 AI 配置:", result.aiConfig);
-      sendResponse({ //操蛋返回提，得respond.config.aiSentenceTranslationPrompt;
+      sendResponse({ // 操蛋返回提，得respond.config.aiSentenceTranslationPrompt;
         config: result.aiConfig || {
           apiBaseURL: "",
           apiModel: "",
@@ -3451,22 +3479,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const requestData = { ...message.requestData, tabId: sender.tab?.id };
 
     handleAIRequest(requestData)
-      .then(result => {
+      .then((result) => {
         sendResponse(result);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("AI 请求失败:", error);
         sendResponse({ error: error.message });
       });
     return true;
   }
   else if (message.action === 'addSentence') {
-    const { word, sentence, translation,url } = message;
-    addSentenceToDB(word, sentence, translation,url)
+    const { word, sentence, translation, url } = message;
+    addSentenceToDB(word, sentence, translation, url)
       .then(() => {
         sendResponse({ success: true });
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("添加例句失败:", err);
         sendResponse({ error: err });
       });
@@ -3478,7 +3506,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then(() => {
         sendResponse({ success: true });
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("删除例句失败:", err);
         sendResponse({ error: err });
       });
@@ -3490,7 +3518,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then(() => {
         sendResponse({ success: true });
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("删除单词失败:", err);
         sendResponse({ error: err });
       });
@@ -3502,7 +3530,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then(() => {
         sendResponse({ success: true });
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("删除单词原型失败:", err);
         sendResponse({ error: err });
       });
@@ -3511,10 +3539,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   else if (message.action === 'getKnownWordsByStatus') {
     // 使用主数据库查询
     getKnownWordsByStatus(message.statuses)
-      .then(result => {
+      .then((result) => {
         sendResponse(result);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("获取已知单词失败:", err);
         sendResponse({ words: [], details: [] });
       });
@@ -3532,7 +3560,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
           if (Array.isArray(cloudPhrases)) {
             // 为每个词组添加 isCustom 标记以保持兼容性
-            const wordsWithFlag = cloudPhrases.map(word => ({
+            const wordsWithFlag = cloudPhrases.map((word) => ({
               ...word,
               isCustom: true
             }));
@@ -3550,10 +3578,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       } else {
         // 使用本地数据库
         getCustomWordsFromDB()
-          .then(words => {
+          .then((words) => {
             sendResponse({ words });
           })
-          .catch(err => {
+          .catch((err) => {
             console.error("获取自定义词组失败:", err);
             sendResponse({ words: [] });
           });
@@ -3563,9 +3591,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   else if (message.action === "backupDatabase") {
     // 全量备份：获取所有单词详情
-    getAllWordDetailsFromDB().then(details => {
+    getAllWordDetailsFromDB().then((details) => {
       sendResponse({ success: true, data: details });
-    }).catch(err => {
+    }).catch((err) => {
       console.error("备份数据库失败:", err);
       sendResponse({ success: false });
     });
@@ -3623,7 +3651,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
 
         // 2. 清除迁移标记
-        await new Promise(resolve => {
+        await new Promise((resolve) => {
           chrome.storage.local.set({ customPhrasesMigrated: false }, () => {
             console.log("迁移标记已清除");
             resolve();
@@ -3663,12 +3691,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             let promises = [];
             console.log(`准备写入 ${words.length} 个单词 (restoreDatabase)...`);
 
-            words.forEach(word => {
+            words.forEach((word) => {
                 const record = backupData[word];
                 if (record && typeof record === 'object') { // 基本检查
                     // 确保设置主键（如果备份数据中没有）
-                    if (!record.word) record.word = word.toLowerCase();
-                    if (!record.term) record.term = word;
+                    if (!record.word) {record.word = word.toLowerCase();}
+                    if (!record.term) {record.term = word;}
 
                     promises.push(new Promise((resolvePut, rejectPut) => {
                         const req = storeRestore.put(record);
@@ -3687,7 +3715,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 .then(() => {
                     console.log("所有单词的 put 请求已成功排队 (restoreDatabase)，等待事务提交...");
                 })
-                .catch(err => {
+                .catch((err) => {
                     console.error("至少一个 put 请求在排队时失败 (restoreDatabase):", err);
                     try { txRestore.abort(); console.log("事务已中止 (restoreDatabase - put error)。"); } catch (abortError) { console.error("中止事务时出错:", abortError); }
                     // 不要在这里发送响应，让 tx.onerror 处理
@@ -3754,7 +3782,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
 
             // 获取本地记录 ， 不用判断键值 ， 合并就是要键值相同。
-            //const getReq = storeMerge.get(word.toLowerCase());
+            // const getReq = storeMerge.get(word.toLowerCase());
             const getReq = storeMerge.get(word);
 
             getReq.onsuccess = (event) => {
@@ -3764,8 +3792,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 if (!localRecord) {
                     // 本地没有此单词，直接添加远程记录
                     finalRecord = { ...remoteRecord };
-                    if (!finalRecord.word) finalRecord.word = word.toLowerCase();
-                    if (!finalRecord.term) finalRecord.term = word;
+                    if (!finalRecord.word) {finalRecord.word = word.toLowerCase();}
+                    if (!finalRecord.term) {finalRecord.term = word;}
                     mergedCount++;
                     newWords.push(word);
                     console.log(`新增单词: ${word}`);
@@ -3814,12 +3842,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             // 打印汇总信息
             if (newWords.length > 0) {
                 console.log(`\n=== 新增单词汇总 (${newWords.length}个) ===`);
-                newWords.forEach(word => console.log(`  新增: ${word}`));
+                newWords.forEach((word) => console.log(`  新增: ${word}`));
             }
 
             if (mergedWords.length > 0) {
                 console.log(`\n=== 合并单词汇总 (${mergedWords.length}个) ===`);
-                mergedWords.forEach(word => console.log(`  合并: ${word}`));
+                mergedWords.forEach((word) => console.log(`  合并: ${word}`));
             }
 
             console.log(`\n=== 合并操作完成 ===`);
@@ -3858,7 +3886,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then(() => {
         sendResponse({ success: true });
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("更改单词语言失败:", err);
         sendResponse({ error: err });
       });
@@ -3869,7 +3897,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         try {
             // 检查是否启用了Orion TTS
             let useOrionTTS = false;
-            await new Promise(resolve => {
+            await new Promise((resolve) => {
                 chrome.storage.local.get(['useOrionTTS'], function(result) {
                     useOrionTTS = result.useOrionTTS === true;
                     resolve();
@@ -3879,14 +3907,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (message.audioType === "playCustom") {
                 if (useOrionTTS) {
                     // 使用Orion TTS
-                    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
                         if (tabs[0]) {
                             chrome.tabs.sendMessage(tabs[0].id, {
                                 action: "playCustom",
                                 url: message.url,
                                 count: message.count,
                                 volume: message.volume
-                            }).catch(error => {
+                            }).catch((error) => {
                                 console.error("发送Orion TTS消息失败:", error);
                             });
                         }
@@ -3905,7 +3933,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                             url: message.url,
                             count: message.count,
                             volume: message.volume
-                        }).catch(error => {
+                        }).catch((error) => {
                             console.error("发送offscreen消息失败:", error);
                         });
                     } else {
@@ -3915,7 +3943,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             } else if (message.audioType === "playMinimaxi") {
             if (useOrionTTS) {
                 // 使用Orion TTS
-                chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
                     if (tabs[0]) {
                         chrome.tabs.sendMessage(tabs[0].id, {
                             action: "playMinimaxi",
@@ -3960,7 +3988,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
             if (useOrionTTS) {
                 // 使用Orion TTS
-                chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
                     if (tabs[0]) {
                         chrome.tabs.sendMessage(tabs[0].id, {
                             action: "playEdgeTTS",
@@ -4071,7 +4099,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                                         return;
                                     }
                                     if (result && result.languages && result.languages.length > 0) {
-                                        const reliableLang = result.languages.find(l => l.isReliable);
+                                        const reliableLang = result.languages.find((l) => l.isReliable);
                                         let detectedLang = reliableLang ? reliableLang.language : result.languages[0].language;
                                         console.log(`[background.js] 自动检测到语言: ${detectedLang} (可靠: ${!!reliableLang})`);
                                         resolve(detectedLang);
@@ -4098,12 +4126,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
             if (useOrionTTS) {
                 // 使用Orion TTS
-                chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
                     if (tabs[0]) {
                         chrome.tabs.sendMessage(tabs[0].id, {
                             action: "playLocal",
-                            text: text,         // 要播放的原始文本
-                            lang: actualLang,   // 最终确定的语言
+                            text: text, // 要播放的原始文本
+                            lang: actualLang, // 最终确定的语言
                             isSentence: isSentence
                         });
                     }
@@ -4119,8 +4147,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     // 发送消息到offscreen页面
                     chrome.runtime.sendMessage({
                         action: "playLocal",
-                        text: text,         // 要播放的原始文本
-                        lang: actualLang,   // 最终确定的语言
+                        text: text, // 要播放的原始文本
+                        lang: actualLang, // 最终确定的语言
                         isSentence: isSentence
                     });
                 } else {
@@ -4128,10 +4156,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 }
             }
         }
-        sendResponse({success: true});
+        sendResponse({ success: true });
         } catch (error) {
             console.error("处理音频播放请求时发生错误:", error);
-            sendResponse({success: false, error: error.message});
+            sendResponse({ success: false, error: error.message });
         }
     })();
     return true;
@@ -4143,7 +4171,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         if (useOrionTTS) {
             // 使用Orion TTS
-            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
                 if (tabs[0]) {
                     chrome.tabs.sendMessage(tabs[0].id, {
                         action: "stopAudio"
@@ -4162,7 +4190,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
         }
     });
-    sendResponse({success: true});
+    sendResponse({ success: true });
     return true;
   }
 
@@ -4176,7 +4204,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // autoCloseTimeout = setTimeout(() => {
     //   // closeOffscreenDocument();
     // }, 20000); // 修改为20秒后关闭
-    sendResponse({success: true});
+    sendResponse({ success: true });
     return true;
   }
 
@@ -4185,7 +4213,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log("音频播放开始:", message.audioType);
     // 将消息转发给所有标签页
     chrome.tabs.query({}, function(tabs) {
-      tabs.forEach(tab => {
+      tabs.forEach((tab) => {
         chrome.tabs.sendMessage(tab.id, {
           action: "audioPlaybackStarted",
           audioType: message.audioType
@@ -4194,14 +4222,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
       });
     });
-    sendResponse({success: true});
+    sendResponse({ success: true });
     return true;
   }
 
   // 处理音频播放错误
   if (message.action === "audioPlaybackError") {
     console.error("音频播放错误:", message.error);
-    sendResponse({success: true});
+    sendResponse({ success: true });
     return true;
   }
 
@@ -4220,7 +4248,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               }
             });
           }, 300);
-        }).catch(error => {
+        }).catch((error) => {
           console.error("打开侧边栏失败:", error);
           sendResponse({ status: "error", error: error.message });
         });
@@ -4265,7 +4293,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         if (useOrionTTS) {
             // 使用Orion TTS
-            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
                 if (tabs[0]) {
                     chrome.tabs.sendMessage(tabs[0].id, {
                         action: "stopSpecificAudio",
@@ -4286,7 +4314,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
         }
     });
-    sendResponse({success: true});
+    sendResponse({ success: true });
     return true;
   }
 
@@ -4295,10 +4323,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 if (message.action === "getAfdianStatus") {
   const { afdianUserId } = message;
   checkAfdianStatus(afdianUserId)
-    .then(result => {
+    .then((result) => {
       sendResponse(result);
     })
-    .catch(error => {
+    .catch((error) => {
       console.error("处理爱发电状态请求失败:", error);
       sendResponse({ success: false, error: error.message });
     });
@@ -4315,7 +4343,7 @@ function getKnownWordsByStatus(statuses) {
       const index = store.index("status");
 
       // 创建所有的查询请求 Promise
-      const promises = statuses.map(status => {
+      const promises = statuses.map((status) => {
         return new Promise((res, rej) => {
           // 直接对每个 status 用 getAll，这是最高效的批量获取方式
           const request = index.getAll(IDBKeyRange.only(status));
@@ -4327,7 +4355,7 @@ function getKnownWordsByStatus(statuses) {
 
       // 等所有 status 的查询都结束
       Promise.all(promises)
-        .then(results => {
+        .then((results) => {
           // results 是一个二维数组 [[status1的数据], [status2的数据]...]
           // 我们把它拍平 (flat)
           const allItems = results.flat();
@@ -4335,7 +4363,7 @@ function getKnownWordsByStatus(statuses) {
           const words = [];
           const detailsMap = {}; // 用于去重，万一 status 有重叠（虽然通常 status 是互斥的）
 
-          allItems.forEach(item => {
+          allItems.forEach((item) => {
              // 这里做个简单的去重防止万一
              if (!detailsMap[item.word]) {
                  words.push(item.word);
@@ -4348,7 +4376,7 @@ function getKnownWordsByStatus(statuses) {
             details: Object.values(detailsMap)
           });
         })
-        .catch(err => {
+        .catch((err) => {
           console.error("Error fetching statuses:", err);
           resolve({ words: [], details: [] });
         });
@@ -4385,7 +4413,7 @@ function getFilteredWordDetails(filters = {}) {
       // 如果有状态筛选，使用状态索引查询
       if (statuses && statuses.length > 0) {
         const statusIndex = store.index("status");
-        const promises = statuses.map(status => {
+        const promises = statuses.map((status) => {
           return new Promise((res, rej) => {
             // 注意：数据库中status存储为字符串，需要转换
             const statusStr = String(status);
@@ -4396,7 +4424,7 @@ function getFilteredWordDetails(filters = {}) {
         });
 
         Promise.all(promises)
-          .then(results => {
+          .then((results) => {
             const allItems = results.flat();
             const details = {};
 
@@ -4404,10 +4432,10 @@ function getFilteredWordDetails(filters = {}) {
 
             allItems.forEach((item, index) => {
               // 去重
-              if (details[item.word]) return;
+              if (details[item.word]) {return;}
 
               // 语言筛选
-              if (language !== 'all' && item.language !== language) return;
+              if (language !== 'all' && item.language !== language) {return;}
 
               // 计算 createdAt（与 getAllWordDetailsFromDB 逻辑一致）
               let createdAtValue = null;
@@ -4415,7 +4443,7 @@ function getFilteredWordDetails(filters = {}) {
                 let earliestCreateTime = Infinity;
                 let foundValidCreateTimeInHistory = false;
 
-                Object.values(item.statusHistory).forEach(historyEntry => {
+                Object.values(item.statusHistory).forEach((historyEntry) => {
                   if (historyEntry &&
                       typeof historyEntry.createTime === 'number' &&
                       !isNaN(historyEntry.createTime) &&
@@ -4474,20 +4502,20 @@ function getFilteredWordDetails(filters = {}) {
             console.log(`[background.js] getFilteredWordDetails 返回 ${Object.keys(details).length} 个单词`);
             resolve(details);
           })
-          .catch(err => {
+          .catch((err) => {
             console.error("Error in getFilteredWordDetails:", err);
             reject(err);
           });
       } else {
         // 没有状态筛选，获取所有单词
         const request = store.getAll();
-        request.onsuccess = event => {
+        request.onsuccess = (event) => {
           const detailsArr = event.target.result;
           const details = {};
 
-          detailsArr.forEach(item => {
+          detailsArr.forEach((item) => {
             // 语言筛选
-            if (language !== 'all' && item.language !== language) return;
+            if (language !== 'all' && item.language !== language) {return;}
 
             // 计算 createdAt
             let createdAtValue = null;
@@ -4495,7 +4523,7 @@ function getFilteredWordDetails(filters = {}) {
               let earliestCreateTime = Infinity;
               let foundValidCreateTimeInHistory = false;
 
-              Object.values(item.statusHistory).forEach(historyEntry => {
+              Object.values(item.statusHistory).forEach((historyEntry) => {
                 if (historyEntry &&
                     typeof historyEntry.createTime === 'number' &&
                     !isNaN(historyEntry.createTime) &&
@@ -4538,7 +4566,7 @@ function getFilteredWordDetails(filters = {}) {
           console.log(`[background.js] getFilteredWordDetails 返回 ${Object.keys(details).length} 个单词`);
           resolve(details);
         };
-        request.onerror = event => reject(event.target.error);
+        request.onerror = (event) => reject(event.target.error);
       }
     });
   });
@@ -4554,13 +4582,13 @@ function getCustomWordsFromDB() {
       const store = tx.objectStore("customPhrases");
       const request = store.getAll();
 
-      request.onsuccess = event => {
+      request.onsuccess = (event) => {
         const customWords = event.target.result || [];
         const endTime = performance.now();
         console.log(`[DB性能] getCustomWords 查询完成，耗时: ${(endTime - startTime).toFixed(2)}ms，获取到 ${customWords.length} 个自定义词组`);
 
         // 为每个词组添加 isCustom 标记以保持兼容性
-        const wordsWithFlag = customWords.map(word => ({
+        const wordsWithFlag = customWords.map((word) => ({
           ...word,
           isCustom: true
         }));
@@ -4568,7 +4596,7 @@ function getCustomWordsFromDB() {
         resolve(wordsWithFlag);
       };
 
-      request.onerror = event => {
+      request.onerror = (event) => {
         console.error("获取自定义词组失败:", event.target.error);
         reject(event.target.error);
       };
@@ -4592,10 +4620,10 @@ function changeWordLanguageInDB(word, details) {
       console.log("[background.js] [changeWordLanguageInDB] 发起 get 请求，key:", key);
       getReq = store.get(key);
 
-      getReq.onsuccess = event => {
+      getReq.onsuccess = (event) => {
         console.log("[background.js] [changeWordLanguageInDB] get 请求成功");
         let record = event.target.result || { word: key, term: word };
-        if (!record.term) record.term = word;
+        if (!record.term) {record.term = word;}
 
         console.log("[background.js] [changeWordLanguageInDB] 获取到的原始记录:", record);
         console.log("[background.js] [changeWordLanguageInDB] 接收到的 details:", details);
@@ -4615,13 +4643,13 @@ function changeWordLanguageInDB(word, details) {
           console.log("[background.js] [changeWordLanguageInDB] put 请求成功");
           resolve();
         };
-        putReq.onerror = e => {
+        putReq.onerror = (e) => {
           console.error("[background.js] [changeWordLanguageInDB] put 请求失败:", e.target.error);
           reject(e.target.error);
         };
       };
 
-      getReq.onerror = e => {
+      getReq.onerror = (e) => {
         console.error("[background.js] [changeWordLanguageInDB] get 请求失败:", e.target.error);
         reject(e.target.error);
       };
@@ -4638,7 +4666,7 @@ function changeWordLanguageInDB(word, details) {
 chrome.runtime.onInstalled.addListener(() => {
   if (chrome.sidePanel) {
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false })
-      .catch(error => console.error("设置侧边栏行为失败:", error));
+      .catch((error) => console.error("设置侧边栏行为失败:", error));
   }
 });
 
@@ -4650,7 +4678,7 @@ if (message.action === "updateClipboardContent") {
 
   // 可选：将内容广播给所有标签页
   chrome.tabs.query({}, function(tabs) {
-    tabs.forEach(tab => {
+    tabs.forEach((tab) => {
       chrome.tabs.sendMessage(tab.id, {
         action: "clipboardUpdated",
         content: message.content
@@ -4708,7 +4736,7 @@ if (message.action === "checkClipboardStatus") {
 
           sendResponse({ clipboardEnabled: isClipSubtitles });
 
-      }else{
+      } else {
         console.log("bg收到offer检查剪贴板状态:", message, isClipSubtitles);
 
         sendResponse({ clipboardEnabled: isClipSubtitles });
@@ -4742,14 +4770,14 @@ if (message.action === "playTTS") {
 
     // 根据不同语言优化 TTS 参数
     const languageSettings = {
-        'zh': { rate: 0.9, pitch: 1.0 },      // 中文
-        'ja': { rate: 0.85, pitch: 1.0 },     // 日语
-        'ko': { rate: 0.9, pitch: 1.0 },      // 韩语
-        'de': { rate: 0.9, pitch: 1.0 },      // 德语
-        'fr': { rate: 0.9, pitch: 1.0 },      // 法语
-        'es': { rate: 0.9, pitch: 1.0 },      // 西班牙语
-        'ru': { rate: 0.85, pitch: 1.0 },     // 俄语
-        'en': { rate: 0.95, pitch: 1.0 }      // 英语
+        'zh': { rate: 0.9, pitch: 1.0 }, // 中文
+        'ja': { rate: 0.85, pitch: 1.0 }, // 日语
+        'ko': { rate: 0.9, pitch: 1.0 }, // 韩语
+        'de': { rate: 0.9, pitch: 1.0 }, // 德语
+        'fr': { rate: 0.9, pitch: 1.0 }, // 法语
+        'es': { rate: 0.9, pitch: 1.0 }, // 西班牙语
+        'ru': { rate: 0.85, pitch: 1.0 }, // 俄语
+        'en': { rate: 0.95, pitch: 1.0 } // 英语
     };
 
     // 获取语言的基础代码（如 'zh-CN' -> 'zh'）
@@ -4784,7 +4812,7 @@ if (message.action === "playTTS") {
     // 获取可用语音并优化选择逻辑
     chrome.tts.getVoices((voices) => {
         // 按语言筛选语音
-        const matchingVoices = voices.filter(voice =>
+        const matchingVoices = voices.filter((voice) =>
             voice.lang && voice.lang.toLowerCase().startsWith(baseLang)
         );
 
@@ -4792,15 +4820,15 @@ if (message.action === "playTTS") {
         const getVoiceScore = (voice) => {
             let score = 0;
             // Google 语音优先
-            if (voice.voiceName.includes('Google')) score += 5;
+            if (voice.voiceName.includes('Google')) {score += 5;}
             // Microsoft 语音次之
-            else if (voice.voiceName.includes('Microsoft')) score += 4;
+            else if (voice.voiceName.includes('Microsoft')) {score += 4;}
             // 自然语音
-            else if (voice.voiceName.includes('Natural')) score += 3;
+            else if (voice.voiceName.includes('Natural')) {score += 3;}
             // 本地语音
-            else if (!voice.remote) score += 2;
+            else if (!voice.remote) {score += 2;}
             // 完全匹配语言代码的优先
-            if (voice.lang.toLowerCase() === lang.toLowerCase()) score += 2;
+            if (voice.lang.toLowerCase() === lang.toLowerCase()) {score += 2;}
             return score;
         };
 
@@ -4828,14 +4856,14 @@ if (message.action === "playTTS") {
 // 添加 API Key 管理的消息处理
 else if (message.action === 'getBlockedApiKeys') {
   getBlockedApiKeys()
-    .then(result => sendResponse({ success: true, blockedKeys: result }))
-    .catch(error => sendResponse({ success: false, error: error.message }));
+    .then((result) => sendResponse({ success: true, blockedKeys: result }))
+    .catch((error) => sendResponse({ success: false, error: error.message }));
   return true;
 }
 else if (message.action === 'unblockApiKey') {
   unblockApiKey(message.apiKey)
     .then(() => sendResponse({ success: true }))
-    .catch(error => sendResponse({ success: false, error: error.message }));
+    .catch((error) => sendResponse({ success: false, error: error.message }));
   return true;
 }
 else if (message.action === 'clearAllBlockedKeys') {
@@ -4844,32 +4872,32 @@ else if (message.action === 'clearAllBlockedKeys') {
       console.log('[background.js] 已清除所有屏蔽的 API Keys');
       sendResponse({ success: true });
     })
-    .catch(error => sendResponse({ success: false, error: error.message }));
+    .catch((error) => sendResponse({ success: false, error: error.message }));
   return true;
 }
 // 添加 OhMyGPT API 的消息处理
 else if (message.action === 'ohMyGptGetToken') {
   ohMyGptGetToken(message.code)
-    .then(result => sendResponse(result))
-    .catch(error => sendResponse({ success: false, error: error.message })); // 添加 catch 以防万一
+    .then((result) => sendResponse(result))
+    .catch((error) => sendResponse({ success: false, error: error.message })); // 添加 catch 以防万一
   return true; // 异步响应
 }
 else if (message.action === 'ohMyGptAddDays') {
   ohMyGptAddDays(message.userId, message.token)
-    .then(result => sendResponse(result))
-    .catch(error => sendResponse({ success: false, error: error.message }));
+    .then((result) => sendResponse(result))
+    .catch((error) => sendResponse({ success: false, error: error.message }));
   return true; // 异步响应
 }
 else if (message.action === 'ohMyGptSendDollar') {
   ohMyGptSendDollar(message.token, message.amount)
-    .then(result => sendResponse(result))
-    .catch(error => sendResponse({ success: false, error: error.message }));
+    .then((result) => sendResponse(result))
+    .catch((error) => sendResponse({ success: false, error: error.message }));
   return true; // 异步响应
 }
 else if (message.action === 'ohMyGptGetDays') {
   ohMyGptGetDays(message.userId)
-    .then(result => sendResponse(result))
-    .catch(error => sendResponse({ success: false, error: error.message }));
+    .then((result) => sendResponse(result))
+    .catch((error) => sendResponse({ success: false, error: error.message }));
   return true; // 异步响应
 }
 else if (message.action === 'refreshAfdianSubscription') {
@@ -4983,7 +5011,7 @@ else if (message.action === 'refreshAfdianSubscription') {
           // 如果字幕功能开启，启动剪贴板监听
           chrome.runtime.sendMessage({
             action: "startClipboardMonitoring"
-          }).catch(err => console.log("启动剪贴板监听失败:", err));
+          }).catch((err) => console.log("启动剪贴板监听失败:", err));
       }
   });
 })();
@@ -5158,8 +5186,8 @@ chrome.runtime.onInstalled.addListener((details) => {
     contexts: ["action"] // 只在插件图标上显示
   });
 
-  //https://app.flowoss.com/zh-CN
-  //https://react-reader.metabits.no/
+  // https://app.flowoss.com/zh-CN
+  // https://react-reader.metabits.no/
   // 创建右键菜单项 - FlowOSS阅读器
   chrome.contextMenus.create({
     id: "openFlowOSSReader",
@@ -5255,9 +5283,9 @@ chrome.runtime.onInstalled.addListener((details) => {
       console.log("初始化弹窗主题模式为: auto");
     }
   });
-  
 
- //初始化ai请求默认为开启
+
+ // 初始化ai请求默认为开启
 
 
   // 获取用户的浏览器语言设置
@@ -5330,12 +5358,12 @@ chrome.runtime.onInstalled.addListener((details) => {
           }
         });
         console.log("已保存更新通知状态，新版本:", chrome.runtime.getManifest().version);
-     
+
         //   // 打开更新详情页面
         // chrome.tabs.create({
         //   url: updateUrl
         // });
-     
+
       });
     } else {
       console.log("版本号未变化，跳过更新通知");

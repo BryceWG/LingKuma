@@ -10,7 +10,7 @@ let currentWordRect = null; // <--- 添加：保存当前单词的位置信息�
 // 液体玻璃效果相关变量
 let liquidGlassEnabled = false; // 液体玻璃效果开关，默认关闭
 let liquidGlassUpdater = null; // 液体玻璃更新函数
-let liquidGlassEnabledCache = null; // 缓存的液体玻璃状态 
+let liquidGlassEnabledCache = null; // 缓存的液体玻璃状态
 let liquidGlassEnabledCacheTime = 0; // 缓存时间戳
 
 // 防止重复执行的变量
@@ -245,7 +245,7 @@ function applyLiquidGlassEffect() {
     const existingContainers = document.querySelectorAll('#tooltip-liquid-glass-container');
     if (existingContainers.length > 0) {
       console.log(`快速清理 ${existingContainers.length} 个残留的液体玻璃容器...`);
-      existingContainers.forEach(container => {
+      existingContainers.forEach((container) => {
         try {
           container.remove();
         } catch (error) {
@@ -332,7 +332,7 @@ function cleanupLiquidGlass() {
   const existingContainers = document.querySelectorAll('#tooltip-liquid-glass-container');
   if (existingContainers.length > 0) {
     console.log(`清理 ${existingContainers.length} 个残留的独立液体玻璃容器...`);
-    existingContainers.forEach(container => {
+    existingContainers.forEach((container) => {
       try {
         container.remove();
         console.log('残留容器已移除');
@@ -631,7 +631,7 @@ function clearAllPopupsAndWindows() {
   // 5. 清理任何残留的液体玻璃容器
   try {
     const glassContainers = document.querySelectorAll('#tooltip-liquid-glass-container, .liquid-glass-container');
-    glassContainers.forEach(container => {
+    glassContainers.forEach((container) => {
       container.remove();
     });
     if (glassContainers.length > 0) {
@@ -787,7 +787,7 @@ function applyBackgroundSettings(bgSettings) {
         "src/service/image/pattern.png",
         "src/service/image/pattern2.png",
         "src/service/image/pattern3.png",
-        ...tgPngFiles.map(filename => `src/service/image/tg_png/${filename}`)
+        ...tgPngFiles.map((filename) => `src/service/image/tg_png/${filename}`)
       ];
       const randomIndex = Math.floor(Math.random() * imageUrls.length);
       const randomImagePath = imageUrls[randomIndex];
@@ -822,22 +822,22 @@ function detectVerticalWritingMode() {
     // 检查body和html的writing-mode
     const bodyStyle = window.getComputedStyle(document.body);
     const htmlStyle = window.getComputedStyle(document.documentElement);
-    
+
     const bodyWritingMode = bodyStyle.writingMode || bodyStyle.webkitWritingMode;
     const htmlWritingMode = htmlStyle.writingMode || htmlStyle.webkitWritingMode;
-    
+
     // 检查是否为竖排模式
-    const isVertical = bodyWritingMode === 'vertical-rl' || 
+    const isVertical = bodyWritingMode === 'vertical-rl' ||
                       bodyWritingMode === 'vertical-lr' ||
-                      htmlWritingMode === 'vertical-rl' || 
+                      htmlWritingMode === 'vertical-rl' ||
                       htmlWritingMode === 'vertical-lr';
-    
+
     // 额外检查text-orientation
     const bodyTextOrientation = bodyStyle.textOrientation;
     const htmlTextOrientation = htmlStyle.textOrientation;
-    const hasVerticalOrientation = bodyTextOrientation === 'upright' || 
+    const hasVerticalOrientation = bodyTextOrientation === 'upright' ||
                                   htmlTextOrientation === 'upright';
-    
+
     console.log('检测竖排文本模式:', {
       bodyWritingMode,
       htmlWritingMode,
@@ -845,7 +845,7 @@ function detectVerticalWritingMode() {
       htmlTextOrientation,
       isVertical: isVertical || hasVerticalOrientation
     });
-    
+
     return isVertical || hasVerticalOrientation;
   } catch (error) {
     console.warn('检测竖排文本模式时出错:', error);
@@ -961,7 +961,7 @@ function applyTooltipTheme(themeMode) {
   const shadowHost = document.getElementById('lingkuma-tooltip-host');
   if (shadowHost && shadowHost.shadowRoot) {
     const capsules = shadowHost.shadowRoot.querySelectorAll('.header-buttons-capsule');
-    capsules.forEach(capsule => {
+    capsules.forEach((capsule) => {
       if (isDark) {
         capsule.classList.add('dark-mode');
         capsule.classList.remove('light-mode');
@@ -977,7 +977,7 @@ function applyTooltipTheme(themeMode) {
 
 // 让弹窗始终完整保持在视口内（右/下边缘自动避让，预留8px边距）
 function clampTooltipToViewport(el) {
-  if (!el || !el.parentNode) return;
+  if (!el || !el.parentNode) {return;}
   const rect = el.getBoundingClientRect();
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
@@ -1082,7 +1082,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
   }
 
   function getStructuredWordResult(result) {
-    if (!result || !result.words) return null;
+    if (!result || !result.words) {return null;}
     return result.words[originalWord.toLowerCase()] || result.words[word] || result.words[word.toLowerCase()] || null;
   }
 
@@ -1099,7 +1099,8 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
     ]);
 
     let details = highlightManager?.wordDetailsFromDB?.[word] || {};
-    if (!details.hasOwnProperty('translations') || !details.hasOwnProperty('tags') || !details.hasOwnProperty('sentences')) {
+    const requiredKeys = ['translations', 'tags', 'sentences'];
+    if (requiredKeys.some((key) => !Object.prototype.hasOwnProperty.call(details, key))) {
       const response = await new Promise((resolve) => {
         chrome.runtime.sendMessage({ action: 'getWordDetails', word }, resolve);
       });
@@ -1117,8 +1118,8 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
     const fields = [];
     const autoRequest1 = settings.autoRequestAITranslations === undefined ? true : settings.autoRequestAITranslations;
     const autoRequest2 = settings.autoRequestAITranslations2 === undefined ? true : settings.autoRequestAITranslations2;
-    if (autoRequest1) fields.push('translation');
-    if (autoRequest2) fields.push('grammar');
+    if (autoRequest1) {fields.push('translation');}
+    if (autoRequest2) {fields.push('grammar');}
 
     const lang = details.language;
     if (!lang || lang === 'auto' || lang === '?') {
@@ -1239,13 +1240,13 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
           return;
         }
         const notesElements = currentTooltipEl.querySelectorAll('.Notes');
-        notesElements.forEach(el => {
+        notesElements.forEach((el) => {
           el.style.transition = 'none';
           el.style.color = 'var(--secondary-text-color)'; // 确保颜色立即设置正确
         });
       }, 0);
     } else {
-      //弹出动画 - 减少动画时间以提高响应速度
+      // 弹出动画 - 减少动画时间以提高响应速度
       tooltipEl.style.transition = 'opacity 0.05s ease-in-out';
       tooltipEl.style.willChange = 'opacity, transform';
 
@@ -1255,7 +1256,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
       setTimeout(() => {
         if (currentTooltipEl2 && currentTooltipEl2.parentNode) {
           const notesElements = currentTooltipEl2.querySelectorAll('.Notes');
-          notesElements.forEach(el => {
+          notesElements.forEach((el) => {
             el.style.transition = 'background-color 0.1s, color 0.1s, transform 0.1s ease-in-out';
           });
         }
@@ -1399,7 +1400,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
           }
         }
 
-      }).catch(error => {
+      }).catch((error) => {
         console.error('requestFullscreen失败:', error);
         // 如果requestFullscreen失败，保持原有显示方式
       });
@@ -1809,7 +1810,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
   try {
 
     // if (typeof window.orion_isIOS !== 'undefined' && window.orion_isIOS) {
-    if(true){
+    if (true) {
       console.log('检测到Orion浏览器');
 
       (async function() { // Keep the async IIFE structure
@@ -1839,9 +1840,9 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
           // Clear any previously added custom player elements from soundIconContainerBtn
           let existingCustomPlayer = soundIconContainerBtn.querySelector('.custom-play-button');
-          if (existingCustomPlayer) existingCustomPlayer.remove();
+          if (existingCustomPlayer) {existingCustomPlayer.remove();}
           let existingAudioEl = soundIconContainerBtn.querySelector('#orion-audio-player');
-          if (existingAudioEl) existingAudioEl.remove();
+          if (existingAudioEl) {existingAudioEl.remove();}
 
           if (orionTTSEnabled === true) {
             console.log('Orion TTS enabled, replacing SVG with custom audio player in .orion-sound-icon-container.');
@@ -1870,7 +1871,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m4.5 25.445l27.908 5.49l5.318 4.372"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m40.085 33.746l-2.36 1.561l-3.299 2.183M20.588 10.51l-5.669 3.232l.032.85l-1.894 1.462l2.81.46v4.648l2.433 2.989l3.85 3.617l8.03-.778l1.261.025L43.5 33.869l-10.136-8.186l3.892.396l-2.83-2.459l4.303-.268l-17.499-9.563Zm.547 16.43l-.83 1.49m5.435-.896l-1.246 1.664l.735-2.364"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m29.068 20.312l-7.715-.26l-.501-3.858Z"/></svg>
             `;
             customPlayButton.innerHTML = playSvg;
-            //${isDarkMode ? '#ffffff' : '#f0f0f0'};
+            // ${isDarkMode ? '#ffffff' : '#f0f0f0'};
             const isDarkMode = currentTooltipEl.classList.contains('dark-mode');
             customPlayButton.style.cssText = `
               width: 42px;
@@ -1896,7 +1897,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 // 如果当前有缓存的音频URL，直接播放，不重新请求网络
                 if (audioElement.src && audioElement.src !== 'about:blank' && audioElement.src !== window.location.href) {
                   console.log('使用缓存的音频URL播放:', audioElement.src);
-                  audioElement.play().catch(err => console.error('播放失败:', err));
+                  audioElement.play().catch((err) => console.error('播放失败:', err));
                   this.innerHTML = pauseSvg;
                 } else {
                   // 如果没有缓存的音频URL，通过orion_playText函数请求新的音频
@@ -1975,9 +1976,9 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
         }
         // Remove any custom player elements if they were somehow added
         let existingCustomPlayer = soundIconContainerBtn.querySelector('.custom-play-button');
-        if (existingCustomPlayer) existingCustomPlayer.remove();
+        if (existingCustomPlayer) {existingCustomPlayer.remove();}
         let existingAudioEl = soundIconContainerBtn.querySelector('#orion-audio-player');
-        if (existingAudioEl) existingAudioEl.remove();
+        if (existingAudioEl) {existingAudioEl.remove();}
       }
     }
   } catch (error) {
@@ -1994,7 +1995,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
   updateButtonColors(tooltipEl, wordStatus);
 
         // 添加各个模块的伸缩功能
-        tooltipEl.querySelectorAll('.section-header').forEach(header => {
+        tooltipEl.querySelectorAll('.section-header').forEach((header) => {
           header.addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -2004,11 +2005,11 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               }
           });
       });
-      ///---tag
+      /// ---tag
 
         // 提取标签点击编辑功能为单独函数，便于复用
         function addTagClickEvent(tag) {
-            tag.addEventListener('mousedown', function(e){
+            tag.addEventListener('mousedown', function(e) {
     e.preventDefault();
     e.stopPropagation();
 
@@ -2051,7 +2052,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 input.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') {
                         e.preventDefault(); // 阻止默认行为
-                        if (processed) return; // 如果已经处理过，则不再处理
+                        if (processed) {return;} // 如果已经处理过，则不再处理
 
                         const newTag = document.createElement('span');
                         newTag.textContent = this.value;
@@ -2060,12 +2061,12 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
                         const tag_add = e.target.value.trim();
 
-                        //如果新旧一样，旧不操作
+                        // 如果新旧一样，旧不操作
                         if (tagText === tag_add) {
                           return;
                         }
 
-                        //删除旧tag
+                        // 删除旧tag
                         if (tagText) {
                           // 去除标签文本中的首尾空格
                           const cleanTagText = tagText.trim();
@@ -2104,8 +2105,8 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
                 // 输入框失去焦点时恢复为标签
                 input.addEventListener('blur', function() {
-                    setTimeout(() => {  // 添加延时，确保在keydown事件之后处理
-                        if (processed) return; // 如果已经处理过，则不再处理
+                    setTimeout(() => { // 添加延时，确保在keydown事件之后处理
+                        if (processed) {return;} // 如果已经处理过，则不再处理
 
                         const newTagValue = this.value.trim();
                         const oldTagValue = tagText.trim();
@@ -2176,11 +2177,11 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               }
 
               const tagsListEl = tooltipEl.querySelector(".tags");
-              if (!tagsListEl) return;
+              if (!tagsListEl) {return;}
 
               const applyTagsAfterLookup = () => {
                 getTooltipStructuredLookup().then(() => {
-                  if (!tooltipEl || tooltipBeingDestroyed) return;
+                  if (!tooltipEl || tooltipBeingDestroyed) {return;}
                   const cachedTags = (highlightManager?.wordDetailsFromDB?.[word.toLowerCase()]?.tags || [])
                     .filter((tag) => tag != null);
                   if (cachedTags.length > 0) {
@@ -2189,8 +2190,8 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                     return;
                   }
                   chrome.runtime.sendMessage({ action: "getWordDetails", word: word }, (updatedResponse) => {
-                    if (!tooltipEl || tooltipBeingDestroyed) return;
-                    const updatedTags = (updatedResponse?.details?.tags || []).filter(tag => tag !== null);
+                    if (!tooltipEl || tooltipBeingDestroyed) {return;}
+                    const updatedTags = (updatedResponse?.details?.tags || []).filter((tag) => tag !== null);
                     updateTagsDisplay(tagsListEl, updatedTags, word);
                     refreshLanguageDisplay(word);
                   });
@@ -2199,7 +2200,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
               if (response && response.details) {
               const tags = response.details.tags || [];
-              const validTags = tags.filter(tag => tag !== null);
+              const validTags = tags.filter((tag) => tag !== null);
 
               if (validTags.length === 0) {
                   updateTagsDisplay(tagsListEl, [], word);
@@ -2228,7 +2229,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
           // console.log("获取的tagsListEl和tags是：",tagsListEl,tags);
 
           // 生成现有标签的HTML
-          tagsListEl.innerHTML = tags.map(tag => {
+          tagsListEl.innerHTML = tags.map((tag) => {
             // 确保tag已经去除了首尾空格
             const cleanTag = tag.trim();
             return `<span class="tag"> ${cleanTag} <span class="remove-tag" data-tag="${cleanTag}">
@@ -2246,7 +2247,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
           tagsListEl.appendChild(addTagButton);
 
           // 为"tag+"按钮绑定特殊的添加新标签点击事件
-          addTagButton.addEventListener('mousedown', function(e){
+          addTagButton.addEventListener('mousedown', function(e) {
               e.preventDefault();
               e.stopPropagation();
               // 获取标签的高度
@@ -2290,7 +2291,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               input.addEventListener('keydown', function(e) {
                   if (e.key === 'Enter') {
                       e.preventDefault();
-                      if (tagAdded) return;
+                      if (tagAdded) {return;}
 
                       if (this.value.trim() !== '') {
                           // 创建新标签
@@ -2332,7 +2333,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               // 输入框失去焦点时处理
               input.addEventListener('blur', function() {
                   setTimeout(() => {
-                      if (tagAdded) return;
+                      if (tagAdded) {return;}
                       const newTagValue = this.value.trim(); // 获取输入的新标签值
 
                       if (newTagValue !== '') {
@@ -2378,7 +2379,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
           });
 
           // 为普通标签添加编辑功能
-          tagsListEl.querySelectorAll('.tag').forEach(tag => {
+          tagsListEl.querySelectorAll('.tag').forEach((tag) => {
             // 跳过"tag+"按钮，它已经有特殊处理
             if (!tag.textContent.includes('tag+')) {
                 addTagClickEvent(tag);
@@ -2386,7 +2387,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
         });
 
           // 为每个删除图标绑定事件
-          tagsListEl.querySelectorAll(".remove-tag").forEach(span => {
+          tagsListEl.querySelectorAll(".remove-tag").forEach((span) => {
               span.addEventListener('mousedown', (e) => {
                 e.preventDefault(); // 阻止默认行为，希望能阻止焦点转移和后续的 click 事件
 
@@ -2409,7 +2410,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                       chrome.runtime.sendMessage({ action: "getWordDetails", word: word }, (updatedResponse) => {
                         if (updatedResponse && updatedResponse.details) {
                           // 过滤掉 null 值
-                          const updatedTags = (updatedResponse.details.tags || []).filter(tag => tag !== null);
+                          const updatedTags = (updatedResponse.details.tags || []).filter((tag) => tag !== null);
                           updateTagsDisplay(tagsListEl, updatedTags, word);
                         }
                       });
@@ -2419,7 +2420,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
           });
         }
 
-        ///---释义管理
+        /// ---释义管理
 
         // 添加释义管理功能
         function initTranslationManagement() {
@@ -2443,17 +2444,17 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               if (chrome.runtime.lastError) {
                 console.error("发送 addTranslation 消息时发生错误:", chrome.runtime.lastError.message);
                 // 即使出错也调用回调
-                if (onComplete) onComplete();
+                if (onComplete) {onComplete();}
                 return;
               }
               if (response && response.error) {
                 console.error("添加翻译失败:", response.error);
                 // 即使失败也调用回调
-                if (onComplete) onComplete();
+                if (onComplete) {onComplete();}
               } else {
                 console.log("添加翻译成功（云端同步已完成）");
 
-                 //添加本地缓存
+                 // 添加本地缓存
                  addTranslationToLocalCache(word, translation);
 
                 // 刷新 tooltip 内显示的翻译列表
@@ -2474,21 +2475,21 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 }));
 
                 // 云端同步完成后调用回调
-                if (onComplete) onComplete();
+                if (onComplete) {onComplete();}
               }
               // translationInput.value = "";
             });
 
-            //点击的时候触发的自动添加例句 得判断一下是否开启了自动添加例句
+            // 点击的时候触发的自动添加例句 得判断一下是否开启了自动添加例句
             getStorageValue('autoAddExampleSentences').then(function(autoAddExampleSentences) {
-              if(autoAddExampleSentences){
-                fetchSentenceTranslation(word, sentence).then(sentTranslation => {
+              if (autoAddExampleSentences) {
+                fetchSentenceTranslation(word, sentence).then((sentTranslation) => {
 
-                  let currentUrl =   window.top.location.href
-                  console.log("当前url是：",currentUrl);
+                  let currentUrl = window.top.location.href;
+                  console.log("当前url是：", currentUrl);
                   chrome.runtime.sendMessage(
 
-                { action: "addSentence", word: originalWord, sentence: sentence, translation: sentTranslation, url:currentUrl },
+                { action: "addSentence", word: originalWord, sentence: sentence, translation: sentTranslation, url: currentUrl },
                 (res) => {
                   if (res && res.error) {
                     console.error("保存例句失败:", res.error);
@@ -2507,7 +2508,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
         }
 
         // 添加释义输入框
-        function addTranslationInput(translationList, number, beforeElement = null,focusIn = true) {
+        function addTranslationInput(translationList, number, beforeElement = null, focusIn = true) {
             // 进入输入态时收起「添加释义」入口
             const leftoverEntry = translationList.querySelector('.add-translation-entry');
             if (leftoverEntry) {
@@ -2560,7 +2561,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
             // 聚焦输入框，并自动调整初始高度
 
-            if(focusIn){
+            if (focusIn) {
             textarea.focus({ preventScroll: true }); // <--- 保持取消自动聚焦
             }
 
@@ -2627,10 +2628,10 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
         }
 
         // 创建释义项 数据库导入到这里来把。
-        //参数解释：
-        //translationList: 释义列表容器
-        //inputContainer: 输入框容器
-        //text: 释义文本
+        // 参数解释：
+        // translationList: 释义列表容器
+        // inputContainer: 输入框容器
+        // text: 释义文本
         function createTranslationItem(translationList, inputContainer, text) {
             // 创建新的释义项
             const newTranslationItem = document.createElement('div');
@@ -2649,19 +2650,19 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             // translationText.style.marginTop = '9px';
 
             // 创建操作按钮
-            //解释：actions是div标签，className是translation-actions，是释义项的样式类名
+            // 解释：actions是div标签，className是translation-actions，是释义项的样式类名
             const actions = document.createElement('div');
             actions.className = 'translation-actions';
 
             const deleteBtn = document.createElement('button');
-            //解释：deleteBtn是button标签，className是translation-action-btn delete-translation，是删除按钮的样式类名
+            // 解释：deleteBtn是button标签，className是translation-action-btn delete-translation，是删除按钮的样式类名
             deleteBtn.className = 'translation-action-btn delete-translation';
             deleteBtn.innerHTML = `<svg data-slot="icon" fill="none" stroke-width="1.5" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
 </svg>`;
 
             const addBtn = document.createElement('button');
-            //解释：addBtn是button标签，className是translation-action-btn add-translation，是添加按钮的样式类名
+            // 解释：addBtn是button标签，className是translation-action-btn add-translation，是添加按钮的样式类名
             addBtn.className = 'translation-action-btn add-translation';
             addBtn.innerHTML = `<svg data-slot="icon" fill="none" stroke-width="1.5" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
@@ -2711,7 +2712,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                       }
                     });
 
-                    //有时候有些数据库里翻译可能没trim，所以需要需要重新删除一次
+                    // 有时候有些数据库里翻译可能没trim，所以需要需要重新删除一次
                     chrome.runtime.sendMessage({ action: "removeTranslation", word: originalWord, translation: translationTextElement.textContent }, (response) => {
                       if (response && response.error) {
                         console.error("删除释义失败:", response.error);
@@ -2720,8 +2721,8 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                       }
                     });
 
-                    //删除本地缓存里的当前word的释义
-                    //添加删除本地
+                    // 删除本地缓存里的当前word的释义
+                    // 添加删除本地
                     if (highlightManager && highlightManager.wordDetailsFromDB) {
                       // console.log("本地缓存存在");
                       // 获取当前单词的本地缓存
@@ -2729,7 +2730,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                       // console.log("本地缓存里的当前wor详情", existingDetails);
                       if (existingDetails && existingDetails.translations) {
                         // 使用 findIndex 查找 sentence 属性匹配的对象的索引
-                        const sentenceIndex = existingDetails.translations
+                        const sentenceIndex = existingDetails.translations;
                         // console.log("本地缓存里的当前word的释义", sentenceIndex);
                         // console.log("要删除的：", translationText);
                         for (translation of sentenceIndex) {
@@ -2833,11 +2834,11 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
               // --- 修改：延迟添加事件监听器并确保获得焦点 ---
               setTimeout(() => {
-                  if (!textarea.isConnected) return; // 确保 textarea 还在 DOM 中
+                  if (!textarea.isConnected) {return;} // 确保 textarea 还在 DOM 中
 
                   // 确保输入框获得焦点（在延迟后再次尝试聚焦）
                   textarea.focus({ preventScroll: true });
-                  
+
                   // 设置翻译输入框活动状态
                   isTranslationInputActive = true;
 
@@ -2846,9 +2847,9 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                       // 阻止事件冒泡到父元素，防止被全局键盘处理器拦截
                       e.stopPropagation();
                       e.stopImmediatePropagation(); // 也阻止同级监听器
-                      
+
                       // 对于一些特殊按键，确保它们的默认行为能正常工作
-                      if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'ArrowLeft' || 
+                      if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'ArrowLeft' ||
                           e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
                           e.key === 'Home' || e.key === 'End' || e.key === 'PageUp' || e.key === 'PageDown' ||
                           (e.key.length === 1) || // 普通字符输入
@@ -2857,13 +2858,13 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                           console.log("允许textarea内的按键默认行为:", e.key);
                       }
                   });
-                  
+
                   // 也为其他键盘事件添加阻止冒泡
                   textarea.addEventListener('keyup', function(e) {
                       e.stopPropagation();
                       e.stopImmediatePropagation();
                   });
-                  
+
                   textarea.addEventListener('keypress', function(e) {
                       e.stopPropagation();
                       e.stopImmediatePropagation();
@@ -2878,7 +2879,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
                       if (e.key === 'Enter' && !e.shiftKey) { // 只有按下回车且没有按下Shift才提交
                           e.preventDefault();
-                          if (processed) return;
+                          if (processed) {return;}
 
                           const newTranslation = this.value.trim();
 
@@ -2978,7 +2979,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                       // 当失去焦点时重置状态标志
                       isTranslationInputActive = false;
                       setTimeout(() => {
-                          if (processed) return;
+                          if (processed) {return;}
 
                           const newTranslation = this.value.trim();
 
@@ -3187,27 +3188,11 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             return;
           }
 
-          // 两个AI翻译都完成了，且AI翻译1已添加到数据库，等待数据库更新完成后再刷新
-          console.log("两个AI翻译都已完成，等待数据库更新后刷新...");
-
-          // 监听aiTranslationAdded事件，在数据库更新完成后刷新
-          const handleTranslationAdded = (event) => {
-            if (event.detail.word.toLowerCase() === word.toLowerCase()) {
-              console.log("数据库更新完成，开始刷新");
-              window.removeEventListener('aiTranslationAdded', handleTranslationAdded);
-              // 使用保存的AI翻译结果进行刷新
-              // 由于AI翻译1已经添加到数据库，所以排除它，只保留AI翻译2
-              refreshTooltipTranslationsWithAIResults(word);
-            }
-          };
-          window.addEventListener('aiTranslationAdded', handleTranslationAdded);
-
-          // 设置超时，如果5秒内没有收到事件，也进行刷新
-          setTimeout(() => {
-            window.removeEventListener('aiTranslationAdded', handleTranslationAdded);
-            console.log("超时，强制刷新");
-            refreshTooltipTranslationsWithAIResults(word);
-          }, 5000);
+          // shouldRefresh 来自 a3 的 translationPersisted，说明写库已 await 完成，可以直接刷新。
+          // 不能再去等 aiTranslationAdded 事件：该事件在结构化查词 promise resolve 之前就已派发，
+          // 到这里注册必然错过，只会白等 5 秒兜底超时。
+          console.log("两个AI翻译都已完成且释义已写库，直接刷新");
+          refreshTooltipTranslationsWithAIResults(word);
         }
 
         // 使用AI翻译结果刷新tooltip
@@ -3291,7 +3276,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
         // 刷新 tooltip 内的翻译列表，从单词详情中读出翻译数组
         // excludeAI: 'ai1' 表示排除第一个AI项, 'ai2' 表示排除第二个AI项, null 表示保留所有
-        function refreshTooltipTranslations(word, freshAI=true, excludeAI=null) {
+        function refreshTooltipTranslations(word, freshAI = true, excludeAI = null) {
           // 验证当前弹窗是否是这个单词的弹窗
           if (currentTooltipWord && currentTooltipWord.toLowerCase() !== word.toLowerCase()) {
             console.log(`弹窗单词不匹配，跳过刷新。当前弹窗: ${currentTooltipWord}, 请求刷新: ${word}`);
@@ -3330,7 +3315,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
           chrome.runtime.sendMessage({ action: "getWordDetails", word: word }, (response) => {
             // 添加null检查，确保tooltipEl存在且tooltip未被销毁
             // console.log("getWordDetails 响应:", response);  // ← 添加这一
-           
+
             if (!tooltipEl || tooltipBeingDestroyed) {
               console.error('tooltipEl 为 null 或tooltip正在被销毁，无法刷新翻译');
               return;
@@ -3342,7 +3327,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               // 获取展开和收缩状态下的翻译列表容器
               const expandedList = tooltipEl.querySelector('.scrollable-content .translation-list');
 
-              if (!expandedList ) return;
+              if (!expandedList ) {return;}
 
               // 清空现有内容
               expandedList.innerHTML = '';
@@ -3368,7 +3353,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
               }
 
               // 再添加AI推荐项
-              if(freshAI){
+              if (freshAI) {
                 createAIRecommendation(expandedList);
                 createAIRecommendation2(expandedList); // 添加第二个AI推荐
                } else {
@@ -3454,7 +3439,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             }
         }
 
-        //---AI释义---
+        // ---AI释义---
         // AI 释义合并横幅：AI1/AI2 各为一行，共用 .ai-recommendation 容器
         // 失败或未启用时返回的占位文本，命中后直接隐藏对应行
         const AI_HIDDEN_TEXTS = ['翻译失败', 'AI 释义加载失败', '暂无翻译', '(✿◠‿◠)'];
@@ -3465,13 +3450,13 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
         // 按各行文本同步合并横幅显示状态：占位/失败的行隐藏，全部隐藏时隐藏整条横幅
         function syncAiBannerVisibility(banner) {
-            if (!banner) return;
+            if (!banner) {return;}
             let anyVisible = false;
-            banner.querySelectorAll('.ai-rec-line').forEach(line => {
+            banner.querySelectorAll('.ai-rec-line').forEach((line) => {
                 const span = line.querySelector('.ai-translation-text, .ai-translation-text-2');
                 const hidden = !span || isAiTextHidden(span.textContent);
                 line.style.display = hidden ? 'none' : '';
-                if (!hidden) anyVisible = true;
+                if (!hidden) {anyVisible = true;}
             });
             banner.style.display = anyVisible ? '' : 'none';
         }
@@ -3615,10 +3600,22 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
             // 异步获取设置并更新元素内容
             getStorageValue('autoRequestAITranslations').then(function(autoRequestAITranslations) {
-                if(autoRequestAITranslations) {
-                    getTooltipStructuredLookup().then(result => {
+                if (autoRequestAITranslations) {
+                    getTooltipStructuredLookup().then((result) => {
+                        // 弹窗已销毁/已被新弹窗替换：不再写游离节点，也不要污染新弹窗的 aiTranslationStatus
+                        if (tooltipBeingDestroyed || tooltipEl !== currentTooltipElRef) {
+                            return;
+                        }
                         const wordResult = getStructuredWordResult(result);
-                        const translation = wordResult?.translation ? String(wordResult.translation).trim() : "暂无翻译";
+                        let translation;
+                        if (wordResult?.translation) {
+                            translation = String(wordResult.translation).trim();
+                        } else if (wordResult?.failed || result?.error) {
+                            // 区分「AI 请求失败」与「AI 明确没给出释义」，避免失败被伪装成暂无翻译
+                            translation = "AI 释义加载失败";
+                        } else {
+                            translation = "暂无翻译";
+                        }
                         console.log("AI释义加载完成", translation);
                         aiTextElement.textContent = translation;
                         syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
@@ -3636,8 +3633,11 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                             }
                           }
                         });
-                    }).catch(error => {
+                    }).catch((error) => {
                         console.error("获取AI释义失败:", error);
+                        if (tooltipBeingDestroyed || tooltipEl !== currentTooltipElRef) {
+                            return;
+                        }
                         aiTextElement.textContent = "AI 释义加载失败";
                         syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
                         aiTranslationStatus.ai1.completed = true;
@@ -3658,12 +3658,12 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             return aiTextElement;
         }
 
-        //---第二个AI释义---
+        // ---第二个AI释义---
         // 创建第二个AI推荐释义行（合并横幅内的第二行）
         function createAIRecommendation2(translationList, savedText = null) {
             // 先检查开关是否打开
             getStorageValue('autoRequestAITranslations2').then(function(autoRequestAITranslations2) {
-                if(!autoRequestAITranslations2) {
+                if (!autoRequestAITranslations2) {
                     // 如果开关关闭，不创建元素
                     return;
                 }
@@ -3779,10 +3779,20 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
             // 异步获取设置并更新元素内容
             getStorageValue('autoRequestAITranslations2').then(function(autoRequestAITranslations2) {
-                if(autoRequestAITranslations2) {
-                    getTooltipStructuredLookup().then(result => {
+                if (autoRequestAITranslations2) {
+                    getTooltipStructuredLookup().then((result) => {
+                        if (tooltipBeingDestroyed || tooltipEl !== currentTooltipElRef) {
+                            return;
+                        }
                         const wordResult = getStructuredWordResult(result);
-                        const translation = wordResult?.grammar ? String(wordResult.grammar).trim() : "暂无翻译";
+                        let translation;
+                        if (wordResult?.grammar) {
+                            translation = String(wordResult.grammar).trim();
+                        } else if (wordResult?.failed || result?.error) {
+                            translation = "AI 释义加载失败";
+                        } else {
+                            translation = "暂无翻译";
+                        }
                         console.log("第二个AI释义加载完成", translation);
                         aiTextElement.textContent = translation;
                         syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
@@ -3792,8 +3802,11 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
                         console.log("AI翻译2完成，检查是否需要刷新...");
                         checkAndRefreshWhenBothAIComplete();
-                    }).catch(error => {
+                    }).catch((error) => {
                         console.error("获取第二个AI释义失败:", error);
+                        if (tooltipBeingDestroyed || tooltipEl !== currentTooltipElRef) {
+                            return;
+                        }
                         aiTextElement.textContent = "AI 释义加载失败";
                         syncAiBannerVisibility(aiTextElement.closest('.ai-recommendation'));
                         aiTranslationStatus.ai2.completed = true;
@@ -3819,15 +3832,15 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
         // 初始化释义管理功能
         initTranslationManagement();
 
-      //自动添加例句到数据库
+      // 自动添加例句到数据库
       getStorageValues(['autoAddExampleSentences', 'autoAddSentencesLimit']).then(function(result) {
         console.log("自动添加例句状态已更新:", result.autoAddExampleSentences);
         console.log("自动添加例句上限条数:", result.autoAddSentencesLimit);
 
-        if(result.autoAddExampleSentences){
+        if (result.autoAddExampleSentences) {
             const sentencesLimit = result.autoAddSentencesLimit === undefined ? 1 : result.autoAddSentencesLimit;
 
-            //这个句子已经存在，就不操作了；
+            // 这个句子已经存在，就不操作了；
             const existingDetails = highlightManager.wordDetailsFromDB[word.toLowerCase()];
             console.log("existingDetails 自动例句判断", existingDetails);
 
@@ -3835,8 +3848,8 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 console.log("existingDetails.sentence  ", existingDetails.sentences);
 
                 // 检查是否已存在相同句子
-                const sentenceExists = existingDetails.sentences.some(item => item.sentence === sentence);
-                if(sentenceExists){
+                const sentenceExists = existingDetails.sentences.some((item) => item.sentence === sentence);
+                if (sentenceExists) {
                     console.log("existingDetails.sentence 包含 sentence， 不自动添加");
                     return;
                 }
@@ -3848,13 +3861,18 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 }
             }
 
-            console.log("sentents is :" +sentence)
+            console.log("sentents is :" + sentence);
             console.log("existingDetails.sentence 不包含 sentence， 自动添加");
 
-            let currentUrl =  window.top.location.href
-            getTooltipStructuredLookup().then(result => {
-              const sentTranslation = result?.sentenceTranslations?.[0];
+            let currentUrl = window.top.location.href;
+            getTooltipStructuredLookup().then(async (result) => {
+              let sentTranslation = result?.sentenceTranslations?.[0];
+              // 结构化查词没带回整句翻译（例如该分块请求失败）时回退单独请求一次，避免例句被静默丢弃
+              if (!sentTranslation && typeof fetchSentenceTranslation === 'function') {
+                sentTranslation = await fetchSentenceTranslation(originalWord, sentence).catch(() => null);
+              }
               if (!sentTranslation || sentTranslation === '暂无翻译' || sentTranslation === '翻译失败') {
+                console.warn("未获取到整句翻译，跳过自动添加例句");
                 return;
               }
               chrome.runtime.sendMessage({
@@ -3862,7 +3880,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                 word: originalWord,
                 sentence: sentence,
                 translation: sentTranslation,
-                url:currentUrl
+                url: currentUrl
               }, (res) => {
                 if (res && res.error) {
                   console.error("保存例句失败:", res.error);
@@ -3872,7 +3890,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
                   // refreshTooltipTranslations(word);
                   //
-                //添加本地缓存  防止多AI请求
+                // 添加本地缓存  防止多AI请求
                 if (highlightManager && highlightManager.wordDetailsFromDB) {
                   // 获取已存在的详情，如果不存在则默认为空对象
                   const existingDetails = highlightManager.wordDetailsFromDB[word.toLowerCase()] || {};
@@ -3903,13 +3921,13 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
             }
 
             const sentencesContainer = tooltipEl.querySelector(".tooltip-sentences");
-            if (!sentencesContainer) return;
+            if (!sentencesContainer) {return;}
             sentencesContainer.innerHTML = ""; // 清空旧内容
 
             if (response && response.details && response.details.sentences && response.details.sentences.length > 0) {
               response.details.sentences.forEach((item, index) => {
                 // 检查sentence是否存在，避免null错误
-                if (!item.sentence) return;
+                if (!item.sentence) {return;}
 
                 const regex = new RegExp(`(${word})`, "gi");
                 const highlightedSentence = item.sentence.replace(regex, '<strong>$1</strong>');
@@ -3938,7 +3956,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
               // 为每个例句对添加事件监听器
               const sentencePairs = sentencesContainer.querySelectorAll(".example-sentence-pair");
-              sentencePairs.forEach(pair => {
+              sentencePairs.forEach((pair) => {
                 const sentence = pair.querySelector(".example-sentence").textContent;
 
                 // 当鼠标悬浮在句子对上时显示翻译，离开后隐藏翻译部分
@@ -3978,13 +3996,13 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
                           console.log("删除例句成功");
                           // 重新刷新例句列表
 
-                        //添加删除本地缓存
+                        // 添加删除本地缓存
                         if (highlightManager && highlightManager.wordDetailsFromDB) {
                           // 获取当前单词的本地缓存
                           const existingDetails = highlightManager.wordDetailsFromDB[word.toLowerCase()];
                           if (existingDetails && existingDetails.sentences) {
                             // 使用 findIndex 查找 sentence 属性匹配的对象的索引
-                            const sentenceIndex = existingDetails.sentences.findIndex(item => item.sentence === sentence);
+                            const sentenceIndex = existingDetails.sentences.findIndex((item) => item.sentence === sentence);
                             if (sentenceIndex > -1) {
                               // 使用 splice 直接修改 sentences 数组，删除指定索引的对象
                               existingDetails.sentences.splice(sentenceIndex, 1);
@@ -4058,7 +4076,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
 // 改为非阻塞预加载：立即开始加载但不等待
 let keyMapout = null;
-let keyMapoutLoadPromise = getStorageValue('wordStatusKeys').then(value => {
+let keyMapoutLoadPromise = getStorageValue('wordStatusKeys').then((value) => {
   keyMapout = value;
   console.log("keyMapout 预加载完成", keyMapout);
   return value;
@@ -4116,7 +4134,7 @@ currentTooltipKeydownHandler = async function(e) {
       }
       currentElement = currentElement.parentElement;
     }
-    
+
     // 检查当前焦点元素是否是翻译输入框或其他输入框
     const activeElement = document.activeElement;
     if (activeElement && (
@@ -4254,7 +4272,7 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
     closeBtnWords.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      //这里判断一下当前鼠标下面的单词是不是小窗单词，如果是就不反应
+      // 这里判断一下当前鼠标下面的单词是不是小窗单词，如果是就不反应
 
       closeTooltipWithAnimation(); // <-- 调用新函数关闭 tooltip
     });
@@ -4366,7 +4384,7 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
       // 使用组合transform，保留show动画效果
       const isShowing = capsulesWrapper.classList.contains('show');
       const translateY = isShowing ? '0' : '10px';
-      capsulesWrapper.style.transform = `scale(${1/capsuleZoomFactor}) translateY(${translateY})`;
+      capsulesWrapper.style.transform = `scale(${1 / capsuleZoomFactor}) translateY(${translateY})`;
       // 设置变换原点为右下角，因为胶囊使用bottom和right定位
       capsulesWrapper.style.transformOrigin = "right bottom";
     };
@@ -4503,7 +4521,7 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
   const viewportHeight = window.innerHeight;
   const viewportWidth = document.documentElement.clientWidth;
 
-  
+
 
   // 获取用户设置的基准DPR值
   const baseDPR = await getStorageValue('devicePixelRatio') || window.devicePixelRatio || 1.0;
@@ -4540,7 +4558,7 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
 
   // 根据缩放比例调整tooltip的最大高度
   // 计算调整后的最大高度 = 原始高度 / 缩放比例
-  const adjustedMaxHeight = Math.floor((window.innerHeight) * zoomFactor) -192;
+  const adjustedMaxHeight = Math.floor((window.innerHeight) * zoomFactor) - 192;
 
   // 确保 tooltipEl 存在且tooltip未被销毁后再设置样式
   if (tooltipEl && !tooltipBeingDestroyed) {
@@ -4555,7 +4573,7 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
   // 注意：此时弹窗还未添加到DOM，无法获取实际尺寸
   // 我们使用一个合理的估计值，后续会通过ResizeObserver调整
   const estimatedTooltipHeight = 277; // 估计的弹窗高度
-  const estimatedTooltipWidth = tooltipWidth;  // 使用动态计算的弹窗宽度
+  const estimatedTooltipWidth = tooltipWidth; // 使用动态计算的弹窗宽度
 
   // 检测shadowHost是否在top layer（全屏模式）
   // 如果在top layer，shadowHost是position:fixed，坐标系相对于视口，不需要加scrollX/Y
@@ -4580,7 +4598,7 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
   console.log("调整后的gap值:", gap);
 
   let desiredLeft = wordRect.left + scrollOffsetX;
-  
+
   // 检测竖排文本模式，如果是竖排则添加额外的水平偏移
   if (detectVerticalWritingMode()) {
     desiredLeft += 30; // 在竖排模式下向右偏移300px
@@ -4644,7 +4662,7 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
       tooltipEl.style.top = adjustedTop + "px";
 
       // 添加CSS变换以抵消浏览器缩放
-      tooltipEl.style.transform = `scale(${1/zoomFactor})`;
+      tooltipEl.style.transform = `scale(${1 / zoomFactor})`;
       // 设置变换原点为左下角，确保向上展开时基于左下角缩放
       tooltipEl.style.transformOrigin = "left bottom";
 
@@ -4671,7 +4689,7 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
       if (tooltipResizeObserver) {
         tooltipResizeObserver.disconnect();
       }
-      tooltipResizeObserver = new ResizeObserver(entries => {
+      tooltipResizeObserver = new ResizeObserver((entries) => {
         for (let entry of entries) {
           const newHeight = entry.contentRect.height;
           // 重新计算 top 以保持底部位置固定
@@ -4702,7 +4720,7 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
       tooltipEl.style.top = desiredTop + "px";
 
       // 添加CSS变换以抵消浏览器缩放
-      tooltipEl.style.transform = `scale(${1/zoomFactor})`;
+      tooltipEl.style.transform = `scale(${1 / zoomFactor})`;
       // 设置变换原点为左上角，确保向下展开时基于左上角缩放
       tooltipEl.style.transformOrigin = "left top";
 
@@ -4754,7 +4772,7 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
         tooltipEl.style.visibility = 'visible'; // 先设为可见
 
         // 使用统一的动画设置函数，等待完成后再显示
-        //615行是啥卧槽
+        // 615行是啥卧槽
         updateTooltipAnimationSettings().then(() => {
           // 动画设置完成后，设置透明度
           if (tooltipEl) { // 再次检查tooltipEl是否存在
@@ -4791,7 +4809,7 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
 
   // 状态按钮事件
   const statusButtons = tooltipEl.querySelectorAll(".nav-buttons button");
-  statusButtons.forEach(btn => {
+  statusButtons.forEach((btn) => {
     btn.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -4917,12 +4935,12 @@ function updateButtonColors(tooltipEl, wordStatus) {
   };
     // 状态颜色映射 - 暗色模式
   const darkModeColors = {
-      0: "rgb(139, 69, 69)",   // Darker Red (New/Unknown)
-      1: "rgb(138, 113, 58)",  // Dark Yellow/Ochre (Learning, from dark-state1 inspiration)
-      2: "rgb(92, 84, 63)",    // Darker Brownish Yellow (Level 2, from dark-state2 inspiration)
-      3: "rgb(60, 62, 63)",    // Dark Grey (Level 3, from dark-state3 inspiration)
-      4: "rgba(85, 85, 85, 0.14)",    // Medium Dark Grey (Ignored)
-      5: "rgba(60, 100, 60, 0.68)"    // Dark Green (Known/Mastered)
+      0: "rgb(139, 69, 69)", // Darker Red (New/Unknown)
+      1: "rgb(138, 113, 58)", // Dark Yellow/Ochre (Learning, from dark-state1 inspiration)
+      2: "rgb(92, 84, 63)", // Darker Brownish Yellow (Level 2, from dark-state2 inspiration)
+      3: "rgb(60, 62, 63)", // Dark Grey (Level 3, from dark-state3 inspiration)
+      4: "rgba(85, 85, 85, 0.14)", // Medium Dark Grey (Ignored)
+      5: "rgba(60, 100, 60, 0.68)" // Dark Green (Known/Mastered)
     };
 
   // 首先获取弹窗主题模式设置
@@ -4953,7 +4971,7 @@ function updateButtonColors(tooltipEl, wordStatus) {
     console.log("状态颜色是：", statusColors);
     // 重置所有按钮样式
     const allButtons = tooltipEl.querySelectorAll(".nav-btn");
-    allButtons.forEach(btn => {
+    allButtons.forEach((btn) => {
       btn.style.backgroundColor = "";
       btn.classList.remove("active-status");
     });
@@ -4973,7 +4991,7 @@ function updateButtonColors(tooltipEl, wordStatus) {
 function updateStatusToggleButton(tooltipEl, currentStatus) {
   return;
   const statusToggleBtn = tooltipEl.querySelector('.status-toggle-btn');
-  if (!statusToggleBtn) return;
+  if (!statusToggleBtn) {return;}
 
   const svg = statusToggleBtn.querySelector('svg path');
 
@@ -4993,7 +5011,7 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
   getTooltipStructuredLookup();
   refreshTooltipTags(word, sentence);
 
-  //获取翻译入口 ； 触发AI自动翻译
+  // 获取翻译入口 ； 触发AI自动翻译
   refreshTooltipTranslations(word);
 
   refreshTooltipSentences(word, sentence);
@@ -5025,7 +5043,7 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
           left: tooltipRect.left,
           right: tooltipRect.left + 100, // 给一个合理的宽度
           top: tooltipRect.top,
-          bottom: tooltipRect.top + 30,  // 给一个合理的高度
+          bottom: tooltipRect.top + 30, // 给一个合理的高度
           width: 100,
           height: 30
         };
@@ -5253,7 +5271,7 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
   // 如果没有语言信息或语言为'auto'，触发AI语言检测
   if (!currentLanguage || currentLanguage === 'auto' || currentLanguage === '?') {
     console.log('触发AI语言检测，当前语言:', currentLanguage);
-    getTooltipStructuredLookup().then(result => {
+    getTooltipStructuredLookup().then((result) => {
       const detectedLanguage = getStructuredWordResult(result)?.language;
       if (detectedLanguage && detectedLanguage !== false) {
         console.log('AI语言检测完成:', detectedLanguage);
@@ -5267,7 +5285,7 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
           };
         }
       }
-    }).catch(error => {
+    }).catch((error) => {
       console.error('AI语言检测失败:', error);
     });
   }
@@ -5322,7 +5340,7 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
           e.preventDefault();
           e.stopPropagation();
           let newLanguage = input.value.trim().toLowerCase(); // 获取并处理新语言代码
-          if (newLanguage === '') newLanguage = null; // 空字符串设为 null
+          if (newLanguage === '') {newLanguage = null;} // 空字符串设为 null
 
           // 如果语言代码没有变化，则直接恢复显示
           if (newLanguage === (currentLanguage || null)) {
@@ -5335,7 +5353,7 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
               action: "ChangeWordLanguage",
               word: originalWord,
               details: { language: newLanguage } // 发送新的语言代码
-          }, response => {
+          }, (response) => {
               if (response && response.success) {
                   console.log("语言已更新为:", newLanguage);
                   currentLanguage = newLanguage; // 更新当前语言变量
@@ -5421,7 +5439,7 @@ function isSidebarFeatureEnabled() {
 }
 
 function applyTooltipSidebarButtonVisibility() {
-  if (!tooltipEl) return;
+  if (!tooltipEl) {return;}
   const sidebarBtn = tooltipEl.querySelector('.sidebar-btn');
   if (sidebarBtn) {
     sidebarBtn.style.display = isSidebarFeatureEnabled() ? '' : 'none';
@@ -5467,7 +5485,7 @@ function getStorageValue(key) {
 
 if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
   chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace !== 'local') return;
+    if (namespace !== 'local') {return;}
 
     Object.keys(changes).forEach((key) => {
       a4StorageCache[key] = changes[key].newValue;
@@ -5552,7 +5570,7 @@ function isA4WordInActivationExplosionSentence(hoveredDetail, activationContext 
   return sentence.toLowerCase().includes(hoveredDetail.word.toLowerCase());
 }
 
-async function handleMouseMoveForTooltip(e,isOffscreen = false, activationContext = {}) {
+async function handleMouseMoveForTooltip(e, isOffscreen = false, activationContext = {}) {
   // 防止重复创建tooltip
   if (tooltipCreationInProgress) {
     console.log("Tooltip创建正在进行中，跳过重复请求");
@@ -5604,7 +5622,7 @@ async function handleMouseMoveForTooltip(e,isOffscreen = false, activationContex
     const tooltipRect = tooltipEl.getBoundingClientRect();
     // 为顶部和底部添加用户设置的gap值冗余区域，避免鼠标在边缘时弹窗消失
     if (e.clientX >= tooltipRect.left && e.clientX <= tooltipRect.right &&
-        e.clientY >= (tooltipRect.top - userGap-2) && e.clientY <= (tooltipRect.bottom + userGap +2)) {
+        e.clientY >= (tooltipRect.top - userGap - 2) && e.clientY <= (tooltipRect.bottom + userGap + 2)) {
       return;
     }
   }
@@ -5616,7 +5634,7 @@ async function handleMouseMoveForTooltip(e,isOffscreen = false, activationContex
   const word = getWordAtPoint(e.clientX, e.clientY);
   if (word) {
     // console.log("鼠标所在单词为:", word);
-    let wordRangesArrays   = wordRangesMap.get(word.toLowerCase());
+    let wordRangesArrays = wordRangesMap.get(word.toLowerCase());
     // console.log("wordRangesArrays:  ", wordRangesArrays);
 
     if (wordRangesArrays) {
@@ -5633,8 +5651,8 @@ async function handleMouseMoveForTooltip(e,isOffscreen = false, activationContex
       if (located) {
         const range = detail.range;
         // 零布局读取的快速排除
-        if (range.startContainer !== located.textNode) continue;
-        if (located.offset < range.startOffset || located.offset > range.endOffset) continue;
+        if (range.startContainer !== located.textNode) {continue;}
+        if (located.offset < range.startOffset || located.offset > range.endOffset) {continue;}
       }
       const rect = detail.range.getBoundingClientRect();
       if (e.clientX >= rect.left && e.clientX <= rect.right &&
@@ -5651,7 +5669,7 @@ async function handleMouseMoveForTooltip(e,isOffscreen = false, activationContex
       }
     }
   }
-  let isAutoWordTTSEnabled  =  false;
+  let isAutoWordTTSEnabled = false;
 
   }
 
@@ -5664,7 +5682,7 @@ async function handleMouseMoveForTooltip(e,isOffscreen = false, activationContex
     // return;
   } else {
     // 仅当 hoveredDetail 有效时才执行以下逻辑
-    const {sentence: sentence1, range: sentenceRange1} = getSentenceForWord(hoveredDetail);
+    const { sentence: sentence1, range: sentenceRange1 } = getSentenceForWord(hoveredDetail);
 
     // 新增：检查 hoveredDetail.word 是否有效
     if (!hoveredDetail.word) {
@@ -5734,43 +5752,43 @@ if (hoveredDetail) {
   // console.log("鼠标悬停的单词是：",wordLower);
 
 // 比较当前tooltipWord时也使用小写
-  //currentTooltipWordLower 等于是 当前tooltipWord的小写版本
+  // currentTooltipWordLower 等于是 当前tooltipWord的小写版本
   const currentTooltipWordLower = currentTooltipWord ? currentTooltipWord.toLowerCase() : null;
   // console.log("当前窗口的单词是：",currentTooltipWordLower);
 
-  //如果当前tooltipWord与鼠标悬停的单词不一致，则移除当前tooltip，并显示新的tooltip
-  if (currentTooltipWordLower !== wordLower) {//如果当前tooltipWord与鼠标悬停的单词不一致，则移除当前tooltip，并判断单词是否已知
+  // 如果当前tooltipWord与鼠标悬停的单词不一致，则移除当前tooltip，并显示新的tooltip
+  if (currentTooltipWordLower !== wordLower) {// 如果当前tooltipWord与鼠标悬停的单词不一致，则移除当前tooltip，并判断单词是否已知
     // console.log("当前窗口的单词与鼠标悬停的单词不一致，移除当前tooltip，并判断单词是否已知");
 
-  //如果autoRefreshTooltip为true，这里是非高亮单词，则不关闭当前小窗并继续执行显示新单词
+  // 如果autoRefreshTooltip为true，这里是非高亮单词，则不关闭当前小窗并继续执行显示新单词
   if (autoRefreshTooltip) {
     // console.log("autoRefreshTooltip 为 true，当前单词和弹窗不一致，但不关闭当前小窗");
   } else {
-    //如果autoRefreshTooltip为false，
+    // 如果autoRefreshTooltip为false，
     closeTooltipWithAnimation(); // <-- 调用新函数关闭 tooltip
   }
 
-  }else{
+  } else {
     // console.log("当前窗口的单词与鼠标悬停的单词一致,啥也不做");
-    return
+    return;
   }
 
-  //当前单词是已知单词，那就啥也不干；不显示新窗口。
-  //但是没必要关闭小窗，因为鼠标移动出去范围，会自动关闭小窗
-  //如果当前单词是已知单词，那就啥也不干；不显示新窗口。
-  //或者不一致，也会关闭。这里没必要判断了。
+  // 当前单词是已知单词，那就啥也不干；不显示新窗口。
+  // 但是没必要关闭小窗，因为鼠标移动出去范围，会自动关闭小窗
+  // 如果当前单词是已知单词，那就啥也不干；不显示新窗口。
+  // 或者不一致，也会关闭。这里没必要判断了。
 
      // 从缓存读取autoExpandTooltip设置 自动展开未高亮单词的小窗
      const autoExpand = getCachedStorageValue('autoExpandTooltip') || false;
      // console.log("autoExpand 为:", autoExpand);
 
-     //这里，如果是点击触发，就显示小窗了。
-     //如果是自动触发，则不显示小窗。
+     // 这里，如果是点击触发，就显示小窗了。
+     // 如果是自动触发，则不显示小窗。
 
      // 从缓存读取 clickOnlyTooltip 设置
      const clickOnlyMode = getCachedStorageValue('clickOnlyTooltip') || false;
 
-     if(clickOnlyMode){
+     if (clickOnlyMode) {
         // console.log("clickOnlyMode 为:", clickOnlyMode);
         // 如果是仅点击模式，这里不需要阻止，因为 handleMouseMoveForTooltip 可能是由点击触发的
         // console.log("点击触发小窗");
@@ -5858,19 +5876,19 @@ if (hoveredDetail) {
 
   // 函数耗时检测：
   // console.time('showEnhancedTooltipForWord');
-  //这才要获取句子，然后显示弹窗
+  // 这才要获取句子，然后显示弹窗
   if (isOffscreen) {
-  //更新当前窗口的单词
+  // 更新当前窗口的单词
   currentTooltipWord = hoveredDetail.word;
-  const {sentence, range: sentenceRange} = getSentenceForWord(hoveredDetail);
-    console.log("originalWord",hoveredDetail.word);
+  const { sentence, range: sentenceRange } = getSentenceForWord(hoveredDetail);
+    console.log("originalWord", hoveredDetail.word);
     // console.log("鼠标已停留500ms，尝试检测单词，isOffscreen为true");
 
     // 先显示弹窗，不等待TTS
     showEnhancedTooltipForWord(hoveredDetail.word, sentence, hoveredRect, parent, hoveredDetail.word);
 
     // 然后异步播放TTS，不阻塞弹窗显示
-    //isAutoWordTTSEnabled 如果开启，这里就不用播放tts了
+    // isAutoWordTTSEnabled 如果开启，这里就不用播放tts了
     if (!isAutoWordTTSEnabled) {
       // 使用 setTimeout 确保完全异步，不阻塞弹窗
       setTimeout(() => {
@@ -5894,11 +5912,11 @@ if (hoveredDetail) {
 
   // console.timeEnd('showEnhancedTooltipForWord');
 
-//否则啥也不做；这个逻辑对Q快捷键也要适用
+// 否则啥也不做；这个逻辑对Q快捷键也要适用
 
 } else {
   // console.log("没有鼠标悬停的单词，删除空格监听");
-  //如果当前没有小窗就  删除空格监听
+  // 如果当前没有小窗就  删除空格监听
 
   // 获取 autoCloseTooltip 设置
   // 如果 autoCloseTooltip 为 true，则删除空格监听
@@ -5913,25 +5931,25 @@ if (hoveredDetail) {
     closeTooltipWithAnimation(); // <-- 调用新函数关闭 tooltip
   }
 
-  //如果autoRefreshTooltip为true，这里是非高亮单词，则不关闭当前小窗并继续执行显示新单词
+  // 如果autoRefreshTooltip为true，这里是非高亮单词，则不关闭当前小窗并继续执行显示新单词
   if (autoRefreshTooltip) {
     // console.log("autoRefreshTooltip 为 true，不关闭当前小窗并继续执行显示新单词");
   } else {
 
-    //如果autoRefreshTooltip为false，
-    //真的是false,
-    //要么就是默认关闭自动关闭所有,鼠标离开就关闭
+    // 如果autoRefreshTooltip为false，
+    // 真的是false,
+    // 要么就是默认关闭自动关闭所有,鼠标离开就关闭
 
-    //这里得判断一下，这个单词，是不是他妈的已知单词
-    //如果是已知单词，则不关闭当前小窗
-    //如果不是已知单词，则关闭当前小窗
+    // 这里得判断一下，这个单词，是不是他妈的已知单词
+    // 如果是已知单词，则不关闭当前小窗
+    // 如果不是已知单词，则关闭当前小窗
 
     closeTooltipWithAnimation(); // <-- 调用新函数关闭 tooltip
 
     // console.log("autoRefreshTooltip 为 false，啥也不做");
   }
 
-  //删除空格监听
+  // 删除空格监听
 
 }
 
@@ -7581,7 +7599,7 @@ html[data-theme='dark'] .scrollable-content::-webkit-scrollbar-thumb:hover {
                         /* --- 修复结束 --- */
 
 </style>
-`
+`;
 
 shadowRoot.appendChild(style);
 
@@ -7812,7 +7830,7 @@ function writeToClipboard() {
   console.log("用户触发后；word:  ", word);
   if (word) {
     console.log("鼠标所在单词为:", word);
-    let wordRangesArrays   = wordRangesMap.get(word.toLowerCase());
+    let wordRangesArrays = wordRangesMap.get(word.toLowerCase());
     // console.log("wordRangesArrays:  ", wordRangesArrays);
     for (const detail of wordRangesArrays) {
       const rect = detail.range.getBoundingClientRect();
@@ -7832,7 +7850,7 @@ function writeToClipboard() {
   }
 
   if (hoveredDetail) {
-    const {sentence, range: sentenceRange} = getSentenceForWord(hoveredDetail);
+    const { sentence, range: sentenceRange } = getSentenceForWord(hoveredDetail);
 
     // 播放句子 TTS
     try {
@@ -7844,7 +7862,7 @@ function writeToClipboard() {
   }
 
   if (hoveredDetail) {
-    const {sentence, range: sentenceRange2} = getSentenceForWord(hoveredDetail);
+    const { sentence, range: sentenceRange2 } = getSentenceForWord(hoveredDetail);
     highlightSpecificWords(getSentenceWordDetails(hoveredDetail), 66);
     navigator.clipboard.writeText(sentence);
   }
@@ -7928,7 +7946,7 @@ function getTranslationCount(word) {
   const capitalizedWord = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 
   console.log("getTranslationCount:  ", highlightManager.wordDetailsFromDB[lowerCaseWord]);
-   //如果没有这个条目，就返回0
+   // 如果没有这个条目，就返回0
   if (!highlightManager.wordDetailsFromDB[lowerCaseWord]) {
     return 0;
   }
@@ -7950,7 +7968,7 @@ function getTranslationCount(word) {
   }
 
    function WesternTextFix(text, index, length) {
-    if(!text){
+    if (!text) {
       return null;
     }
 
@@ -7993,24 +8011,24 @@ function getTranslationCount(word) {
       // 其他常见缩写
       "asap.", "ASAP.", "etc.", "Etc.", "diy.", "DIY.",
       "hr.", "Hr.", "HR.", "min.", "Min.", "sec.", "Sec."
-    ])
+    ]);
 
-    if(commonAbbreviations.has(text)){
-      return  text
-    }else{
+    if (commonAbbreviations.has(text)) {
+      return text;
+    } else {
 
-      //获取第一个\w 字母和她的位置;
-      //获取最后一个字母或者数字和位置
-      //捕获中间的部分
-      //更新index和length
-      //返回处理后的text,index,length
+      // 获取第一个\w 字母和她的位置;
+      // 获取最后一个字母或者数字和位置
+      // 捕获中间的部分
+      // 更新index和length
+      // 返回处理后的text,index,length
 
 // 获取第一个字母和它的位置
 const firstLetterMatch = text.match(/[\p{L}]/u);
 const lastLetterMatch = text.match(/[\p{L}\d][^\p{L}\d]*$/u);
 
 if (!firstLetterMatch || !lastLetterMatch) {
-  return text
+  return text;
 }
 
 const firstIndex = firstLetterMatch.index;
@@ -8019,13 +8037,13 @@ const lastLetterEndIndex = lastIndex + lastLetterMatch[0].replace(/[^\p{L}\d]/gu
 
 // 如果首尾没有非字母字符，直接返回原始值
 if (firstIndex === 0 && lastLetterEndIndex === length) {
-  return text
+  return text;
 }
 
 // 更新值
 const newText = text.substring(firstIndex, lastLetterEndIndex);
 
-return  newText
+return newText;
 
       }
     }
@@ -8062,7 +8080,7 @@ function getWordAtPoint(x, y) {
     }
 
     const node = range.startContainer;
-    if (node.nodeType !== Node.TEXT_NODE) return null;
+    if (node.nodeType !== Node.TEXT_NODE) {return null;}
 
     const text = node.textContent;
     const offset = range.startOffset;
@@ -8183,7 +8201,7 @@ function getParentAtPoint(x, y) {
 }
 
   // 检测文本是否为韩语
-function  isKoreanText(text) {
+function isKoreanText(text) {
       // 检测是否含有韩语特有字符
       return /[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7AF]/.test(text);
   }
@@ -8405,7 +8423,7 @@ function showSidebar(url, word) {
     let resizeOverlay = null;
 
     const handleMouseMove = (e) => {
-      if (!isResizing) return;
+      if (!isResizing) {return;}
       e.preventDefault();
       e.stopPropagation();
 
@@ -8492,8 +8510,8 @@ function showSidebar(url, word) {
     // 如果已存在，更新iframe的src和标题
     const iframe = sidebar.querySelector('iframe');
     const titleEl = sidebar.querySelector('div > div');
-    if (iframe) iframe.src = url;
-    if (titleEl) titleEl.textContent = word || '侧边栏';
+    if (iframe) {iframe.src = url;}
+    if (titleEl) {titleEl.textContent = word || '侧边栏';}
 
     // 如果侧边栏被隐藏，重新显示
     if (sidebar.style.transform === 'translateX(100%)') {
@@ -8740,7 +8758,7 @@ function setupMouseListeners() {
 
     // console.log(`[a4_tooltip_new.js @ ${window.location.href.substring(0, 50)}] Actually adding mousemove listener inside setTimeout.`);
     document.addEventListener("mousemove", (e) => {
-        if (shouldIgnoreA4SyntheticMouseEvent(e)) return;
+        if (shouldIgnoreA4SyntheticMouseEvent(e)) {return;}
         // console.log(`[a4_tooltip_new.js @ ${window.location.href.substring(0, 50)}] Mousemove listener triggered.`);
         // --- 日志结束 ---
 
@@ -8797,7 +8815,7 @@ function setupMouseListeners() {
                 handleMouseMoveForTooltip(e, false);
             });
         }
-    },true);
+    }, true);
     // 如果还有其他事件监听器，也在这里用 setTimeout 添加
     /*
     document.addEventListener('mousedown', (e) => {
@@ -8805,12 +8823,12 @@ function setupMouseListeners() {
     });
     */
 
-////////////////////////// 键盘事件处理
+/// /////////////////////// 键盘事件处理
 
 // 处理句子爆炸快捷键触发
 function handleSentenceExplosion() {
   console.log('[SentenceExplosion] 句子爆炸快捷键被触发');
-  
+
   // 检查lastMouseEvent是否存在
   if (!lastMouseEvent) {
     console.log('[SentenceExplosion] 没有鼠标事件记录，无法触发');
@@ -8821,7 +8839,7 @@ function handleSentenceExplosion() {
   getStorageValues(['wordExplosionEnabled', 'enablePlugin']).then(function(result) {
     const isPluginEnabled = result.enablePlugin !== false;
     const isExplosionEnabled = result.wordExplosionEnabled !== false;
-    
+
     if (!isPluginEnabled || !isExplosionEnabled) {
       console.log('[SentenceExplosion] 插件或句子爆炸功能未启用');
       return;
@@ -8832,13 +8850,13 @@ function handleSentenceExplosion() {
     if (typeof findWordAndSentenceAtPosition === 'function') {
       const sentenceInfo = findWordAndSentenceAtPosition(lastMouseEvent.clientX, lastMouseEvent.clientY);
       console.log('[SentenceExplosion] findWordAndSentenceAtPosition返回:', sentenceInfo);
-      
+
       if (sentenceInfo && sentenceInfo.sentence && sentenceInfo.sentence.trim().length >= 5) {
         console.log('[SentenceExplosion] 找到有效句子:', sentenceInfo.sentence);
-        
+
         // 获取句子的位置信息（优先使用sentenceInfo中已有的rect）
         let sentenceRect = sentenceInfo.rect;
-        
+
         // 如果没有rect，尝试使用getSentenceRect函数获取
         if (!sentenceRect && typeof getSentenceRect === 'function') {
           sentenceRect = getSentenceRect(sentenceInfo.sentence, {
@@ -8847,7 +8865,7 @@ function handleSentenceExplosion() {
             sentenceRange: sentenceInfo.sentenceRange
           });
         }
-        
+
         // 调用showWordExplosion显示句子爆炸弹窗
         if (typeof showWordExplosion === 'function') {
           showWordExplosion(sentenceInfo.sentence, sentenceRect, sentenceInfo);
@@ -8910,7 +8928,7 @@ document.addEventListener('keydown', function(e) {
       console.log("用户触发后；word:  ", word);
       if (word) {
         console.log("鼠标所在单词为:", word);
-        let wordRangesArrays   = wordRangesMap.get(word.toLowerCase());
+        let wordRangesArrays = wordRangesMap.get(word.toLowerCase());
         // console.log("wordRangesArrays:  ", wordRangesArrays);
         for (const detail of wordRangesArrays) {
           const rect = detail.range.getBoundingClientRect();
@@ -8931,8 +8949,8 @@ document.addEventListener('keydown', function(e) {
 
       if (hoveredDetail) {
 
-        //获取句子
-        const {sentence, range: sentenceRange} = getSentenceForWord(hoveredDetail);
+        // 获取句子
+        const { sentence, range: sentenceRange } = getSentenceForWord(hoveredDetail);
 
         // 播放 TTS
         try {
@@ -8956,10 +8974,10 @@ document.addEventListener('keydown', function(e) {
           tooltipEl.remove();
           tooltipEl = null;
         }
-        //更新当前窗口的单词
+        // 更新当前窗口的单词
         currentTooltipWord = hoveredDetail.word;
 
-        //显示tooltip
+        // 显示tooltip
         let parent = getParentAtPoint(lastMouseEvent.clientX, lastMouseEvent.clientY);
         showEnhancedTooltipForWord(hoveredDetail.word, sentence, hoveredRect, parent, hoveredDetail.word);
 
@@ -9001,7 +9019,7 @@ document.addEventListener('keydown', function(e) {
   });
 });
 
-////////////////////// 添加点击事件监听器来处理tooltip的关闭
+/// /////////////////// 添加点击事件监听器来处理tooltip的关闭
 // 改成pointerdown，兼容触控
 // Desktop keeps pointerdown behavior. Touch waits for pointerup and ignores scroll/drag.
 const A4_TOUCH_TAP_MOVE_THRESHOLD = 12;
@@ -9021,8 +9039,8 @@ function isA4CoarsePointerDevice() {
 }
 
 function shouldUseA4TouchTapFlow(e) {
-  if (isA4TouchPointerEvent(e)) return true;
-  if (e && e.pointerType === 'mouse') return false;
+  if (isA4TouchPointerEvent(e)) {return true;}
+  if (e && e.pointerType === 'mouse') {return false;}
   return isA4CoarsePointerDevice();
 }
 
@@ -9063,8 +9081,8 @@ function handleA4PointerActivation(e) {
   console.log('[DEBUG] Mousedown raw event coords:', { clientX: e?.clientX, clientY: e?.clientY });
   // --- 记录结束 ---
 
-  //鼠标点击做一个鼠标移动的模拟，增加兼容性；
-  //无论是否在仅点击模式下，点击都应当触发小窗检测
+  // 鼠标点击做一个鼠标移动的模拟，增加兼容性；
+  // 无论是否在仅点击模式下，点击都应当触发小窗检测
 
   // 获取当前点击的元素
 
@@ -9079,7 +9097,7 @@ function handleA4PointerActivation(e) {
       ? getCurrentExplosionSentence()
       : null;
 
-  handleMouseMoveForTooltip(e,true, {
+  handleMouseMoveForTooltip(e, true, {
     explosionVisibleAtActivation,
     explosionRangeAtActivation,
     explosionSentenceAtActivation
@@ -9107,12 +9125,12 @@ function handleA4PointerActivation(e) {
     return; // 如果点击在iframe遮罩层上，不关闭tooltip（让overlay自己处理关闭）
   }
 
-  //就判断当前鼠标下面的单词是不是小窗单词不就行了嘛
+  // 就判断当前鼠标下面的单词是不是小窗单词不就行了嘛
   const dqwords = getWordAtPoint(e.clientX, e.clientY);
   console.log("当前鼠标下的单词是：", dqwords);
 
   // 修复：添加 dqwords 和 currentTooltipWord 的空值检查
-  if(dqwords && currentTooltipWord && dqwords.includes(currentTooltipWord)){
+  if (dqwords && currentTooltipWord && dqwords.includes(currentTooltipWord)) {
     console.log("当前鼠标下的单词是小窗单词，不反应");
     return;
   }
@@ -9120,7 +9138,7 @@ function handleA4PointerActivation(e) {
     // 其他情况下关闭 tooltip
   closeTooltipWithAnimation();
 
-  return
+  return;
 }
 
 document.addEventListener('pointerdown', (e) => {
@@ -9194,10 +9212,10 @@ document.addEventListener('touchcancel', resetA4PendingTouchTap, true);
 if (document.readyState === 'interactive' || document.readyState === 'complete') {
     console.log(`[a4_tooltip_new.js @ ${window.location.href.substring(0, 50)}] Document already ready, queueing listener setup.`);
 
-    //延迟5秒
+    // 延迟5秒
     setTimeout(() => {
     setupMouseListeners();
-    },0);
+    }, 0);
 
 } else {
     console.log(`[a4_tooltip_new.js @ ${window.location.href.substring(0, 50)}] Document not ready, waiting for DOMContentLoaded.`);
@@ -9277,7 +9295,7 @@ function cleanupTooltipListeners() {
     tooltipResizeObserver.disconnect();
     tooltipResizeObserver = null;
   }
-  
+
   // 重置翻译输入框活动状态
   isTranslationInputActive = false;
 }
@@ -9286,7 +9304,7 @@ function cleanupTooltipListeners() {
 let isClosingTooltip = false; // 添加标志防止重复调用
 
 function closeTooltipWithAnimation() {
-  if (!tooltipEl || isClosingTooltip) return; // 如果 tooltip 不存在或正在关闭，则不执行任何操作
+  if (!tooltipEl || isClosingTooltip) {return;} // 如果 tooltip 不存在或正在关闭，则不执行任何操作
 
   isClosingTooltip = true; // 设置关闭标志
   tooltipBeingDestroyed = true; // 标记tooltip正在被销毁
@@ -9400,7 +9418,7 @@ function cleanupTopLayerState() {
       document.exitFullscreen().then(() => {
         console.log('shadowHost已退出全屏');
         cleanupShadowHostStyles(shadowHost);
-      }).catch(error => {
+      }).catch((error) => {
         console.error('退出全屏失败:', error);
         // 即使退出全屏失败，也要清理样式
         cleanupShadowHostStyles(shadowHost);
@@ -9438,7 +9456,7 @@ function cleanupShadowHostStyles(shadowHost) {
 // --- 最小化和还原功能 ---
 // 应用最小化状态但不重新定位（用于初始显示时）
 function applyMinimizeStateWithoutRepositioning() {
-  if (!tooltipEl) return;
+  if (!tooltipEl) {return;}
 
   console.log('应用最小化状态（不重新定位）');
 
@@ -9455,9 +9473,9 @@ function applyMinimizeStateWithoutRepositioning() {
     '.examples-section'
   ];
 
-  elementsToHide.forEach(selector => {
+  elementsToHide.forEach((selector) => {
     const elements = tooltipEl.querySelectorAll(selector);
-    elements.forEach(element => {
+    elements.forEach((element) => {
       element.style.display = 'none';
     });
   });
@@ -9569,7 +9587,7 @@ function applyMinimizeStateWithoutRepositioning() {
 
 // 最小化弹窗功能（用于用户手动点击最小化按钮）
 function minimizeTooltip() {
-  if (!tooltipEl) return;
+  if (!tooltipEl) {return;}
 
   // 已经是最小化状态时，再点最小化按钮 = 还原（真正的 toggle）
   if (tooltipEl.classList.contains('minimized')) {
@@ -9729,7 +9747,7 @@ async function repositionMiniTooltip() {
 
 // 还原弹窗功能
 function restoreTooltip() {
-  if (!tooltipEl) return;
+  if (!tooltipEl) {return;}
 
   console.log('开始还原弹窗');
 
@@ -9741,10 +9759,10 @@ function restoreTooltip() {
     '.examples-section'
   ];
 
-  elementsToShow.forEach(selector => {
+  elementsToShow.forEach((selector) => {
     const elements = tooltipEl.querySelectorAll(selector);
     console.log(`还原：找到 ${elements.length} 个 ${selector} 元素`);
-    elements.forEach(element => {
+    elements.forEach((element) => {
       element.style.display = ''; // 移除行内display样式，恢复到其原始状态或CSS定义的样式
       console.log(`已恢复元素:`, element);
     });
@@ -9824,7 +9842,7 @@ function restoreTooltip() {
     // 先彻底清理现有效果
     // cleanupLiquidGlass();
 
-    // 等待清理完成后再重新应用 
+    // 等待清理完成后再重新应用
     // setTimeout(() => {
     //   console.log('还原清理完成，重新应用液体玻璃效果');
     //   applyLiquidGlassToTooltip();
@@ -9865,7 +9883,7 @@ function showCurrentSentenceTranslation(word, currentSentence) {
   const sentencePairs = tooltipEl.querySelectorAll('.example-sentence-pair');
   let foundMatch = false;
 
-  sentencePairs.forEach(pair => {
+  sentencePairs.forEach((pair) => {
     const sentenceElement = pair.querySelector('.example-sentence');
     if (sentenceElement) {
       // 获取例句文本，移除HTML标签进行比较
@@ -9904,7 +9922,7 @@ function showCurrentSentenceTranslation(word, currentSentence) {
     console.log('未找到匹配的句子，可能需要先添加到数据库');
     // 可以选择显示一个提示或者自动添加句子
     // 这里暂时显示所有句子作为备选方案
-    sentencePairs.forEach(pair => {
+    sentencePairs.forEach((pair) => {
       pair.style.display = 'block';
     });
   }
@@ -10017,7 +10035,7 @@ function restoreExamplesSectionDefaultState() {
 
   // 2. 恢复所有例句条目的显示
   const sentencePairs = tooltipEl.querySelectorAll('.example-sentence-pair');
-  sentencePairs.forEach(pair => {
+  sentencePairs.forEach((pair) => {
     pair.style.display = '';
 
     // 3. 恢复翻译行的原始隐藏状态（默认隐藏，鼠标悬浮时显示）
@@ -10174,7 +10192,7 @@ function createCustomCapsule(capsuleContainer, containerIndex, currentWord, isDa
 
   // 绑定按钮事件
   const btns = capsule.querySelectorAll('.capsule-custom-btn');
-  btns.forEach(btn => {
+  btns.forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -10468,8 +10486,8 @@ function openIframePopup(url, title) {
     // 如果已存在，更新iframe的src和标题
     const iframe = iframePopup.querySelector('iframe');
     const titleEl = iframePopup.querySelector('div > div');
-    if (iframe) iframe.src = url;
-    if (titleEl) titleEl.textContent = title;
+    if (iframe) {iframe.src = url;}
+    if (titleEl) {titleEl.textContent = title;}
   }
 }
 

@@ -4,11 +4,16 @@
     "watch": "webpack --watch --config webpack.config.js",
     "pack": "npm run build && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pack-crx.ps1",
     "build:firefox": "webpack --config webpack.config.js && node scripts/use-firefox-manifest.js",
-    "pack:firefox": "npm run build:firefox && node scripts/pack-firefox.js"
+    "pack:firefox": "npm run build:firefox && node scripts/pack-firefox.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "devDependencies": {
+    "@eslint/js": "^9.37.0",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^13.0.0",
+    "eslint": "^9.37.0",
+    "globals": "^15.15.0",
     "html-webpack-plugin": "^5.6.3",
     "webpack": "^5.98.0",
     "webpack-cli": "^6.0.1"

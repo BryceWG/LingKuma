@@ -36,7 +36,7 @@ async function fetchLanguageDetection(word, sentence) {
   hasLanguage = false;
 
   // 获取 AI 配置
-  const result = await new Promise(resolve =>
+  const result = await new Promise((resolve) =>
     chrome.storage.local.get('aiConfig', resolve)
   );
 
@@ -69,7 +69,7 @@ async function fetchLanguageDetection(word, sentence) {
 
 
 
-    if(!hasLanguage){
+    if (!hasLanguage) {
 
       console.log("写入单词数据库语言值", languageValue);
       // 确保等待消息处理完成
@@ -78,7 +78,7 @@ async function fetchLanguageDetection(word, sentence) {
           {
             action: "ChangeWordLanguage",
             word: word,
-            details: { language: languageValue }  // 修改为传递完整的details对象
+            details: { language: languageValue } // 修改为传递完整的details对象
           },
           (response) => {
 
@@ -112,177 +112,8 @@ async function fetchLanguageDetection(word, sentence) {
 
 
 
-// =======================
-// 新增 AI 单词翻译函数：请求 AI 翻译句子中的单词
-// =======================
-function fetchAIWordTranslation(word, sentence) {
-  return new Promise((resolve) => {
-    // 检查是否已经在进行AI翻译，防止重复请求
-    const translationKey = `${word.toLowerCase()}_${sentence}`;
-    if (window.aiTranslationInProgress && window.aiTranslationInProgress.has(translationKey)) {
-      console.log(`AI翻译已在进行中，跳过重复请求: ${word}`);
-      resolve("翻译进行中...");
-      return;
-    }
-
-    // 标记开始翻译
-    if (!window.aiTranslationInProgress) {
-      window.aiTranslationInProgress = new Set();
-    }
-    window.aiTranslationInProgress.add(translationKey);
-
-    // 获取用户保存的 AI 配置，其中可能包含自定义的提示词 (aiPrompt)
-    chrome.storage.local.get('aiConfig', function(result) {
-      // 如果用户自定义的提示词存在，则使用，并将占位符替换为实际的句子和单词
-      let customPrompt = result && result.aiConfig && result.aiConfig.aiPrompt;
-      let promptText = customPrompt
-                         ? customPrompt.replace('{sentence}', sentence).replace('{word}', word)
-                         : `
-
-# 角色
-你是翻译专家，根据上下文判断单词或短语并翻译。
-
-# 输出规则（严格执行）
-
-**情况一：固定短语**
-若 {word} 在句中构成固定短语/习语，输出格式为：
-"
-完整短语: 中文翻译
-"
-示例："break the ice: 打破僵局"
-
-**情况二：独立单词**
-若 {word} 只是独立单词，输出格式为：
-"
-中文翻译
-"
-示例："打破"
-
-# 禁止事项
-- 禁止输出"单词："、"英文："、"翻译："、"中文翻译："等任何前缀标签
-- 禁止输出分析、解释、语法说明
-- 禁止输出引号
-- 只输出翻译结果，别的什么都不要说
-
-# 任务
-判断句子 ${sentence}中，${word} 是独立单词还是固定短语的一部分，按上述格式输出翻译。
-
-`;
-      const messages = [{
-        role: "user",
-        content: promptText
-      }];
-
-      makeAIRequest({ word, sentence, messages })
-        .then(data => {
-          let aiTranslation = data.choices?.[0]?.message?.content || "暂无翻译";
-          console.log("AI翻译结果", aiTranslation);
-          aiTranslation = aiTranslation.trim();
-          console.log("AI翻译结果 去除空格", aiTranslation);
-          // 获取现有翻译列表进行比对
-          chrome.runtime.sendMessage({ action: "getWordDetails", word: word }, (response) => {
-            const existingTranslations = response?.details?.translations || [];
-
-            // 检查 AI 翻译是否已存在
-            const translationExists = existingTranslations.some(
-              trans => trans.toLowerCase().trim() === aiTranslation.toLowerCase().trim()
-            );
-
-            // 是否自动添加AI释义，加入数据库
-            chrome.storage.local.get('autoAddAITranslations', function(result) {
-              console.log("自动添加AI释义状态已更新:", result.autoAddAITranslations);
-              if(result.autoAddAITranslations){
-                if (!translationExists && aiTranslation !== "暂无翻译" && aiTranslation !== "翻译失败") {
-                  // 如果翻译不存在且有效，则添加翻译和例句
-                  chrome.runtime.sendMessage({
-                    action: "addTranslation",
-                    word: word,
-                    translation: aiTranslation
-                  }, (response) => {
-                    if (response && response.error) {
-                      console.error("添加AI翻译失败:", response.error);
-                    } else {
-
-
-                      //添加本地缓存
-                      addTranslationToLocalCache(word, aiTranslation);
-
-
-
-
-
-                      console.log("添加AI翻译成功");
-                    }
-                  });
-                }
-              } else {
-
-
-                // 自动添加未知单词AI释义
-                chrome.storage.local.get('autoAddAITranslationsFromUnknown', function(result) {
-                  console.log("自动添加未知单词AI释义状态已更新:", result.autoAddAITranslationsFromUnknown);
-                  if(result.autoAddAITranslationsFromUnknown){
-
-                    console.log("更新数据库 ：当前单词:", word, "是否需要更新状态:", ShouldAutoUpdateStatus);
-                    if(ShouldAutoUpdateStatus || getTranslationCount(word) === 0){
-                      if (!translationExists && aiTranslation !== "暂无翻译" && aiTranslation !== "翻译失败") {
-                        chrome.runtime.sendMessage({
-                          action: "addTranslation",
-                          word: word,
-                          translation: aiTranslation
-                        }, (response) => {
-                          if (response && response.error) {
-                            console.error("添加AI翻译失败:", response.error);
-                          } else {
-
-
-                         //添加本地缓存
-                      addTranslationToLocalCache(word, aiTranslation);
-                            console.log("添加AI翻译成功");
-
-                            // 触发自定义事件，通知tooltip刷新
-                            window.dispatchEvent(new CustomEvent('aiTranslationAdded', {
-                              detail: { word: word, translation: aiTranslation }
-                            }));
-                          }
-                        });
-                      }
-                    }
-                  }
-
-
-
-
-
-
-                });
-
-
-
-
-              }
-            });
-            // 返回 AI 翻译结果用于显示
-            resolve(aiTranslation);
-          });
-        })
-        .catch(err => {
-          console.error("AI单词翻译失败", err);
-          resolve("翻译失败");//不确定能不能改，好像有个判断是这个值
-        })
-        .finally(() => {
-          // 清理翻译进行中的标记
-          const translationKey = `${word.toLowerCase()}_${sentence}`;
-          if (window.aiTranslationInProgress) {
-            window.aiTranslationInProgress.delete(translationKey);
-          }
-        });
-    });
-  });
-}
-
 function addTranslationToLocalCache(word, translation) {
-  //添加本地缓存
+  // 添加本地缓存
   if (!highlightManager || !highlightManager.wordDetailsFromDB) {
     console.warn("highlightManager或wordDetailsFromDB未初始化");
     return;
@@ -315,88 +146,12 @@ function addTranslationToLocalCache(word, translation) {
 }
 
 
-// =======================
-// 第二个AI单词翻译函数：请求第二个AI翻译句子中的单词
-// =======================
-function fetchAIWordTranslation2(word, sentence) {
-  return new Promise((resolve) => {
-    // 检查是否已经在进行AI翻译，防止重复请求
-    const translationKey = `${word.toLowerCase()}_${sentence}_2`;
-    if (window.aiTranslationInProgress && window.aiTranslationInProgress.has(translationKey)) {
-      console.log(`第二个AI翻译已在进行中，跳过重复请求: ${word}`);
-      resolve("翻译进行中...");
-      return;
-    }
-
-    // 标记开始翻译
-    if (!window.aiTranslationInProgress) {
-      window.aiTranslationInProgress = new Set();
-    }
-    window.aiTranslationInProgress.add(translationKey);
-
-    // 获取用户保存的 AI 配置，其中可能包含自定义的提示词 (aiPrompt2)
-    chrome.storage.local.get('aiConfig', function(result) {
-      // 如果用户自定义的提示词存在，则使用，并将占位符替换为实际的句子和单词
-      let customPrompt = result && result.aiConfig && result.aiConfig.aiPrompt2;
-      let promptText = customPrompt
-                         ? customPrompt.replace('{sentence}', sentence).replace('{word}', word)
-                         : `
-# 角色
-你是一位精通德语 日语 英语的语法解析专家，擅长根据上下文精确判断对应单词的解析精要
-
-# 任务
-根据提供的 [句子]，判断 [待解析词] 在该语境下的具体语法作用，形变规则等
-
-# 核心规则
-返回20字左右精要解析。
-
-# 输入
-句子：'${sentence}'
-待解析词：'${word}'
-
-# 输出格式
-直接返回解析内容
-`;
-      const messages = [{
-        role: "user",
-        content: promptText
-      }];
-
-      makeAIRequest({ word, sentence, messages })
-        .then(data => {
-          let aiTranslation = data.choices?.[0]?.message?.content || "暂无翻译";
-          console.log("第二个AI翻译结果", aiTranslation);
-          aiTranslation = aiTranslation.trim();
-          console.log("第二个AI翻译结果 去除空格", aiTranslation);
-
-          // 注意：第二个AI翻译不会自动添加到数据库
-          // 用户需要手动点击添加按钮
-
-          // 返回 AI 翻译结果用于显示
-          resolve(aiTranslation);
-        })
-        .catch(err => {
-          console.error("第二个AI单词翻译失败", err);
-          resolve("翻译失败");
-        })
-        .finally(() => {
-          // 清理翻译进行中的标记
-          const translationKey = `${word.toLowerCase()}_${sentence}_2`;
-          if (window.aiTranslationInProgress) {
-            window.aiTranslationInProgress.delete(translationKey);
-          }
-        });
-    });
-  });
-}
-
-
 
 // 新增通用 AI 请求函数 - 修改为通过 background script 执行，避免 Firefox CSP 限制
-function makeAIRequest({ word, sentence, stream = false, messages, model = null, temperature = 1, jsonMode = false}) {
+function makeAIRequest({ word, sentence, stream = false, messages, model = null, temperature = 1, jsonMode = false }) {
   return new Promise((resolve, reject) => {
     // 将 AI 请求转发到 background script
-    chrome.runtime.sendMessage({ 
+    chrome.runtime.sendMessage({
       action: "makeAIRequest",
       requestData: { word, sentence, stream, messages, model, temperature, jsonMode }
     }, (response) => {
@@ -404,24 +159,55 @@ function makeAIRequest({ word, sentence, stream = false, messages, model = null,
         reject(new Error(chrome.runtime.lastError.message));
         return;
       }
-      
+
       if (response.error) {
         reject(new Error(response.error));
         return;
       }
-      
+
       resolve(response);
     });
   });
 }
 
 const STRUCTURED_LOOKUP_CHUNK_SIZE = 12;
+// 与 options.js 中 DEFAULT_PROMPTS 对应的默认提示词副本，仅用于判断用户是否自定义过提示词。
+// 比较前会经 normalizePromptForCompare 折叠空白，因此这里可以自由换行排版。
 const STRUCTURED_LOOKUP_STOCK_PROMPTS = {
-  aiPrompt: `# 角色 你是翻译专家，根据上下文判断单词或短语并翻译。 # 输出规则（严格执行） **情况一：固定短语** 若 {word} 在句中构成固定短语/习语，输出格式为： " 完整短语: 中文翻译 " 示例："break the ice: 打破僵局" **情况二：独立单词** 若 {word} 只是独立单词，输出格式为： " 中文翻译 " 示例："打破" # 禁止事项 - 禁止输出"单词："、"英文："、"翻译："，"中文翻译："等任何前缀标签 - 禁止输出分析、解释、语法说明 - 禁止输出引号 - 只输出翻译结果，别的什么都不要说 # 任务 判断句子 {sentence} 中，{word} 是独立单词还是固定短语的一部分，按上述格式输出翻译。`,
-  aiPrompt2: `# 角色 你是一位精通德语 日语 英语的语法解析专家，擅长根据上下文精确判断对应单词的解析精要 # 任务 根据提供的 [句子]，判断 [待解析词] 在该语境下的具体语法作用，形变规则等 # 核心规则 返回20字左右精要解析。 # 输入 - 句子: {sentence} - 待解析词: {word} # 输出格式 直接返回解析内容`,
-  aiLanguageDetectionPrompt: `请判断以下句子中单词 '{word}' 在句子'{sentence}'中所使用的语言，仅返回ISO 639-1国际标准化组织ISO 639语言代码标准(如en, de, fr等)`,
-  aiSentenceTranslationPrompt: `请将句子: '{sentence}'翻译为中文，并将句子中单词"'{word}'"对应的中文的部分用Markdown加粗显示。只返回翻译结果，不要额外说明。`,
-  aiTagAnalysisPrompt: `你将要按照下列要求，分析单词在句子中的一些信息，用作某单词的tag，请按照下列要求进行分析： 1. 词性(pos): 在句子中的词性 2. 性别(gender): 如果是名词，返回 der/die/das 3. 复数形式(plural): 如果是名词，返回其复数形式 4. 变位(conjugation): 如果是动词，返回其原形 5. 附加信息1(自定义key): 任何其他重要信息，请自行判断添加，可参考示例。 6. 附加信息2(自定义key): 任何其他重要信息，请自行判断添加，可参考示例。 7. ... ... 示例： 德语：{"pos":"n", "gender":"der", "plural":"Häuser", "conjugation":"gehen"} 英语：{"pos":"n", "plural":"houses", "conjugation":"null"} 日语：{"pos":"n", "gender":"null", "plural":"null", "conjugation":"null", "注音":"いえ、うち","罗马音":"ie,uchi"} 中文：{"pos":"n", "gender":"null", "plural":"null", "conjugation":"null", "pinyin":"fáng zi"} "请分析句子"{sentence}"中的单词"{word}"。返回JSON格式，包含： 仅返回JSON，无需解释，不要加markdown代码块标记，注意不同语言，非日语不要返回注意和罗马音和拼音。`
+  aiPrompt: `# 角色 你是翻译专家，根据上下文判断单词或短语并翻译。
+# 输出规则（严格执行）
+**情况一：固定短语** 若 {word} 在句中构成固定短语/习语，输出格式为： " 完整短语: 中文翻译 " 示例："break the ice: 打破僵局"
+**情况二：独立单词** 若 {word} 只是独立单词，输出格式为： " 中文翻译 " 示例："打破"
+# 禁止事项
+- 禁止输出"单词："、"英文："、"翻译："，"中文翻译："等任何前缀标签
+- 禁止输出分析、解释、语法说明
+- 禁止输出引号
+- 只输出翻译结果，别的什么都不要说
+# 任务 判断句子 {sentence} 中，{word} 是独立单词还是固定短语的一部分，按上述格式输出翻译。`,
+  aiPrompt2: `# 角色 你是一位精通德语 日语 英语的语法解析专家，擅长根据上下文精确判断对应单词的解析精要
+# 任务 根据提供的 [句子]，判断 [待解析词] 在该语境下的具体语法作用，形变规则等
+# 核心规则 返回20字左右精要解析。
+# 输入 - 句子: {sentence} - 待解析词: {word}
+# 输出格式 直接返回解析内容`,
+  aiLanguageDetectionPrompt: `请判断以下句子中单词 '{word}' 在句子'{sentence}'中所使用的语言，`
+    + `仅返回ISO 639-1国际标准化组织ISO 639语言代码标准(如en, de, fr等)`,
+  aiSentenceTranslationPrompt: `请将句子: '{sentence}'翻译为中文，`
+    + `并将句子中单词"'{word}'"对应的中文的部分用Markdown加粗显示。只返回翻译结果，不要额外说明。`,
+  aiTagAnalysisPrompt: `你将要按照下列要求，分析单词在句子中的一些信息，用作某单词的tag，请按照下列要求进行分析：
+1. 词性(pos): 在句子中的词性
+2. 性别(gender): 如果是名词，返回 der/die/das
+3. 复数形式(plural): 如果是名词，返回其复数形式
+4. 变位(conjugation): 如果是动词，返回其原形
+5. 附加信息1(自定义key): 任何其他重要信息，请自行判断添加，可参考示例。
+6. 附加信息2(自定义key): 任何其他重要信息，请自行判断添加，可参考示例。
+7. ... ...
+示例：
+德语：{"pos":"n", "gender":"der", "plural":"Häuser", "conjugation":"gehen"}
+英语：{"pos":"n", "plural":"houses", "conjugation":"null"}
+日语：{"pos":"n", "gender":"null", "plural":"null", "conjugation":"null", "注音":"いえ、うち","罗马音":"ie,uchi"}
+中文：{"pos":"n", "gender":"null", "plural":"null", "conjugation":"null", "pinyin":"fáng zi"}
+"请分析句子"{sentence}"中的单词"{word}"。返回JSON格式，包含：
+仅返回JSON，无需解释，不要加markdown代码块标记，注意不同语言，非日语不要返回注意和罗马音和拼音。`
 };
 
 function normalizePromptForCompare(text) {
@@ -429,14 +215,14 @@ function normalizePromptForCompare(text) {
 }
 
 function isCustomLookupPrompt(key, value) {
-  if (!value || !String(value).trim()) return false;
+  if (!value || !String(value).trim()) {return false;}
   const stock = STRUCTURED_LOOKUP_STOCK_PROMPTS[key];
-  if (!stock) return true;
+  if (!stock) {return true;}
   return normalizePromptForCompare(value) !== normalizePromptForCompare(stock);
 }
 
 function isInvalidAITranslation(text) {
-  if (text == null) return true;
+  if (text == null) {return true;}
   const t = String(text).trim();
   return !t || ['暂无翻译', '翻译失败', '翻译进行中...', 'AI 释义加载失败'].includes(t);
 }
@@ -454,7 +240,7 @@ function sendRuntimeMessage(payload) {
 }
 
 function parseStructuredLookupJson(content) {
-  if (!content || typeof content !== 'string') return null;
+  if (!content || typeof content !== 'string') {return null;}
   let text = content.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
   const firstBrace = text.indexOf('{');
   const lastBrace = text.lastIndexOf('}');
@@ -504,7 +290,7 @@ ${extraBlock}`;
 }
 
 function collectCustomLookupInstructions(aiConfig, sentence) {
-  if (!aiConfig) return '';
+  if (!aiConfig) {return '';}
   const mapping = [
     ['aiPrompt', 'translation'],
     ['aiPrompt2', 'grammar'],
@@ -515,7 +301,7 @@ function collectCustomLookupInstructions(aiConfig, sentence) {
   const parts = [];
   mapping.forEach(([key, field]) => {
     const raw = aiConfig[key];
-    if (!isCustomLookupPrompt(key, raw)) return;
+    if (!isCustomLookupPrompt(key, raw)) {return;}
     const text = String(raw)
       .replace(/\{sentence\}/g, sentence)
       .replace(/\{word\}/g, '(对应 JSON 中的 word 字段)');
@@ -525,25 +311,25 @@ function collectCustomLookupInstructions(aiConfig, sentence) {
 }
 
 function formatStructuredTagStrings(word, tags) {
-  if (!tags || typeof tags !== 'object') return [];
+  if (!tags || typeof tags !== 'object') {return [];}
 
   const isMultiWordResponse = !Object.prototype.hasOwnProperty.call(tags, 'pos') &&
     Object.keys(tags).some((key) => tags[key] && typeof tags[key] === 'object' && !Array.isArray(tags[key]));
 
   const tagStrings = [];
   const pushTag = (value) => {
-    if (value == null || value === '' || value === 'null') return;
+    if (value == null || value === '' || value === 'null') {return;}
     const text = typeof value === 'string' || typeof value === 'number'
       ? String(value)
       : JSON.stringify(value);
-    if (text && !tagStrings.includes(text)) tagStrings.push(text);
+    if (text && !tagStrings.includes(text)) {tagStrings.push(text);}
   };
 
   if (isMultiWordResponse) {
     Object.entries(tags).forEach(([wordKey, wordData]) => {
-      if (!wordData || typeof wordData !== 'object') return;
+      if (!wordData || typeof wordData !== 'object') {return;}
       Object.entries(wordData).forEach(([key, value]) => {
-        if (value == null || value === '' || value === 'null') return;
+        if (value == null || value === '' || value === 'null') {return;}
         pushTag(`${wordKey}-${key}: ${value}`);
       });
     });
@@ -565,12 +351,12 @@ function formatStructuredTagStrings(word, tags) {
   }
 
   Object.entries(tags).forEach(([key, value]) => {
-    if (['pos', 'gender', 'plural', 'conjugation'].includes(key)) return;
-    if (value == null || value === '' || value === 'null') return;
+    if (['pos', 'gender', 'plural', 'conjugation'].includes(key)) {return;}
+    if (value == null || value === '' || value === 'null') {return;}
     let formattedValue;
-    if (Array.isArray(value)) formattedValue = value.join(', ');
-    else if (typeof value === 'object') formattedValue = JSON.stringify(value);
-    else formattedValue = String(value);
+    if (Array.isArray(value)) {formattedValue = value.join(', ');}
+    else if (typeof value === 'object') {formattedValue = JSON.stringify(value);}
+    else {formattedValue = String(value);}
     pushTag(`${key}: ${formattedValue}`);
   });
 
@@ -578,10 +364,11 @@ function formatStructuredTagStrings(word, tags) {
 }
 
 async function applyStructuredLanguage(word, language) {
-  if (!language || language === false) return null;
-  let languageValue = String(language).trim();
-  if (!languageValue) return null;
-  if (languageValue.length > 7) languageValue = '?';
+  if (!language || language === false) {return null;}
+  const languageValue = String(language).trim();
+  if (!languageValue) {return null;}
+  // 与 fetchLanguageDetection 保持一致：原值入库，只在展示层把异常长的值折叠为 '?'
+  const displayValue = languageValue.length > 7 ? '?' : languageValue;
 
   await sendRuntimeMessage({
     action: 'ChangeWordLanguage',
@@ -589,18 +376,18 @@ async function applyStructuredLanguage(word, language) {
     details: { language: languageValue }
   });
 
-  if (highlightManager && highlightManager.wordDetailsFromDB) {
+  if (typeof highlightManager !== 'undefined' && highlightManager?.wordDetailsFromDB) {
     const lower = word.toLowerCase();
     highlightManager.wordDetailsFromDB[lower] = {
       ...highlightManager.wordDetailsFromDB[lower],
       language: languageValue
     };
   }
-  return languageValue;
+  return displayValue;
 }
 
 async function applyStructuredTranslation(word, translation) {
-  if (isInvalidAITranslation(translation)) return false;
+  if (isInvalidAITranslation(translation)) {return false;}
   const aiTranslation = String(translation).trim();
 
   const detailsResponse = await sendRuntimeMessage({ action: 'getWordDetails', word });
@@ -608,7 +395,7 @@ async function applyStructuredTranslation(word, translation) {
   const translationExists = existingTranslations.some(
     (trans) => String(trans).toLowerCase().trim() === aiTranslation.toLowerCase()
   );
-  if (translationExists) return false;
+  if (translationExists) {return false;}
 
   const persistSettings = await new Promise((resolve) => {
     chrome.storage.local.get(['autoAddAITranslations', 'autoAddAITranslationsFromUnknown'], resolve);
@@ -621,7 +408,7 @@ async function applyStructuredTranslation(word, translation) {
     const statusNum = status === undefined || status === null ? 0 : parseInt(status, 10);
     shouldPersist = count === 0 && statusNum !== 5;
   }
-  if (!shouldPersist) return false;
+  if (!shouldPersist) {return false;}
 
   const addResponse = await sendRuntimeMessage({
     action: 'addTranslation',
@@ -642,13 +429,13 @@ async function applyStructuredTranslation(word, translation) {
 
 async function applyStructuredTags(word, tags) {
   const tagStrings = formatStructuredTagStrings(word, tags);
-  if (!tagStrings.length) return [];
+  if (!tagStrings.length) {return [];}
 
   for (const tag of tagStrings) {
     await sendRuntimeMessage({ action: 'addTag', word, tag });
   }
 
-  if (highlightManager && highlightManager.wordDetailsFromDB) {
+  if (typeof highlightManager !== 'undefined' && highlightManager?.wordDetailsFromDB) {
     const lower = word.toLowerCase();
     if (!highlightManager.wordDetailsFromDB[lower]) {
       highlightManager.wordDetailsFromDB[lower] = { word, tags: [] };
@@ -678,10 +465,10 @@ function chunkStructuredItems(items, size) {
 }
 
 function findStructuredWordResult(wordsMap, word) {
-  if (!wordsMap || !word) return null;
-  if (wordsMap[word]) return wordsMap[word];
+  if (!wordsMap || !word) {return null;}
+  if (wordsMap[word]) {return wordsMap[word];}
   const lower = word.toLowerCase();
-  if (wordsMap[lower]) return wordsMap[lower];
+  if (wordsMap[lower]) {return wordsMap[lower];}
   const match = Object.keys(wordsMap).find((key) => key.toLowerCase() === lower);
   return match ? wordsMap[match] : null;
 }
@@ -704,13 +491,14 @@ async function requestStructuredLookupChunk({ sentence, items, sentenceTranslati
   const content = data?.choices?.[0]?.message?.content || '';
   const parsed = parseStructuredLookupJson(content);
   if (!parsed || typeof parsed !== 'object') {
-    return { words: {}, sentenceTranslations: [] };
+    // 抛错而不是返回空对象，让上层能区分「AI 返回失败」与「该字段确实没有内容」
+    throw new Error(`结构化查词返回内容无法解析为 JSON: ${String(content).slice(0, 200)}`);
   }
 
   const wordsArray = Array.isArray(parsed.words) ? parsed.words : [];
   const words = {};
   wordsArray.forEach((entry) => {
-    if (!entry || !entry.word) return;
+    if (!entry || !entry.word) {return;}
     words[String(entry.word).toLowerCase()] = entry;
   });
 
@@ -721,7 +509,7 @@ async function requestStructuredLookupChunk({ sentence, items, sentenceTranslati
       .filter((item) => item && item !== '暂无翻译' && item !== '翻译失败');
   } else if (parsed.sentenceTranslation) {
     const one = String(parsed.sentenceTranslation).trim();
-    if (one) sentenceTranslations = [one];
+    if (one) {sentenceTranslations = [one];}
   }
 
   return { words, sentenceTranslations };
@@ -745,7 +533,10 @@ async function fetchStructuredWordLookup({ sentence, items = [], sentenceTransla
     return { words: {}, sentenceTranslations: [] };
   }
 
-  const inflightKey = `${sentence}||${normalizedItems.map((item) => `${item.word.toLowerCase()}:${item.fields.slice().sort().join(',')}`).join(';')}||${count}`;
+  const itemsKey = normalizedItems
+    .map((item) => `${item.word.toLowerCase()}:${item.fields.slice().sort().join(',')}`)
+    .join(';');
+  const inflightKey = `${sentence}||${itemsKey}||${count}`;
   if (!window.structuredLookupInflight) {
     window.structuredLookupInflight = new Map();
   }
@@ -760,35 +551,59 @@ async function fetchStructuredWordLookup({ sentence, items = [], sentenceTransla
     const extraFieldInstructions = collectCustomLookupInstructions(aiConfig, sentence);
     const chunks = chunkStructuredItems(normalizedItems, STRUCTURED_LOOKUP_CHUNK_SIZE);
     const merged = { words: {}, sentenceTranslations: [] };
+    const failedWords = new Set();
+    let sentenceTranslationFailed = false;
+    let lastError = null;
 
     for (let i = 0; i < chunks.length; i++) {
       const chunkCount = i === 0 ? count : 0;
-      if (!chunks[i].length && chunkCount < 1) continue;
-      try {
-        const chunkResult = await requestStructuredLookupChunk({
-          sentence,
-          items: chunks[i],
-          sentenceTranslationCount: chunkCount,
-          extraFieldInstructions
-        });
-        Object.assign(merged.words, chunkResult.words);
-        if (chunkResult.sentenceTranslations?.length) {
-          chunkResult.sentenceTranslations.forEach((trans) => {
-            if (!merged.sentenceTranslations.includes(trans)) {
-              merged.sentenceTranslations.push(trans);
-            }
+      if (!chunks[i].length && chunkCount < 1) {
+        continue;
+      }
+
+      // 失败重试一次：模型偶发返回非 JSON 时，重来一次通常就能拿到合法结果
+      let chunkResult = null;
+      for (let attempt = 0; attempt < 2 && !chunkResult; attempt++) {
+        try {
+          chunkResult = await requestStructuredLookupChunk({
+            sentence,
+            items: chunks[i],
+            sentenceTranslationCount: chunkCount,
+            extraFieldInstructions
           });
+        } catch (err) {
+          lastError = err;
+          console.error(`[structuredLookup] 分块请求失败（第 ${attempt + 1} 次尝试）:`, err);
         }
-      } catch (err) {
-        console.error('[structuredLookup] 分块请求失败:', err);
+      }
+
+      // 重试后仍失败：把该分块的词标记为失败，供调用方区分「AI 失败」与「确实无内容」
+      if (!chunkResult) {
+        chunks[i].forEach((item) => failedWords.add(item.word.toLowerCase()));
+        if (chunkCount > 0) {
+          sentenceTranslationFailed = true;
+        }
+        continue;
+      }
+
+      Object.assign(merged.words, chunkResult.words);
+      if (chunkResult.sentenceTranslations?.length) {
+        chunkResult.sentenceTranslations.forEach((trans) => {
+          if (!merged.sentenceTranslations.includes(trans)) {
+            merged.sentenceTranslations.push(trans);
+          }
+        });
       }
     }
 
     const resultWords = {};
-    for (const item of normalizedItems) {
+    // 各单词之间互不影响，并发持久化，避免十几个词串行等待消息往返
+    await Promise.all(normalizedItems.map(async (item) => {
+      const lowerWord = item.word.toLowerCase();
       const raw = findStructuredWordResult(merged.words, item.word) || {};
       const wordResult = {
         word: item.word,
+        failed: failedWords.has(lowerWord),
         translation: item.fields.includes('translation') ? (raw.translation ?? null) : null,
         grammar: item.fields.includes('grammar') ? (raw.grammar ?? null) : null,
         language: item.fields.includes('language') ? (raw.language ?? null) : null,
@@ -797,24 +612,34 @@ async function fetchStructuredWordLookup({ sentence, items = [], sentenceTransla
       };
 
       if (persist) {
-        if (item.fields.includes('language') && wordResult.language) {
-          const savedLanguage = await applyStructuredLanguage(item.word, wordResult.language);
-          if (savedLanguage) wordResult.language = savedLanguage;
-        }
-        if (item.fields.includes('translation') && wordResult.translation) {
-          wordResult.translationPersisted = await applyStructuredTranslation(item.word, wordResult.translation);
-        }
-        if (item.fields.includes('tags') && wordResult.tags) {
-          await applyStructuredTags(item.word, wordResult.tags);
+        try {
+          if (item.fields.includes('language') && wordResult.language) {
+            const savedLanguage = await applyStructuredLanguage(item.word, wordResult.language);
+            if (savedLanguage) {
+              wordResult.language = savedLanguage;
+            }
+          }
+          if (item.fields.includes('translation') && wordResult.translation) {
+            wordResult.translationPersisted = await applyStructuredTranslation(item.word, wordResult.translation);
+          }
+          if (item.fields.includes('tags') && wordResult.tags) {
+            await applyStructuredTags(item.word, wordResult.tags);
+          }
+        } catch (err) {
+          // 单个词写库失败不应中断其余单词
+          console.error('[structuredLookup] 持久化失败:', item.word, err);
         }
       }
 
-      resultWords[item.word.toLowerCase()] = wordResult;
-    }
+      resultWords[lowerWord] = wordResult;
+    }));
 
     return {
       words: resultWords,
-      sentenceTranslations: merged.sentenceTranslations
+      sentenceTranslations: merged.sentenceTranslations,
+      failedWords: Array.from(failedWords),
+      sentenceTranslationFailed,
+      error: lastError ? String(lastError.message || lastError) : null
     };
   })();
 
@@ -849,7 +674,7 @@ function getStorageValue(key) {
 
 // 修改流式分析函数
 async function streamAnalysis(word, sentence) {
-  //获取分析结果的DOM元素，用来流式输出
+  // 获取分析结果的DOM元素，用来流式输出
   const analysisResult = analysisWindow.querySelector('.analysis-result');
 
   // 获取用户自定义的 AI 提示词
@@ -914,7 +739,7 @@ function useLegacyStreamAnalysis(word, sentence, messages, analysisResult) {
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${config.apiKey}`,
-        "x-gemini-legacy-support": "true",
+        "x-gemini-legacy-support": "true"
       },
       body: JSON.stringify({
         model: config.apiModel,
@@ -923,7 +748,7 @@ function useLegacyStreamAnalysis(word, sentence, messages, analysisResult) {
         temperature: 1
       })
     })
-    .then(response => {
+    .then((response) => {
       // analysisResult.innerHTML += `<br>收到响应，状态: ${response.status}`;
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -991,7 +816,7 @@ function useLegacyStreamAnalysis(word, sentence, messages, analysisResult) {
 
       return reader.read().then(processText);
     })
-    .catch(err => {
+    .catch((err) => {
       // analysisResult.innerHTML = `<br>Orion模式流式请求失败: ${err.message}<br>尝试非流式请求...`;
       analysisResult.innerHTML = '正在分析（非流式模式）...';
 
@@ -1001,7 +826,7 @@ function useLegacyStreamAnalysis(word, sentence, messages, analysisResult) {
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${config.apiKey}`,
-          "x-gemini-legacy-support": "true",
+          "x-gemini-legacy-support": "true"
         },
         body: JSON.stringify({
           model: config.apiModel,
@@ -1010,13 +835,13 @@ function useLegacyStreamAnalysis(word, sentence, messages, analysisResult) {
           temperature: 1
         })
       })
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         const content = data.choices?.[0]?.message?.content || '分析失败';
         analysisResult.innerHTML = formatContent(content);
         analysisResult.scrollTop = analysisResult.scrollHeight;
       })
-      .catch(nonStreamErr => {
+      .catch((nonStreamErr) => {
         analysisResult.innerHTML = `分析出错: ${nonStreamErr.message}`;
       });
     });
@@ -1035,7 +860,7 @@ function useBackgroundStreamAnalysis(word, sentence, messages, analysisResult) {
 
   // 通过background处理流式请求
   makeAIRequest({ word, sentence, stream: true, messages })
-    .then(response => {
+    .then((response) => {
       // 如果返回的是流式响应标识，说明background正在处理流式数据
       if (response.success && response.stream) {
         console.log('流式请求已启动，等待background发送数据');
@@ -1073,7 +898,7 @@ function useBackgroundStreamAnalysis(word, sentence, messages, analysisResult) {
         const lines = buffer.split('\n');
         buffer = lines.pop() || ''; // 保留最后一个不完整的行
 
-        lines.forEach(line => {
+        lines.forEach((line) => {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
@@ -1098,18 +923,18 @@ function useBackgroundStreamAnalysis(word, sentence, messages, analysisResult) {
 
       return reader.read().then(processText);
     })
-    .catch(err => {
+    .catch((err) => {
       console.log('流式请求失败，尝试非流式请求:', err.message);
       // 如果流式请求失败（比如在Firefox中），尝试非流式请求
       if (err.message.includes('流式请求暂时不支持')) {
         analysisResult.innerHTML = '正在分析（非流式模式）...';
         makeAIRequest({ word, sentence, stream: false, messages })
-          .then(data => {
+          .then((data) => {
             const content = data.choices?.[0]?.message?.content || '分析失败';
             analysisResult.innerHTML = formatContent(content);
             analysisResult.scrollTop = analysisResult.scrollHeight;
           })
-          .catch(nonStreamErr => {
+          .catch((nonStreamErr) => {
             analysisResult.innerHTML = `分析出错: ${nonStreamErr.message}`;
             console.error('非流式AI分析也失败:', nonStreamErr);
           });
@@ -1128,7 +953,7 @@ function fetchSentenceTranslation(word, sentence) {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage({ action: "getAIConfig" }, (response) => {
 
-      //aiSentenceTranslationPrompt
+      // aiSentenceTranslationPrompt
       // 构造提示语，请求 AI 翻译句子，并将句子中单词进行加粗显示
       let customPrompt = response?.config?.aiSentenceTranslationPrompt;
       console.log("aiSentenceTranslationPromptcustomPrompt:", customPrompt);
@@ -1141,12 +966,12 @@ function fetchSentenceTranslation(word, sentence) {
         content: promptText
       }];
 
-      makeAIRequest({ word, sentence, messages, })
-        .then(data => {
+      makeAIRequest({ word, sentence, messages })
+        .then((data) => {
           const result = data.choices?.[0]?.message?.content || "暂无翻译";
           resolve(result);
         })
-        .catch(err => {
+        .catch((err) => {
           console.error("句子翻译失败", err);
           resolve("翻译失败");
         });
@@ -1154,106 +979,19 @@ function fetchSentenceTranslation(word, sentence) {
   });
 }
 
-
-  // 修改函数：获取AI建议的标签
-  function fetchAITags(word, sentence) {
-    return new Promise((resolve) => {
-      // 不再需要在这里获取config，makeAIRequest内部会处理
-      // chrome.runtime.sendMessage({ action: "getAIConfig" }, (response) => {
-        // const config = response.config
-
-        // 直接获取AI配置，主要是为了获取自定义提示词 aiTagAnalysisPrompt
-        chrome.storage.local.get('aiConfig', function(result) {
-          const config = result?.aiConfig || {}; // 获取配置，提供默认空对象防止错误
-          let customPrompt = config?.aiTagAnalysisPrompt;
-          // console.log("aiTagAnalysisPrompt customPrompt:", customPrompt);
-          let promptText = customPrompt
-                         ? customPrompt.replace('{sentence}', sentence).replace('{word}', word)
-                         : `
-你将要按照下列要求，分析单词在句子中的一些信息，用作某单词的tag，请按照下列要求进行分析：
-1. 词性(pos): 在句子中的词性
-2. 性别(gender): 如果是名词，返回 der/die/das
-3. 复数形式(plural): 如果是名词，返回其复数形式
-4. 变位(conjugation): 如果是动词，返回其原形
-5. 附加信息1(自定义key): 任何其他重要信息，请自行判断添加，可参考示例。
-6. 附加信息2(自定义key): 任何其他重要信息，请自行判断添加，可参考示例。
-7. ...
-...
-示例：
-德语：{"pos":"n", "gender":"der", "plural":"Häuser", "conjugation":"gehen"}
-英语：{"pos":"n", "plural":"houses", "conjugation":"null"}
-日语：{"pos":"n", "gender":"null", "plural":"null", "conjugation":"null", "注音":"いえ、うち","罗马音":"ie,uchi"}
-中文：{"pos":"n", "gender":"null", "plural":"null", "conjugation":"null", "pinyin":"fáng zi"}
-
-请分析句子"${sentence}"中的单词"${word}"。返回JSON格式，包含：
-仅返回JSON，无需解释，不要加markdown代码块标记，注意不同语言，非日语不要返回注意和罗马音和拼音。
-   `;
-
-          const messages = [{ role: "user", content: promptText }];
-
-          // 使用 makeAIRequest 发送请求
-          makeAIRequest({ word, sentence, messages, stream: false }) // model 会使用 makeAIRequest 内部的默认值或配置值
-          .then(data => {
-            try {
-              let content = data.choices?.[0]?.message?.content || "{}";
-
-              // 移除可能存在的代码块标记
-              content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-              // 解析 JSON
-              const result = JSON.parse(content);
-
-              // 确保返回值的格式正确
-              const formattedResult = {
-                pos: result.pos || [],
-                plural: result.plural || null,
-                conjugation: result.conjugation || null,
-                gender: result.gender || null,
-                ...result  // 保留所有其他字段
-              };
-
-              // 确保 pos 始终是数组
-              if (!Array.isArray(formattedResult.pos)) {
-                formattedResult.pos = [formattedResult.pos].filter(Boolean);
-              }
-
-              resolve(formattedResult);
-            } catch (e) {
-              console.error("解析AI标签响应失败:", e);
-              resolve({
-                pos: [],
-                plural: null,
-                conjugation: null,
-                gender: null
-              });
-            }
-          })
-          .catch(err => {
-            console.error("获取AI标签建议失败", err);
-            resolve({
-              pos: [],
-              plural: null,
-              conjugation: null,
-              gender: null
-            });
-          });
-        }); // 结束 chrome.storage.local.get 的回调
-    });
-}
-
 // 新增：对话式分析函数（支持持续性对话）
 async function streamChatAnalysis(word, sentence, conversationHistory, analysisResult) {
   // 获取用户自定义的 AI 提示词
   chrome.storage.local.get('aiConfig', async function(result) {
     let customChatPrompt = result?.aiConfig?.chatPrompt || '请根据以下句子和对话历史回答用户的问题：\n\n句子：{sentence}\n\n对话历史：{history}\n\n用户问题：{question}';
-    
+
     // 构建对话历史字符串
-    const historyStr = conversationHistory.map(msg => `${msg.role === 'user' ? '用户' : 'AI'}: ${msg.content}`).join('\n');
-    
+    const historyStr = conversationHistory.map((msg) => `${msg.role === 'user' ? '用户' : 'AI'}: ${msg.content}`).join('\n');
+
     // 获取最后一个用户问题
     const lastUserMessage = conversationHistory[conversationHistory.length - 1];
     const question = lastUserMessage ? lastUserMessage.content : '';
-    
+
     let promptText = customChatPrompt
       .replace('{sentence}', sentence)
       .replace('{history}', historyStr)
@@ -1312,7 +1050,7 @@ function useLegacyChatAnalysis(word, sentence, messages, analysisResult, convers
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${config.apiKey}`,
-        "x-gemini-legacy-support": "true",
+        "x-gemini-legacy-support": "true"
       },
       body: JSON.stringify({
         model: config.apiModel,
@@ -1321,7 +1059,7 @@ function useLegacyChatAnalysis(word, sentence, messages, analysisResult, convers
         temperature: 1
       })
     })
-    .then(response => {
+    .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -1349,7 +1087,7 @@ function useLegacyChatAnalysis(word, sentence, messages, analysisResult, convers
             for (const line of lines) {
               if (line.startsWith('data: ')) {
                 const dataStr = line.slice(6).trim();
-                if (dataStr === '[DONE]') continue;
+                if (dataStr === '[DONE]') {continue;}
 
                 try {
                   const data = JSON.parse(dataStr);
@@ -1373,7 +1111,7 @@ function useLegacyChatAnalysis(word, sentence, messages, analysisResult, convers
 
       processStream();
     })
-    .catch(err => {
+    .catch((err) => {
       console.error('对话分析失败:', err);
       responseContentSpan.innerHTML += ` 错误: ${err.message}`;
     });
@@ -1403,7 +1141,7 @@ function useBackgroundChatAnalysis(word, sentence, messages, analysisResult, con
 
   // 通过background处理流式请求
   makeAIRequest({ word, sentence, stream: true, messages })
-    .then(response => {
+    .then((response) => {
       if (response.success && response.stream) {
         console.log('对话流式请求已启动，等待background发送数据');
         return;
@@ -1432,7 +1170,7 @@ function useBackgroundChatAnalysis(word, sentence, messages, analysisResult, con
             for (const line of lines) {
               if (line.startsWith('data: ')) {
                 const dataStr = line.slice(6).trim();
-                if (dataStr === '[DONE]') continue;
+                if (dataStr === '[DONE]') {continue;}
 
                 try {
                   const data = JSON.parse(dataStr);
@@ -1456,7 +1194,7 @@ function useBackgroundChatAnalysis(word, sentence, messages, analysisResult, con
 
       processStream();
     })
-    .catch(err => {
+    .catch((err) => {
       console.error('对话分析失败:', err);
       responseContentSpan.innerHTML += ` 错误: ${err.message}`;
     });
@@ -1516,7 +1254,7 @@ function useLegacySidebarStreamAnalysis(word, sentence, messages) {
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${config.apiKey}`,
-        "x-gemini-legacy-support": "true",
+        "x-gemini-legacy-support": "true"
       },
       body: JSON.stringify({
         model: config.apiModel,
@@ -1525,7 +1263,7 @@ function useLegacySidebarStreamAnalysis(word, sentence, messages) {
         temperature: 1
       })
     })
-    .then(response => {
+    .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -1601,7 +1339,7 @@ function useLegacySidebarStreamAnalysis(word, sentence, messages) {
 
       return reader.read().then(processText);
     })
-    .catch(err => {
+    .catch((err) => {
       console.log('Safari模式侧边栏流式请求失败，尝试非流式请求:', err.message);
       chrome.runtime.sendMessage({
         action: "streamUpdate",
@@ -1617,7 +1355,7 @@ function useLegacySidebarStreamAnalysis(word, sentence, messages) {
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${config.apiKey}`,
-          "x-gemini-legacy-support": "true",
+          "x-gemini-legacy-support": "true"
         },
         body: JSON.stringify({
           model: config.apiModel,
@@ -1626,8 +1364,8 @@ function useLegacySidebarStreamAnalysis(word, sentence, messages) {
           temperature: 1
         })
       })
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         const content = data.choices?.[0]?.message?.content || '分析失败';
         chrome.runtime.sendMessage({
           action: "streamUpdate",
@@ -1637,7 +1375,7 @@ function useLegacySidebarStreamAnalysis(word, sentence, messages) {
           }
         });
       })
-      .catch(nonStreamErr => {
+      .catch((nonStreamErr) => {
         chrome.runtime.sendMessage({
           action: "streamUpdate",
           data: {
@@ -1662,7 +1400,7 @@ function useBackgroundSidebarStreamAnalysis(word, sentence, messages) {
 
   // 通过background处理流式请求
   makeAIRequest({ word, sentence, stream: true, messages })
-    .then(response => {
+    .then((response) => {
       // 如果返回的是流式响应标识，说明background正在处理流式数据
       if (response.success && response.stream) {
         console.log('侧边栏流式请求已启动，等待background发送数据');
@@ -1706,7 +1444,7 @@ function useBackgroundSidebarStreamAnalysis(word, sentence, messages) {
         const lines = buffer.split('\n');
         buffer = lines.pop() || ''; // 保留最后一个不完整的行
 
-        lines.forEach(line => {
+        lines.forEach((line) => {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
@@ -1737,7 +1475,7 @@ function useBackgroundSidebarStreamAnalysis(word, sentence, messages) {
 
       return reader.read().then(processText);
     })
-    .catch(err => {
+    .catch((err) => {
       console.log('侧边栏流式请求失败，尝试非流式请求:', err.message);
       // 如果流式请求失败（比如在Firefox中），尝试非流式请求
       if (err.message.includes('流式请求暂时不支持')) {
@@ -1750,7 +1488,7 @@ function useBackgroundSidebarStreamAnalysis(word, sentence, messages) {
         });
 
         makeAIRequest({ word, sentence, stream: false, messages })
-          .then(data => {
+          .then((data) => {
             const content = data.choices?.[0]?.message?.content || '分析失败';
             chrome.runtime.sendMessage({
               action: "streamUpdate",
@@ -1760,7 +1498,7 @@ function useBackgroundSidebarStreamAnalysis(word, sentence, messages) {
               }
             });
           })
-          .catch(nonStreamErr => {
+          .catch((nonStreamErr) => {
             chrome.runtime.sendMessage({
               action: "streamUpdate",
               data: {

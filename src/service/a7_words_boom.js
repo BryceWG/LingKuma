@@ -21,7 +21,7 @@ let lastHoverSentence = null; // 缓存上一次悬停的句子，避免重复�
 let hoverDelayTimer = null; // 鼠标悬浮延迟计时器
 const HOVER_DELAY = 150; // 悬浮延迟时间（毫秒）
 let isInBlacklist = true; // 当前网站是否在黑名单中（默认为true，等待异步检查完成后更新）
-let wordExplosionManualBlacklistOverride = false; //增加本页手动黑名单覆盖标志；手动开启时清掉 isInBlacklist，并防止异步黑名单检查回调之后又把它改回 true。
+let wordExplosionManualBlacklistOverride = false; // 增加本页手动黑名单覆盖标志；手动开启时清掉 isInBlacklist，并防止异步黑名单检查回调之后又把它改回 true。
 let isPluginEnabled = false; // 插件总开关状态（默认为true，等待异步检查完成后更新）
 let wordExplosionControlMessageSeen = false;
 let wordExplosionInitialized = false;
@@ -88,19 +88,44 @@ let lastSentenceTranslationCount = 0; // 用于检测翻译数量变化
 // 词爆结构化批量查词缓冲：同一句里的单词在短窗口内合并成一次请求
 let explosionLookupBuffer = null;
 let explosionLookupTimer = null;
+const EXPLOSION_LOOKUP_DEBOUNCE = 200;
+// 持续悬停时防止 debounce 无限顺延，超过该时长强制发出
+const EXPLOSION_LOOKUP_MAX_WAIT = 600;
 
-function enqueueExplosionStructuredLookup(sentence, items, sentenceTranslationCount = 0) {
-  if (!sentence) return;
-  if (!explosionLookupBuffer || explosionLookupBuffer.sentence !== sentence) {
+function releaseExplosionLookupLocks(lockKeys) {
+  if (!lockKeys || !window.aiTranslationInProgress) {
+    return;
+  }
+  lockKeys.forEach((key) => window.aiTranslationInProgress.delete(key));
+}
+
+function enqueueExplosionStructuredLookup(sentence, items, sentenceTranslationCount = 0, lockKeys = []) {
+  if (!sentence) {
+    releaseExplosionLookupLocks(lockKeys);
+    return;
+  }
+
+  // 句子变了：先把上一句已入队但还没发出的请求 flush 掉，否则这些词会被静默丢弃
+  if (explosionLookupBuffer && explosionLookupBuffer.sentence !== sentence) {
+    flushExplosionStructuredLookup();
+  }
+
+  if (!explosionLookupBuffer) {
     explosionLookupBuffer = {
       sentence,
       items: new Map(),
-      sentenceTranslationCount: 0
+      sentenceTranslationCount: 0,
+      firstEnqueueAt: Date.now(),
+      lockKeys: new Set()
     };
   }
 
+  lockKeys.forEach((key) => explosionLookupBuffer.lockKeys.add(key));
+
   (items || []).forEach((item) => {
-    if (!item || !item.word) return;
+    if (!item || !item.word) {
+      return;
+    }
     const key = String(item.word).toLowerCase();
     const incomingFields = Array.isArray(item.fields) ? item.fields.filter(Boolean) : [];
     const existing = explosionLookupBuffer.items.get(key);
@@ -120,23 +145,34 @@ function enqueueExplosionStructuredLookup(sentence, items, sentenceTranslationCo
   if (explosionLookupTimer) {
     clearTimeout(explosionLookupTimer);
   }
+  const waited = Date.now() - explosionLookupBuffer.firstEnqueueAt;
+  const delay = Math.max(0, Math.min(EXPLOSION_LOOKUP_DEBOUNCE, EXPLOSION_LOOKUP_MAX_WAIT - waited));
   explosionLookupTimer = setTimeout(() => {
     flushExplosionStructuredLookup();
-  }, 200);
+  }, delay);
 }
 
 async function flushExplosionStructuredLookup() {
+  if (explosionLookupTimer) {
+    clearTimeout(explosionLookupTimer);
+  }
   explosionLookupTimer = null;
   const buf = explosionLookupBuffer;
   explosionLookupBuffer = null;
-  if (!buf) return;
+  if (!buf) {
+    return;
+  }
 
   const items = Array.from(buf.items.values()).filter((item) => item.fields && item.fields.length);
   const count = buf.sentenceTranslationCount || 0;
-  if (!items.length && count < 1) return;
+  if (!items.length && count < 1) {
+    releaseExplosionLookupLocks(buf.lockKeys);
+    return;
+  }
 
   if (typeof fetchStructuredWordLookup !== 'function') {
     console.error('[WordExplosion] fetchStructuredWordLookup 不存在，无法批量查词');
+    releaseExplosionLookupLocks(buf.lockKeys);
     return;
   }
 
@@ -163,6 +199,9 @@ async function flushExplosionStructuredLookup() {
     }
   } catch (error) {
     console.error('[WordExplosion] 结构化批量查词失败:', error);
+  } finally {
+    // 请求真正结束后才释放去重锁，避免请求发出前锁就被放开导致重复请求
+    releaseExplosionLookupLocks(buf.lockKeys);
   }
 }
 
@@ -256,7 +295,7 @@ function initWordExplosion() {
       }
 
       // 查找需要更新的单词
-      const wordToUpdate = currentExplosionWords.find(w => w.wordLower === updatedWord);
+      const wordToUpdate = currentExplosionWords.find((w) => w.wordLower === updatedWord);
       if (!wordToUpdate) {
         return;
       }
@@ -445,7 +484,7 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 // 添加window消息监听器，用于接收单词翻译更新通知
 window.addEventListener('message', function(event) {
   // 只处理来自同一窗口的消息
-  if (event.source !== window) return;
+  if (event.source !== window) {return;}
 
   if (event.data.type === 'WORD_TRANSLATION_UPDATED') {
     const updatedWord = event.data.word;
@@ -511,7 +550,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 
 // 创建单词爆炸弹窗
 function createWordExplosionTooltip() {
-  if (wordExplosionEl) return wordExplosionEl;
+  if (wordExplosionEl) {return wordExplosionEl;}
 
   const container = document.createElement('div');
   container.id = 'word-explosion-tooltip';
@@ -722,7 +761,7 @@ function createWordExplosionTooltip() {
 // 应用主题模式到爆炸窗口
 // forcedIsDark: 可选参数，来自 updateHighlightTheme 广播的 isDark，保证与 a4 弹窗同一时刻的状态一致
 function applyWordExplosionTheme(container, forcedIsDark = null) {
-  if (!container) return;
+  if (!container) {return;}
 
   // 从Shadow DOM中获取左侧按钮容器
   const leftButtons = explosionShadowRoot ? explosionShadowRoot.getElementById('word-explosion-left-buttons-wrapper') : null;
@@ -730,11 +769,11 @@ function applyWordExplosionTheme(container, forcedIsDark = null) {
   if (explosionThemeMode === 'dark') {
     // 固定暗色主题
     container.classList.add('dark-mode');
-    if (leftButtons) leftButtons.classList.add('dark-mode');
+    if (leftButtons) {leftButtons.classList.add('dark-mode');}
   } else if (explosionThemeMode === 'light') {
     // 固定亮色主题
     container.classList.remove('dark-mode');
-    if (leftButtons) leftButtons.classList.remove('dark-mode');
+    if (leftButtons) {leftButtons.classList.remove('dark-mode');}
   } else {
     // 自动检测模式（跟随当前页面的高亮模式）
     const isDark = typeof forcedIsDark === 'boolean' ? forcedIsDark
@@ -742,10 +781,10 @@ function applyWordExplosionTheme(container, forcedIsDark = null) {
           ? highlightManager.isDarkMode : false);
     if (isDark) {
       container.classList.add('dark-mode');
-      if (leftButtons) leftButtons.classList.add('dark-mode');
+      if (leftButtons) {leftButtons.classList.add('dark-mode');}
     } else {
       container.classList.remove('dark-mode');
-      if (leftButtons) leftButtons.classList.remove('dark-mode');
+      if (leftButtons) {leftButtons.classList.remove('dark-mode');}
     }
   }
 }
@@ -768,7 +807,7 @@ function startDragWordExplosion(e) {
 
 // 拖动中
 function dragWordExplosion(e) {
-  if (!wordExplosionDragging) return;
+  if (!wordExplosionDragging) {return;}
 
   const x = e.clientX - wordExplosionDragOffset.x;
   const y = e.clientY - wordExplosionDragOffset.y;
@@ -779,7 +818,7 @@ function dragWordExplosion(e) {
 
 // 停止拖动
 function stopDragWordExplosion() {
-  if (!wordExplosionDragging) return;
+  if (!wordExplosionDragging) {return;}
 
   wordExplosionDragging = false;
 
@@ -847,12 +886,12 @@ function getExplosionSentenceFastRect() {
 
 function mergeExplosionLineRects(rects) {
   const sortedRects = rects
-    .filter(rect => rect && rect.width > 0 && rect.height > 0)
+    .filter((rect) => rect && rect.width > 0 && rect.height > 0)
     .sort((a, b) => (a.top - b.top) || (a.left - b.left));
 
   const lines = [];
   for (const rect of sortedRects) {
-    const line = lines.find(item =>
+    const line = lines.find((item) =>
       rect.top <= item.bottom + 2 &&
       rect.bottom >= item.top - 2
     );
@@ -909,7 +948,7 @@ function applyExplosionSentenceRectHighlight(rects) {
   removeExplosionSentenceRectHighlight();
 
   const rectList = Array.isArray(rects) ? rects : [rects];
-  if (rectList.length === 0) return;
+  if (rectList.length === 0) {return;}
 
   const container = document.createElement('div');
   container.id = 'explosion-sentence-rect-highlight';
@@ -921,7 +960,7 @@ function applyExplosionSentenceRectHighlight(rects) {
   container.style.zIndex = '2147483643';
 
   for (const rect of rectList) {
-    if (!rect || rect.width <= 0 || rect.height <= 0) continue;
+    if (!rect || rect.width <= 0 || rect.height <= 0) {continue;}
 
     const el = document.createElement('div');
     el.style.position = 'absolute';
@@ -1072,7 +1111,7 @@ function removeExplosionSentenceHighlight() {
 // 这样可以处理 &nbsp; (U+00A0) 等特殊空格字符
 // 注意：这里的规范化必须与content.js中的normalizeText函数保持一致
 function normalizeTextForHighlight(text) {
-  if (!text) return "";
+  if (!text) {return "";}
   // 替换软连字符为空字符串
   let normalized = text.replace(/\u00AD/g, '');
   // 替换所有空白字符（包括 \s 和 \u00A0 非断行空格）为单个普通空格
@@ -1083,7 +1122,7 @@ function normalizeTextForHighlight(text) {
 // 跨元素创建句子的Range对象
 // 当句子被多个元素分割时，此函数可以找到句子的起始和结束位置，创建跨越多个元素的Range
 function createCrossElementSentenceRange(sentence, sentenceInfo) {
-  if (!sentence) return null;
+  if (!sentence) {return null;}
 
   console.log('[WordExplosion] 尝试跨元素创建句子Range:', sentence.substring(0, 50) + '...');
 
@@ -1095,7 +1134,7 @@ function createCrossElementSentenceRange(sentence, sentenceInfo) {
 
   // 确定搜索的根元素
   let rootElement = document.body;
-  
+
   // 如果有sentenceInfo，尝试找到更精确的搜索范围
   if (sentenceInfo) {
     if (sentenceInfo.textNode && document.contains(sentenceInfo.textNode)) {
@@ -1162,7 +1201,7 @@ function createCrossElementSentenceRange(sentence, sentenceInfo) {
   // 收集所有文本节点和它们的规范化文本
   const textNodes = [];
   let currentNode;
-  while (currentNode = walker.nextNode()) {
+  while ((currentNode = walker.nextNode())) {
     textNodes.push({
       node: currentNode,
       originalText: currentNode.textContent,
@@ -1174,16 +1213,16 @@ function createCrossElementSentenceRange(sentence, sentenceInfo) {
 
   // 辅助函数：检测两个文本节点之间是否有 br 标签
   function hasBrBetween(node1, node2) {
-    if (!node1 || !node2) return false;
-    
+    if (!node1 || !node2) {return false;}
+
     // 获取两个节点的共同祖先
     let ancestor = node1.parentElement;
     while (ancestor) {
-      if (ancestor.contains(node2)) break;
+      if (ancestor.contains(node2)) {break;}
       ancestor = ancestor.parentElement;
     }
-    if (!ancestor) return false;
-    
+    if (!ancestor) {return false;}
+
     // 使用更简单的方法：遍历共同祖先的所有后代节点，检查两个文本节点之间是否有 br 标签
     const walker = document.createTreeWalker(
       ancestor,
@@ -1191,7 +1230,7 @@ function createCrossElementSentenceRange(sentence, sentenceInfo) {
       null,
       false
     );
-    
+
     let foundFirst = false;
     let currentNode;
     while ((currentNode = walker.nextNode())) {
@@ -1229,23 +1268,23 @@ function createCrossElementSentenceRange(sentence, sentenceInfo) {
       });
       fullNormalizedText += ' ';
     }
-    
+
     const originalText = textNodeInfo.originalText;
     const normalizedText = textNodeInfo.normalizedText;
-    
+
     // 为每个规范化字符建立映射
     let originalOffset = 0;
     let normalizedOffset = 0;
-    
+
     while (originalOffset < originalText.length) {
       const char = originalText[originalOffset];
-      
+
       // 软连字符在规范化时被删除
       if (char === '\u00AD') {
         originalOffset++;
         continue;
       }
-      
+
       // 空白字符在规范化时被替换为单个空格
       if (/[\s\u00A0]/.test(char)) {
         // 跳过连续的空白字符
@@ -1272,7 +1311,7 @@ function createCrossElementSentenceRange(sentence, sentenceInfo) {
         normalizedOffset++;
       }
     }
-    
+
     lastTextNode = textNodeInfo.node; // 更新上一个文本节点
   }
 
@@ -1280,7 +1319,7 @@ function createCrossElementSentenceRange(sentence, sentenceInfo) {
 
   // 在完整规范化文本中查找句子
   const sentenceStartIndex = fullNormalizedText.indexOf(normalizedSentence);
-  
+
   if (sentenceStartIndex === -1) {
     console.warn('[WordExplosion] 在完整文本中找不到句子');
     return null;
@@ -1307,12 +1346,12 @@ function createCrossElementSentenceRange(sentence, sentenceInfo) {
   // 创建Range对象
   try {
     const sentenceRange = document.createRange();
-    
+
     // 设置起始位置
     // 如果起始字符是空格，需要找到下一个非空格字符的位置
     let startNode = startCharInfo.node;
     let startOffset = startCharInfo.originalOffset;
-    
+
     // 如果起始位置是空格标记，需要向前查找实际的起始位置
     if (startCharInfo.isSpace) {
       // 空格标记的originalOffset指向空白后的第一个字符
@@ -1325,13 +1364,13 @@ function createCrossElementSentenceRange(sentence, sentenceInfo) {
       }
       startOffset = tempOffset + 1;
     }
-    
+
     sentenceRange.setStart(startNode, startOffset);
-    
+
     // 设置结束位置
     let endNode = endCharInfo.node;
     let endOffset = endCharInfo.originalOffset + 1; // Range的endOffset是 exclusive
-    
+
     // 如果结束字符是空格标记
     if (endCharInfo.isSpace) {
       // 找到空白结束的位置
@@ -1340,13 +1379,13 @@ function createCrossElementSentenceRange(sentence, sentenceInfo) {
         endOffset++;
       }
     }
-    
+
     sentenceRange.setEnd(endNode, endOffset);
-    
+
     console.log('[WordExplosion] 成功创建跨元素Range');
     console.log('[WordExplosion] 起始节点:', startNode.textContent.substring(0, 30), '偏移:', startOffset);
     console.log('[WordExplosion] 结束节点:', endNode.textContent.substring(0, 30), '偏移:', endOffset);
-    
+
     return sentenceRange;
   } catch (error) {
     console.error('[WordExplosion] 创建跨元素Range失败:', error);
@@ -1357,7 +1396,7 @@ function createCrossElementSentenceRange(sentence, sentenceInfo) {
 // 创建句子的Range对象
 // 首先尝试在单个文本节点中查找（高效），如果失败则使用预计算的sentenceRange或尝试跨元素查找
 function createSentenceRange(sentence, sentenceInfo) {
-  if (!sentence || !sentenceInfo) return null;
+  if (!sentence || !sentenceInfo) {return null;}
 
   try {
     const sentenceRange = document.createRange();
@@ -1366,7 +1405,7 @@ function createSentenceRange(sentence, sentenceInfo) {
     // 这样可以处理 &nbsp; (U+00A0) 等特殊空格字符
     // 注意：这里的规范化必须与content.js中的normalizeText函数保持一致
     const normalizeText = (text) => {
-      if (!text) return "";
+      if (!text) {return "";}
       // 替换软连字符为空字符串
       let normalized = text.replace(/\u00AD/g, '');
       // 替换所有空白字符（包括 \s 和 \u00A0 非断行空格）为单个普通空格
@@ -1404,8 +1443,8 @@ function createSentenceRange(sentence, sentenceInfo) {
         // 尝试跨元素查找
         console.log('[WordExplosion] 备用系统：在单个节点中找不到句子，尝试跨元素查找');
         const crossRange = createCrossElementSentenceRange(sentence, sentenceInfo);
-        if (crossRange) return crossRange;
-        
+        if (crossRange) {return crossRange;}
+
         // 如果跨元素查找也失败，使用原始range
         console.warn('[WordExplosion] 在规范化文本中找不到句子，使用原始range');
         sentenceRange.setStart(sentenceInfo.range.startContainer, sentenceInfo.range.startOffset);
@@ -1452,8 +1491,8 @@ function createSentenceRange(sentence, sentenceInfo) {
       // 尝试跨元素查找
       console.log('[WordExplosion] 新系统：在单个节点中找不到句子，尝试跨元素查找');
       const crossRange = createCrossElementSentenceRange(sentence, sentenceInfo);
-      if (crossRange) return crossRange;
-      
+      if (crossRange) {return crossRange;}
+
       // 如果跨元素查找也失败，尝试使用原始范围
       console.warn('[WordExplosion] 在规范化文本中找不到句子，尝试使用原始范围');
       if (sentenceInfo.range) {
@@ -1514,13 +1553,13 @@ function mapNormalizedPositionToOriginal(originalText, normalizedPosition) {
 // 显示单词爆炸弹窗
 function showWordExplosion(sentence, sentenceRect = null, sentenceInfo = null) {
   console.log('[WordExplosion] showWordExplosion 被调用');
-  console.log('[WordExplosion] 参数:', { 
-    sentence: sentence?.substring(0, 50) + '...', 
+  console.log('[WordExplosion] 参数:', {
+    sentence: sentence?.substring(0, 50) + '...',
     hasSentenceRect: !!sentenceRect,
     hasSentenceInfo: !!sentenceInfo
   });
   console.log('[WordExplosion] wordExplosionEnabled:', wordExplosionEnabled);
-  
+
   if (!isPluginEnabled) {
     console.log('[WordExplosion] highlight runtime disabled, skip');
     return;
@@ -1551,7 +1590,7 @@ function showWordExplosion(sentence, sentenceRect = null, sentenceInfo = null) {
   }
 
   // 如果UI被锁定且鼠标在弹窗内，不更新
-  if (wordExplosionLocked && isMouseInsideExplosion) return;
+  if (wordExplosionLocked && isMouseInsideExplosion) {return;}
 
   // 检查是否与当前显示的句子相同，避免重复刷新
   if (currentExplosionSentence === sentence && wordExplosionEl && wordExplosionEl.style.display !== 'none') {
@@ -1622,7 +1661,7 @@ function showWordExplosion(sentence, sentenceRect = null, sentenceInfo = null) {
   });
 
   // 解析句子，获取未知单词
-  extractUnknownWords(sentence).then(async unknownWords => {
+  extractUnknownWords(sentence).then(async (unknownWords) => {
     // 创建或获取弹窗（无论是否有生词都创建，以支持爆炸优先模式）
     const tooltip = createWordExplosionTooltip();
 
@@ -1758,7 +1797,7 @@ function getStorageValue(key) {
 
 // 定位弹窗 - 智能上下定位模式
 async function positionWordExplosion(sentenceRect = null) {
-  if (!wordExplosionEl) return;
+  if (!wordExplosionEl) {return;}
 
   // 获取缩放因子
   // 使用 devicePixelRatio 来检测页面缩放（Ctrl++）
@@ -1834,7 +1873,7 @@ async function positionWordExplosion(sentenceRect = null) {
 
   const explosionRect = wordExplosionEl.getBoundingClientRect();
   let explosionWidth = explosionRect.width;
-  
+
   // 如果获取的宽度无效（0或undefined），使用默认值500
   if (!explosionWidth || explosionWidth === 0) {
     console.warn('[WordExplosion] 无法获取弹窗宽度，使用默认值500');
@@ -2211,14 +2250,14 @@ function shouldShowExplosionForLanguage(sentence) {
 
       if (/[a-zA-Z]/.test(sentence)) {
         // 如果包含拉丁字母，使用西方文本处理方法
-  
+
         return true;
-      }else{
+      } else {
 
         console.log('[WordExplosion] 中文高亮已关闭，跳过句子:', sentence.substring(0, 50));
         return false;
       }
-      
+
     }
     return true;
   }
@@ -2269,8 +2308,8 @@ function isNonLanguageSymbol(word) {
 // 从句子中提取未知单词和词组（状态0-4）
 async function extractUnknownWords(sentence, shouldTriggerQuery = true) {
   // console.log(`[extractUnknownWords] 开始提取未知单词, shouldTriggerQuery: ${shouldTriggerQuery}`);
-  
-  if (!sentence || !sentence.trim()) return [];
+
+  if (!sentence || !sentence.trim()) {return [];}
 
   // 使用 Map 进行去重，key 为 wordLower，value 为单词/词组信息
   const wordMap = new Map();
@@ -2281,11 +2320,11 @@ async function extractUnknownWords(sentence, shouldTriggerQuery = true) {
   const segments = Array.from(segmenter.segment(sentence));
 
   const words = segments
-    .filter(seg => seg.isWordLike)
-    .map(seg => seg.segment.trim())
-    .filter(word => word.length > 0)
-    .filter(word => !isNonLanguageSymbol(word)) // 过滤掉纯数字和标点符号
-    .filter(word => {
+    .filter((seg) => seg.isWordLike)
+    .map((seg) => seg.segment.trim())
+    .filter((word) => word.length > 0)
+    .filter((word) => !isNonLanguageSymbol(word)) // 过滤掉纯数字和标点符号
+    .filter((word) => {
       // 根据语言高亮设置过滤单词
       // 如果word是中文且中文高亮未启用，则跳过
       if (isChineseTextExplosion(word)) {
@@ -2366,28 +2405,28 @@ async function extractUnknownWords(sentence, shouldTriggerQuery = true) {
           });
         })
       )
-    ).then(results => {
+    ).then((results) => {
       // 查询完成后，更新缓存，并检查状态1-4的单词是否需要补充数据
       results.forEach(({ wordLower, details }) => {
         // console.log(`[extractUnknownWords] 异步查询结果: ${wordLower}`, details);
-        
+
         // 获取缓存中当前的状态（可能在第二个循环中已被更新为1）
         const existingStatus = highlightManager?.wordDetailsFromDB?.[wordLower]?.status;
         const existingStatusNum = existingStatus !== undefined ? parseInt(existingStatus, 10) : undefined;
-        
+
         // 检查数据库返回的是否为有效数据（有word字段或status字段）
         const hasValidData = details && (details.word || details.status !== undefined);
         // console.log(`[extractUnknownWords] hasValidData: ${hasValidData}, 当前缓存状态: ${existingStatus}`);
-        
+
         if (hasValidData) {
           // 如果缓存中的状态已经是1-4，而数据库返回的状态是undefined或0，保留缓存中的状态
-          if (existingStatusNum >= 1 && existingStatusNum <= 4 && 
+          if (existingStatusNum >= 1 && existingStatusNum <= 4 &&
               (details.status === undefined || details.status === '0' || details.status === 0)) {
             console.log(`[WordExplosion] 保留缓存中的状态 ${existingStatus}，不使用数据库返回的状态:`, wordLower);
             // 合并数据：保留缓存中的状态，但使用数据库中的其他数据
             details.status = existingStatus;
           }
-          
+
           // 更新缓存
           if (highlightManager && highlightManager.wordDetailsFromDB) {
             highlightManager.wordDetailsFromDB[wordLower] = details;
@@ -2426,7 +2465,7 @@ async function extractUnknownWords(sentence, shouldTriggerQuery = true) {
         }
       });
       console.log('[WordExplosion] 异步查询完成，缓存已更新');
-    }).catch(error => {
+    }).catch((error) => {
       console.error('[WordExplosion] 并发查询单词详情失败:', error);
     });
   }
@@ -2686,7 +2725,12 @@ async function triggerWordQuery(word, sentence) {
     if (autoRequest) {
       fields.unshift('translation');
     }
-    enqueueExplosionStructuredLookup(sentence, [{ word, fields }]);
+    // 入队即上锁，由 flush 在请求结束后释放，避免同一词被重复请求
+    if (!window.aiTranslationInProgress) {
+      window.aiTranslationInProgress = new Set();
+    }
+    window.aiTranslationInProgress.add(translationKey);
+    enqueueExplosionStructuredLookup(sentence, [{ word, fields }], 0, [translationKey]);
   });
 }
 
@@ -2733,8 +2777,7 @@ async function triggerMissingDataQuery(word, sentence, wordDetails) {
       return;
     }
 
-    enqueueExplosionStructuredLookup(sentence, [{ word, fields }]);
-    window.aiTranslationInProgress.delete(queryKey);
+    enqueueExplosionStructuredLookup(sentence, [{ word, fields }], 0, [queryKey]);
   }).catch((error) => {
     console.error('[WordExplosion] 缺失数据补充出错:', error);
     window.aiTranslationInProgress.delete(queryKey);
@@ -2828,7 +2871,7 @@ function handleMarkSingleWordKnown(word, wordLower, wordDiv) {
   console.log('[WordExplosion] 标记单个单词为已知:', word);
 
   // 查找当前单词的状态
-  const wordInfo = currentExplosionWords.find(w => w.wordLower === wordLower);
+  const wordInfo = currentExplosionWords.find((w) => w.wordLower === wordLower);
   if (!wordInfo) {
     console.error('[WordExplosion] 找不到单词信息:', word);
     return;
@@ -2878,7 +2921,7 @@ function handleMarkSingleWordKnown(word, wordLower, wordDiv) {
           wordDiv.remove();
 
           // 检查是否还有未知单词
-          const remainingWords = currentExplosionWords.filter(w => w.status >= 0 && w.status <= 4);
+          const remainingWords = currentExplosionWords.filter((w) => w.status >= 0 && w.status <= 4);
           if (remainingWords.length === 0) {
             console.log('[WordExplosion] 所有单词已标记为已知，关闭弹窗');
             hideWordExplosion();
@@ -2904,10 +2947,10 @@ function handleMarkSingleWordKnown(word, wordLower, wordDiv) {
 
 // 更新弹窗内容
 async function updateWordExplosionContent(content) {
-  if (!wordExplosionEl) return;
+  if (!wordExplosionEl) {return;}
 
   const contentEl = wordExplosionEl.querySelector('.word-explosion-content');
-  if (!contentEl) return;
+  if (!contentEl) {return;}
 
   // 如果是字符串（提示信息）
   if (typeof content === 'string') {
@@ -3056,10 +3099,10 @@ async function renderWordExplosionContent(container, unknownWords, forceRefresh 
 
   // 如果缓存中没有翻译，异步获取句子翻译(不阻塞单词加载)
   if (cachedTranslations.length === 0) {
-    getSentenceTranslations(currentExplosionSentence, unknownWords, forceRefresh).then(sentenceTranslations => {
+    getSentenceTranslations(currentExplosionSentence, unknownWords, forceRefresh).then((sentenceTranslations) => {
       // 更新句子翻译UI
       const translationsContainer = container.querySelector('#sentence-translations-container');
-      if (!translationsContainer) return;
+      if (!translationsContainer) {return;}
 
       if (sentenceTranslations.length > 0) {
         // 有翻译,清空占位符并显示所有翻译
@@ -3076,7 +3119,7 @@ async function renderWordExplosionContent(container, unknownWords, forceRefresh 
         // 等待AI翻译完成后,通过refreshSentenceTranslationsUI更新
         console.log('[WordExplosion] 没有翻译,保留占位符,等待AI翻译');
       }
-    }).catch(error => {
+    }).catch((error) => {
       console.error('[WordExplosion] 获取句子翻译失败:', error);
       // 出错时移除占位符
       const translationsContainer = container.querySelector('#sentence-translations-container');
@@ -3185,13 +3228,13 @@ async function createWordItem(wordInfo, forceRefresh = false) {
     wordDiv.appendChild(loadingDiv);
 
     // 异步获取翻译（不阻塞UI渲染）
-    getWordTranslations(wordInfo, false).then(translations => {
+    getWordTranslations(wordInfo, false).then((translations) => {
       if (translations.length > 0) {
         // 从数据库获取到翻译，手动更新UI
         console.log('[WordExplosion] 异步获取翻译完成，更新UI:', wordInfo.word, translations);
         updateSingleWordUI(wordInfo);
       }
-    }).catch(error => {
+    }).catch((error) => {
       console.error('[WordExplosion] 异步获取翻译失败:', error);
     });
   }
@@ -3277,7 +3320,7 @@ async function getWordTranslations(wordInfo, forceRefresh = false) {
           const currentCachedDetails = highlightManager?.wordDetailsFromDB?.[wordInfo.wordLower];
           const currentCachedStatus = currentCachedDetails?.status;
           const currentCachedStatusNum = currentCachedStatus !== undefined ? parseInt(currentCachedStatus, 10) : undefined;
-          
+
           if (currentCachedStatusNum >= 1 && currentCachedStatusNum <= 4) {
             console.log(`[WordExplosion] 数据库返回空数据，保留缓存中的状态: ${currentCachedStatus}`);
             // 确保缓存条目存在且状态正确
@@ -3329,10 +3372,10 @@ async function getSentenceTranslations(sentence, unknownWords, forceRefresh = fa
 
 // 刷新句子翻译UI（当新翻译到达时调用）
 function refreshSentenceTranslationsUI() {
-  if (!wordExplosionEl || !currentExplosionSentence) return;
+  if (!wordExplosionEl || !currentExplosionSentence) {return;}
 
   const translationsContainer = wordExplosionEl.querySelector('#sentence-translations-container');
-  if (!translationsContainer) return;
+  if (!translationsContainer) {return;}
 
   const translations = explosionSentenceTranslationsCache[currentExplosionSentence] || [];
 
@@ -3381,15 +3424,15 @@ async function updateSentenceTranslationUI(container, unknownWords) {
 
 // 刷新单词翻译数据（当收到翻译更新通知时调用）
 async function refreshWordTranslationData(updatedWord) {
-  if (!wordExplosionEl || !currentExplosionSentence || !currentExplosionWords) return;
+  if (!wordExplosionEl || !currentExplosionSentence || !currentExplosionWords) {return;}
 
   const contentEl = wordExplosionEl.querySelector('.word-explosion-content');
-  if (!contentEl) return;
+  if (!contentEl) {return;}
 
   console.log('[WordExplosion] 收到单词翻译更新通知:', updatedWord);
 
   // 查找是否是当前句子中的单词
-  const wordInfo = currentExplosionWords.find(w => w.wordLower === updatedWord.toLowerCase());
+  const wordInfo = currentExplosionWords.find((w) => w.wordLower === updatedWord.toLowerCase());
   if (!wordInfo) {
     console.log('[WordExplosion] 更新的单词不在当前句子中，忽略');
     return;
@@ -3446,22 +3489,22 @@ async function refreshWordTranslationData(updatedWord) {
 
 // 更新单个单词的UI
 async function updateSingleWordUI(wordInfo) {
-  if (!wordExplosionEl) return;
+  if (!wordExplosionEl) {return;}
 
   const contentEl = wordExplosionEl.querySelector('.word-explosion-content');
-  if (!contentEl) return;
+  if (!contentEl) {return;}
 
   // 查找该单词在UI中的元素
   const wordsContainer = contentEl.querySelector('.word-explosion-words');
-  if (!wordsContainer) return;
+  if (!wordsContainer) {return;}
 
   // 查找该单词的索引
-  const wordIndex = currentExplosionWords.findIndex(w => w.wordLower === wordInfo.wordLower);
-  if (wordIndex === -1) return;
+  const wordIndex = currentExplosionWords.findIndex((w) => w.wordLower === wordInfo.wordLower);
+  if (wordIndex === -1) {return;}
 
   // 获取该单词的DOM元素
   const wordItems = wordsContainer.querySelectorAll('.word-explosion-word-item');
-  if (wordIndex >= wordItems.length) return;
+  if (wordIndex >= wordItems.length) {return;}
 
   const oldWordItem = wordItems[wordIndex];
 
@@ -3501,8 +3544,8 @@ async function refreshWordExplosionData() {
     console.log('[WordExplosion] 单词列表已变化，执行全量刷新');
 
     // 合并新旧数据：保留旧的details对象，只更新status
-    const mergedWords = updatedWords.map(newWord => {
-      const oldWord = currentExplosionWords.find(w => w.wordLower === newWord.wordLower);
+    const mergedWords = updatedWords.map((newWord) => {
+      const oldWord = currentExplosionWords.find((w) => w.wordLower === newWord.wordLower);
       if (oldWord && oldWord.details && oldWord.details.hasOwnProperty('translations')) {
         // 保留旧的完整details，只更新status
         return {
@@ -3551,7 +3594,7 @@ async function refreshWordExplosionData() {
     let detailsUpdated = false;
 
     // 从缓存中获取最新的details
-    const updatedWordsWithCache = currentExplosionWords.map(wordInfo => {
+    const updatedWordsWithCache = currentExplosionWords.map((wordInfo) => {
       const cachedDetails = highlightManager?.wordDetailsFromDB?.[wordInfo.wordLower];
 
       // 检查缓存中的details是否比当前的更完整
@@ -3624,7 +3667,7 @@ async function refreshWordExplosionData() {
 
 // 更新布局
 function updateWordExplosionLayout() {
-  if (!wordExplosionEl) return;
+  if (!wordExplosionEl) {return;}
 
   const wordsContainer = wordExplosionEl.querySelector('.word-explosion-words');
   if (wordsContainer) {
@@ -3637,17 +3680,17 @@ function updateWordExplosionLayout() {
 // 由它做 rAF 节流（每帧最多派发一次）并共享 caret 定位结果。
 function handleA7PointerMove(payload) {
   const e = payload.event;
-  if (shouldIgnoreA7SyntheticMouseEvent(e)) return;
+  if (shouldIgnoreA7SyntheticMouseEvent(e)) {return;}
   // 检查插件总开关
-  if (!isPluginEnabled) return;
+  if (!isPluginEnabled) {return;}
 
   // 检查是否在黑名单中（与高亮黑名单同步）
-  if (isInBlacklist) return;
+  if (isInBlacklist) {return;}
 
   // 只在悬停模式下触发
-  if (!wordExplosionEnabled || wordExplosionConfig.triggerMode !== 'hover') return;
-  if (wordExplosionLocked && isMouseInsideExplosion) return;
-  if (wordExplosionDragging) return;
+  if (!wordExplosionEnabled || wordExplosionConfig.triggerMode !== 'hover') {return;}
+  if (wordExplosionLocked && isMouseInsideExplosion) {return;}
+  if (wordExplosionDragging) {return;}
 
   // --- 新增：检查句子解析弹窗是否正在显示 ---
   // 如果句子解析弹窗正在显示，完全禁用爆炸弹窗功能
@@ -3660,7 +3703,7 @@ function handleA7PointerMove(payload) {
 
   // 获取鼠标下的元素
   const target = payload.target;
-  if (!target) return;
+  if (!target) {return;}
 
   // 检查是否在弹窗内
   if (wordExplosionEl && wordExplosionEl.contains(target)) {
@@ -3827,7 +3870,7 @@ function isClickOnHighlightedWord(x, y) {
         }
 
         // 首先过滤掉纯数字和标点符号的rawRanges
-        const filteredRanges = rawRanges.filter(raw => !highlightManagerFilter(raw.word));
+        const filteredRanges = rawRanges.filter((raw) => !highlightManagerFilter(raw.word));
 
         // 在过滤后的文本节点中查找鼠标位置的单词
         const foundWord = findWordAtPositionInTextNode(textNode, filteredRanges, x, y);
@@ -3864,8 +3907,8 @@ function isA7CoarsePointerDevice() {
 }
 
 function shouldUseA7TouchTapFlow(e) {
-  if (isA7TouchPointerEvent(e)) return true;
-  if (e && e.pointerType === 'mouse') return false;
+  if (isA7TouchPointerEvent(e)) {return true;}
+  if (e && e.pointerType === 'mouse') {return false;}
   return isA7CoarsePointerDevice();
 }
 
@@ -3907,7 +3950,7 @@ async function handleA7PointerActivation(e) {
   // 提前检查是否点击在爆炸窗口内部（在延迟之前）
   const isInsideExplosion = explosionShadowHost && eventPath.includes(explosionShadowHost);
 
-  console.log('[WordExplosion] pointerdown事件, path:', eventPath.map(el => el.tagName || el.nodeName || el));
+  console.log('[WordExplosion] pointerdown事件, path:', eventPath.map((el) => el.tagName || el.nodeName || el));
   console.log('[WordExplosion] isInsideExplosion:', isInsideExplosion);
 
   // 如果点击在爆炸窗口内部，直接返回，不处理
@@ -3919,13 +3962,13 @@ async function handleA7PointerActivation(e) {
   // 延迟 50ms（非阻塞）
   // 这里慢50ms，让单词弹窗的pointerdown提前判断，在爆炸优先情况下，可以不弹出单词弹窗。
   // Dont delete it.
-  await new Promise(res => setTimeout(res, 50));
+  await new Promise((res) => setTimeout(res, 50));
 
   // 检查插件总开关
-  if (!isPluginEnabled) return;
+  if (!isPluginEnabled) {return;}
 
   // 检查是否在黑名单中（与高亮黑名单同步）
-  if (isInBlacklist) return;
+  if (isInBlacklist) {return;}
 
   // 只在点击模式下触发 - 提前检查，避免在悬浮模式下执行后续逻辑
   if (!wordExplosionEnabled || wordExplosionConfig.triggerMode !== 'click') {
@@ -3985,7 +4028,7 @@ async function handleA7PointerActivation(e) {
   }
 
   // 只处理文本节点或包含文本的元素
-  if (!eventTarget) return;
+  if (!eventTarget) {return;}
 
   // 排除特定元素（按钮、输入框、链接等）
   const excludedTags = ['BUTTON', 'INPUT', 'TEXTAREA', 'SELECT', 'A', 'IMG', 'VIDEO', 'AUDIO', 'CANVAS', 'SVG'];
@@ -4104,11 +4147,11 @@ function findWordAndSentenceAtPositionFallback(x, y) {
   try {
     // 注意：caretRangeFromPoint 是 WebKit/Blink 专有 API，Firefox 上不存在。
     // 这里显式判断而不是依赖 try/catch，避免高频路径上每帧抛一次异常。
-    if (typeof document.caretRangeFromPoint !== 'function') return null;
+    if (typeof document.caretRangeFromPoint !== 'function') {return null;}
 
     // 获取鼠标位置的句子
     const range = document.caretRangeFromPoint(x, y);
-    if (!range) return null;
+    if (!range) {return null;}
 
     // 检查range是否在文本节点中
     if (range.startContainer.nodeType !== Node.TEXT_NODE) {
@@ -4120,7 +4163,7 @@ function findWordAndSentenceAtPositionFallback(x, y) {
       word: ''
     };
 
-    const {sentence, range: sentenceRange} = getSentenceForWord(detail);
+    const { sentence, range: sentenceRange } = getSentenceForWord(detail);
 
     // 只有当句子长度合理时才返回
     if (sentence && sentence.trim().length >= 5) {
@@ -4141,16 +4184,16 @@ function findWordAndSentenceAtPositionFallback(x, y) {
 
 // 备用方案：获取句子矩形
 function getSentenceRectFallback(sentence, clickRange) {
-  if (!sentence || !clickRange) return null;
+  if (!sentence || !clickRange) {return null;}
 
   try {
     // 获取点击位置所在的文本节点
     const textNode = clickRange.startContainer;
-    if (textNode.nodeType !== Node.TEXT_NODE) return null;
+    if (textNode.nodeType !== Node.TEXT_NODE) {return null;}
 
     // 规范化文本：将各种空格字符统一为普通空格
     const normalizeText = (text) => {
-      if (!text) return "";
+      if (!text) {return "";}
       let normalized = text.replace(/\u00AD/g, '');
       normalized = normalized.replace(/[\s\u00A0]+/g, ' ');
       return normalized;
@@ -4178,7 +4221,7 @@ function getSentenceRectFallback(sentence, clickRange) {
 
     // 获取句子的边界矩形
     const rects = sentenceRange.getClientRects();
-    if (rects.length === 0) return null;
+    if (rects.length === 0) {return null;}
 
     // 计算所有矩形的边界（句子可能跨多行）
     let minLeft = Infinity;
@@ -4297,7 +4340,7 @@ function findWordAtPositionInTextNode(textNode, rawRanges, x, y) {
     // console.log('[WordExplosion] findWordAtPositionInTextNode 开始，坐标:', { x, y });
     // console.log('[WordExplosion] 文本节点内容:', textNode.textContent.substring(0, 100));
     // console.log('[WordExplosion] rawRanges 数量:', rawRanges.length);
-    
+
     // 创建Range对象来获取文本节点的精确位置信息
     const textRange = document.createRange();
     textRange.selectNodeContents(textNode);
@@ -4330,7 +4373,7 @@ function findWordAtPositionInTextNode(textNode, rawRanges, x, y) {
     let wordsChecked = 0;
     for (const rawRange of rawRanges) {
       wordsChecked++;
-      
+
       // 跳过纯数字和标点符号（虽然它们不应该出现在rawRanges中，但双重保险）
       if (isNonLanguageSymbol(rawRange.word)) {
         console.log('[WordExplosion] 跳过非语言符号:', rawRange.word);
@@ -4350,7 +4393,7 @@ function findWordAtPositionInTextNode(textNode, rawRanges, x, y) {
         // 检查鼠标是否在这个单词的矩形范围内
         const isInside = x >= wordRect.left && x <= wordRect.right &&
                        y >= wordRect.top && y <= wordRect.bottom;
-        
+
         // console.log('[WordExplosion] 检查单词矩形:', {
         //   word: rawRange.word,
         //   rect: { left: wordRect.left, right: wordRect.right, top: wordRect.top, bottom: wordRect.bottom },
@@ -4380,11 +4423,11 @@ function findWordAtPositionInTextNode(textNode, rawRanges, x, y) {
 }
 
 function getRangeBoundingRect(range) {
-  if (!range || !range.startContainer || !range.endContainer) return null;
-  if (!document.contains(range.startContainer) || !document.contains(range.endContainer)) return null;
+  if (!range || !range.startContainer || !range.endContainer) {return null;}
+  if (!document.contains(range.startContainer) || !document.contains(range.endContainer)) {return null;}
 
-  const rects = Array.from(range.getClientRects()).filter(rect => rect.width > 0 && rect.height > 0);
-  if (rects.length === 0) return null;
+  const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0);
+  if (rects.length === 0) {return null;}
 
   let minLeft = Infinity;
   let minTop = Infinity;
@@ -4410,7 +4453,7 @@ function getRangeBoundingRect(range) {
 
 // 获取句子的边界矩形（支持新系统和备用系统）
 function getSentenceRect(sentence, foundInfo) {
-  if (!sentence || !foundInfo) return null;
+  if (!sentence || !foundInfo) {return null;}
 
   try {
     const precomputedRect = getRangeBoundingRect(foundInfo.sentenceRange);
@@ -4432,7 +4475,7 @@ function getSentenceRect(sentence, foundInfo) {
     // 规范化文本：将各种空格字符统一为普通空格
     // 注意：这里的规范化必须与content.js中的normalizeText函数保持一致
     const normalizeText = (text) => {
-      if (!text) return "";
+      if (!text) {return "";}
       let normalized = text.replace(/\u00AD/g, '');
       normalized = normalized.replace(/[\s\u00A0]+/g, ' ');
       return normalized;
@@ -4462,7 +4505,7 @@ function getSentenceRect(sentence, foundInfo) {
 
     // 获取句子的边界矩形
     const rects = sentenceRange.getClientRects();
-    if (rects.length === 0) return null;
+    if (rects.length === 0) {return null;}
 
     // console.log('[WordExplosion] getSentenceRect - 句子矩形数量:', rects.length);
     // for (let i = 0; i < rects.length; i++) {
@@ -4587,13 +4630,13 @@ function isWordExplosionHighlightEnabledForCurrentPage(result) {
 
 // 检查URL是否匹配黑名单模式（与高亮黑名单同步）
 function isUrlInBlacklist(url, blacklistPatterns) {
-  if (!blacklistPatterns) return false;
+  if (!blacklistPatterns) {return false;}
 
-  const patterns = blacklistPatterns.split(';').filter(pattern => pattern.trim() !== '');
+  const patterns = blacklistPatterns.split(';').filter((pattern) => pattern.trim() !== '');
 
   for (const pattern of patterns) {
     const trimmedPattern = pattern.trim();
-    if (trimmedPattern === '') continue;
+    if (trimmedPattern === '') {continue;}
 
     // 将通配符模式转换为正则表达式
     const regexPattern = trimmedPattern
@@ -4983,7 +5026,7 @@ function initExplosionShadowDOM() {
 
 // 注入爆炸窗口CSS样式到Shadow DOM
 function injectExplosionStyles() {
-  if (!explosionShadowRoot) return;
+  if (!explosionShadowRoot) {return;}
 
   const style = document.createElement('style');
   style.textContent = `
