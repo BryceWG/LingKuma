@@ -553,8 +553,8 @@ function initializeSettings() {
       // 液体玻璃效果默认关闭
       liquidGlassEnabled: false,
       glassEffectType: 'rough', // 默认为Rough
-      // 解析句子玻璃效果默认开启
-      analysisGlassEnabled: true,
+      // Ask 浮窗已改为简洁卡片，玻璃效果默认关闭
+      analysisGlassEnabled: false,
 
       // Thanox Reading 设置默认值
       thanoxReadingEnabled: false,

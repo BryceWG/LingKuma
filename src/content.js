@@ -871,31 +871,18 @@ async function showAnalysisWindow(word, sentence, hoveredRect) {
     analysisWindow.addEventListener(eventName, e => e.stopPropagation());
   });
 
-  analysisWindow.classList.add(isDarkMode() ? 'dark-mode' : 'light-mode');
-
-  // 检查是否启用解析句子玻璃效果
-  chrome.storage.local.get(['analysisGlassEnabled'], (result) => {
-    const isGlassEnabled = result.analysisGlassEnabled !== undefined ? result.analysisGlassEnabled : true;
-    if (isGlassEnabled && analysisWindow) {
-      analysisWindow.classList.add('glass-effect');
-    }
-  });
-
   // 先添加到DOM以获取尺寸，但设置为不可见以防止闪烁
   analysisWindow.style.visibility = 'hidden';
   shadowRoot.appendChild(analysisWindow);
 
-  // 设置窗口内容结构
+  // 跟随扩展弹窗主题（tooltipThemeMode / 高亮深色模式），不再用页面文字亮度猜测
+  applyAnalysisWindowTheme();
+
+  // 设置窗口内容结构（与单词/句子弹窗统一为简洁卡片）
   analysisWindow.innerHTML = `
     <div class="analysis-header">
-      <span class="drag-handle">Sentence Analysis</span>
+      <span class="drag-handle">Ask</span>
       <div class="header-buttons">
-        <button class="analysis-glass-toggle-btn" title="切换玻璃效果">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 48 48">
-            <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M42.199 23.504c-.203-.609-.576-1.705-1.621-2.436c-1.265-.877-2.942-.82-3.242-.812c-.616.024-.957.13-1.621 0c-.47-.098-1.24-.244-1.621-.812c-.324-.48-.122-.877 0-2.437c.097-1.226.138-1.843 0-2.436c-.3-1.283-1.208-2.079-1.621-2.436c-.851-.747-1.929-1.267-4.052-1.624c-1.475-.252-3.85-.487-7.295 0c-1.742.244-4.425.706-6.483 1.397a17.7 17.7 0 0 0-4.863 2.436c-.016.008-.033.016-.04.024c-2.789 1.82-4.37 5.035-4.231 8.373c.737 17.922 33.091 20.18 36.69 4.823c.073-.487.64-2.152 0-4.06m-16.85-4.775a2.24 2.24 0 0 1-2.237-2.241c0-1.243.997-2.242 2.237-2.242h2.196a2.238 2.238 0 0 1 1.58 3.825a2.23 2.23 0 0 1-1.58.658z"/>
-            <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M8.159 21.068a2.434 2.434 0 0 0 2.43 2.437a2.434 2.434 0 0 0 2.432-2.434v-.003a2.434 2.434 0 0 0-2.43-2.438a2.434 2.434 0 0 0-2.432 2.435zm4.051 7.308a2.434 2.434 0 0 0 2.432 2.437a2.434 2.434 0 0 0 2.432-2.436v0a2.434 2.434 0 0 0-2.43-2.438a2.434 2.434 0 0 0-2.433 2.434zm8.106 2.437a2.434 2.434 0 0 0 2.429 2.438a2.434 2.434 0 0 0 2.434-2.434v-.005a2.434 2.434 0 0 0-2.432-2.436a2.434 2.434 0 0 0-2.431 2.436zM28.42 30a2.434 2.434 0 0 0 2.43 2.439a2.434 2.434 0 0 0 2.433-2.434V30a2.434 2.434 0 0 0-2.43-2.436A2.434 2.434 0 0 0 28.42 30"/>
-          </svg>
-        </button>
         <span class="close-btn">&times;</span>
       </div>
     </div>
@@ -915,39 +902,6 @@ async function showAnalysisWindow(word, sentence, hoveredRect) {
     closeAnalysisWindowWithAnimation();
   });
 
-  // 添加玻璃效果切换按钮事件监听
-  const glassToggleBtn = analysisWindow.querySelector('.analysis-glass-toggle-btn');
-  glassToggleBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // 切换玻璃效果状态
-    chrome.storage.local.get(['analysisGlassEnabled'], (result) => {
-      const currentState = result.analysisGlassEnabled !== undefined ? result.analysisGlassEnabled : true;
-      const newState = !currentState;
-
-      // 保存新状态
-      chrome.storage.local.set({ analysisGlassEnabled: newState }, () => {
-        console.log('解析句子玻璃效果状态已更新:', newState);
-
-        // 立即应用或移除玻璃效果
-        if (newState) {
-          analysisWindow.classList.add('glass-effect');
-        } else {
-          analysisWindow.classList.remove('glass-effect');
-        }
-
-        // 更新按钮外观
-        updateAnalysisGlassToggleButton(glassToggleBtn, newState);
-      });
-    });
-  });
-
-  // 初始化玻璃效果切换按钮外观
-  chrome.storage.local.get(['analysisGlassEnabled'], (result) => {
-    const isEnabled = result.analysisGlassEnabled !== undefined ? result.analysisGlassEnabled : true;
-    updateAnalysisGlassToggleButton(glassToggleBtn, isEnabled);
-  });
 
   // 添加点击窗口外关闭的事件处理函数
   const handleOutsideClick = (event) => {
@@ -1337,33 +1291,79 @@ function getStorageValue(key) {
   });
 }
 
-// 更新解析窗口玻璃效果切换按钮的外观
-function updateAnalysisGlassToggleButton(button, enabled) {
-  if (!button) return;
+// 玻璃切换已移除；保留空实现以免旧调用报错
+function updateAnalysisGlassToggleButton() {}
 
-  // 如果没有传入状态，从存储中读取
-  if (enabled === undefined) {
-    chrome.storage.local.get(['analysisGlassEnabled'], (result) => {
-      const isEnabled = result.analysisGlassEnabled !== undefined ? result.analysisGlassEnabled : true;
-      updateAnalysisGlassToggleButton(button, isEnabled);
-    });
+// Ask 浮窗主题：与 a4 / a7 一致，跟随 tooltipThemeMode（auto 时跟当前页高亮深色模式）
+function resolveAnalysisThemeIsDark(themeMode, forcedIsDark = null) {
+  if (themeMode === 'dark') {
+    return true;
+  }
+  if (themeMode === 'light') {
+    return false;
+  }
+  if (typeof forcedIsDark === 'boolean') {
+    return forcedIsDark;
+  }
+  try {
+    if (typeof tooltipEl !== 'undefined' && tooltipEl) {
+      return tooltipEl.classList.contains('dark-mode');
+    }
+  } catch (error) {
+    // ignore
+  }
+  try {
+    if (typeof highlightManager !== 'undefined' && highlightManager && typeof highlightManager.isDarkMode === 'boolean') {
+      return highlightManager.isDarkMode;
+    }
+  } catch (error) {
+    // ignore
+  }
+  return false;
+}
+
+function applyAnalysisWindowTheme(forcedIsDark = null) {
+  if (!analysisWindow) {
     return;
   }
 
-  // 更新按钮样式和提示文本
-  if (enabled) {
-    button.style.opacity = '1';
-    button.title = '玻璃效果: 已启用 (点击禁用)';
-    button.classList.add('glass-enabled');
-  } else {
-    button.style.opacity = '0.5';
-    button.title = '玻璃效果: 已禁用 (点击启用)';
-    button.classList.remove('glass-enabled');
+  const apply = (themeMode) => {
+    if (!analysisWindow) {
+      return;
+    }
+    const isDark = resolveAnalysisThemeIsDark(themeMode, forcedIsDark);
+    analysisWindow.classList.toggle('dark-mode', isDark);
+    analysisWindow.classList.toggle('light-mode', !isDark);
+  };
+
+  // 若已有单词弹窗，先立刻对齐其明暗，避免闪一下错误主题
+  try {
+    if (typeof tooltipEl !== 'undefined' && tooltipEl && forcedIsDark === null) {
+      apply(tooltipEl.classList.contains('dark-mode') ? 'dark' : 'light');
+    }
+  } catch (error) {
+    // ignore
   }
+
+  chrome.storage.local.get({ tooltipThemeMode: 'auto' }, (result) => {
+    apply(result.tooltipThemeMode || 'auto');
+  });
 }
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== 'local' || !analysisWindow) {
+    return;
+  }
+  if (changes.tooltipThemeMode || changes.highlightPageThemeOverrides || changes.isDarkMode) {
+    applyAnalysisWindowTheme();
+  }
+});
 
 // 监听来自 background.js 的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'updateHighlightTheme') {
+    applyAnalysisWindowTheme(typeof message.isDark === 'boolean' ? message.isDark : null);
+  }
   // 处理音频播放开始消息
   if (message.action === "audioPlaybackStarted") {
     console.log("Content script 收到音频播放开始消息:", message.audioType);
@@ -1482,30 +1482,34 @@ bodyObserver.observe(document.body, {
 // 更新相关的 CSS 样式
 const analysisStyles = document.createElement('style');
 analysisStyles.textContent = `
+  /* Ask 浮窗：与单词弹窗 / 句子弹窗统一的简洁卡片风格 */
   .analysis-window {
-    font-family: "PingFang SC","Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol" !important; /* <--- 添加自定义字体 */
-
-    /* position: fixed; */ /* 旧代码：固定定位 */
-    position: absolute; /* 新代码：绝对定位 */
-
-    max-width: 500px; /* 最大宽度     width: 500px; */
-    width: 95vw;     /* 默认宽度为视口宽度，最大不超过392px */
-
-
-
-
+    font-family: "PingFang SC","Segoe UI Variable Display", "Segoe UI", Helvetica, "Microsoft YaHei", "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol" !important;
+    position: absolute;
+    max-width: 500px;
+    width: 95vw;
     max-height: 80vh;
     box-sizing: border-box;
-    border-radius: 10px;
+    background-color: #FBFAF5;
+    color: #000;
+    border: 1px solid #dddddd;
+    border-radius: 20px;
     z-index: 2147483647;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    box-shadow: 0 .5em 1em -0.125em rgba(9,26,47,.25), 0 0 0 1px rgba(9,26,47,.1);
     display: flex;
     flex-direction: column;
   }
 
+  .analysis-window.dark-mode {
+    background-color: #1f1f1f;
+    color: #eee;
+    border-color: #333;
+    box-shadow: 0 .5em 1em -0.125em rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06);
+  }
+
   .analysis-header {
-    padding: 10px;
+    padding: 8px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1513,61 +1517,26 @@ analysisStyles.textContent = `
     touch-action: none;
     -webkit-tap-highlight-color: transparent;
     cursor: grab;
-    font-size: 16px;
+    font-size: 14px;
+    font-weight: 600;
     position: sticky;
     top: 0;
     z-index: 100;
     flex-shrink: 0;
+    background: transparent;
+    border-bottom: 1px solid rgb(213,216,220);
+    color: #333;
+  }
+
+  .dark-mode .analysis-header {
+    border-bottom-color: #333;
+    color: #eee;
   }
 
   .header-buttons {
     display: flex;
     align-items: center;
     gap: 8px;
-  }
-
-  .analysis-glass-toggle-btn {
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 50%;
-    border: none;
-    background: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .analysis-glass-toggle-btn:hover {
-    transform: scale(1.1);
-  }
-
-  .analysis-glass-toggle-btn svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .analysis-glass-toggle-btn svg path {
-    stroke: #000000 !important;
-  }
-
-  .dark-mode .analysis-glass-toggle-btn svg path {
-    stroke: #ffffff !important;
-  }
-
-  .analysis-glass-toggle-btn.glass-enabled {
-    opacity: 1 !important;
-  }
-
-  .light-mode .analysis-header {
-    background: #f5f5f5;
-    border-bottom: 1px solid #ddd;
-    color: #333;
-  }
-
-  .dark-mode .analysis-header {
-    background: #333;
-    border-bottom: 1px solid #444;
-    color: #eee;
   }
 
   .close-btn {
@@ -1578,6 +1547,7 @@ analysisStyles.textContent = `
     border: none;
     background: none;
     border-radius: 50%;
+    color: inherit;
   }
 
   .close-btn:hover {
@@ -1586,78 +1556,49 @@ analysisStyles.textContent = `
   }
 
   .analysis-content {
-    padding: 15px;
+    padding: 8px 16px;
     overflow-y: auto;
-    font-size: 14px;
+    font-size: 16px;
     flex-grow: 1;
-    max-height: calc(80vh - 40px);
+    max-height: calc(80vh - 96px);
+    background: transparent;
   }
 
-  .light-mode .analysis-content {
-    background-color: #fafafa;
-    color: #333;
-  }
-
-  .analysis-window.glass-effect.light-mode .analysis-content {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    color: #333;
-  }
-
-
-
-  .dark-mode .analysis-content {
-    background-color: #2a2a2a;
-    color: #eee;
-  }
-
-  .analysis-window.glass-effect.dark-mode .analysis-content {
-    background-color: rgba(0, 0, 0, 0.2) !important;
-
-  }
-
-
+  .light-mode .analysis-content { color: #333; }
+  .dark-mode .analysis-content { color: #eee; }
 
   .sentence-display {
-    margin-bottom: 10px;
-    padding: 10px;
-    border-radius: 10px;
-    line-height: 1.3;
-    font-size: 17px;
-   font-family: serif !important;
-    font-style: italic !important;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    margin: 0 0 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    line-height: 1.4;
+    font-size: 16px;
+    font-family: inherit !important;
+    font-style: normal !important;
     display: none;
-  }
-
-  .light-mode .sentence-display {
-    background: #e3e3e3;
-    
+    background: #dcdddd8a;
   }
 
   .dark-mode .sentence-display {
-    background: #3a3a3a;
+    background: rgba(255,255,255,0.08);
   }
 
   .analysis-result {
-    padding: 10px;
+    padding: 8px 12px;
     font-size: 16px;
-    border-radius: 10px;
-    line-height: 1.1;
-    white-space: pre-wrap;
-  }
-
-
-
-  /* 使用更通用的选择器为英文文本设置字体和特定字号 */
-  .analysis-result {
-    /* 基本字体设置 */
     font-family: "PingFang SC", sans-serif;
-    font-size: 16px;
-
+    border-radius: 8px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    background: #dcdddd8a;
+    color: #000;
   }
 
-  /* 为英文文本设置更大字号 */
+  .dark-mode .analysis-result {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+  }
+
   .analysis-result .english-text,
   .analysis-result em,
   .analysis-result i,
@@ -1668,34 +1609,13 @@ analysisStyles.textContent = `
     font-size: 18px !important;
   }
 
-
-
-.dark-mode .analysis-result {
-
-    color:rgb(255, 255, 255);
-}
-
-.light-mode .analysis-result {
-
-color:rgb(0, 0, 0);
-}
-
-
-  /* 添加一个通用类，可以手动添加到需要设置字体的元素上 */
-  .dark-mode .analysis-result  .fanwood-text {
+  .dark-mode .analysis-result .fanwood-text,
+  .light-mode .analysis-result .fanwood-text {
     font-family: serif !important;
     font-size: 21px !important;
     color: #148bf3;
   }
 
-  .light-mode .analysis-result  .fanwood-text {
-    font-family: serif !important;
-    font-size: 21px !important;
-    color: #148bf3;
-  }
-
-
-  /* 确保strong元素使用粗体 */
   .analysis-result strong,
   .fanwood-text strong {
     font-family: serif !important;
@@ -1703,21 +1623,9 @@ color:rgb(0, 0, 0);
     font-size: 18px !important;
   }
 
-  /* Markdown样式 */
-  .analysis-result h1 {
-    font-size: 22px;
-    margin: 15px 0 10px 0;
-  }
-
-  .analysis-result h2 {
-    font-size: 18px;
-    margin: 12px 0 8px 0;
-  }
-
-  .analysis-result h3 {
-    font-size: 16px;
-    margin: 10px 0 6px 0;
-  }
+  .analysis-result h1 { font-size: 22px; margin: 15px 0 10px 0; }
+  .analysis-result h2 { font-size: 18px; margin: 12px 0 8px 0; }
+  .analysis-result h3 { font-size: 16px; margin: 10px 0 6px 0; }
 
   .analysis-result pre {
     background: rgba(0,0,0,0.05);
@@ -1740,93 +1648,71 @@ color:rgb(0, 0, 0);
     color: #666;
   }
 
-  .analysis-result li {
-    margin: 5px 0 5px 20px;
-  }
-
-  .analysis-result a {
-    text-decoration: underline;
-  }
+  .analysis-result li { margin: 5px 0 5px 20px; }
+  .analysis-result a { text-decoration: underline; }
 
   .dark-mode .analysis-result code,
-  .dark-mode .analysis-result pre {
-    background: rgba(255,255,255,0.1);
-  }
+  .dark-mode .analysis-result pre { background: rgba(255,255,255,0.1); }
 
   .dark-mode .analysis-result blockquote {
     border-left-color: #555;
     color: #aaa;
   }
 
-  .dark-mode .analysis-result a {
-    color: #8ab4f8;
-  }
-
-  .light-mode .analysis-result {
-    background: #fafafa;
-  }
-
-  .dark-mode .analysis-result {
-    background: #2a2a2a;
-  }
+  .dark-mode .analysis-result a { color: #8ab4f8; }
 
   .analysis-input-container {
     display: flex;
     gap: 8px;
-    padding: 10px 15px;
-    border-top: 1px solid #ddd;
-    background-color: #fafafa;
+    padding: 8px 16px;
+    border-top: 1px solid rgb(213,216,220);
+    background: transparent;
+    flex-shrink: 0;
   }
 
-  .dark-mode .analysis-input-container {
-    border-top: 1px solid #444;
-    background-color: #2a2a2a;  
-  }
+  .dark-mode .analysis-input-container { border-top-color: #333; }
 
   .analysis-input {
     flex: 1;
     padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+    border: 1px solid #dddddd;
+    border-radius: 8px;
     font-size: 14px;
     outline: none;
+    background: #fff;
+    color: #333;
+    font-family: inherit;
   }
 
-  .analysis-input:focus {
-    border-color: #007bff;
-  }
+  .analysis-input:focus { border-color: #007bff; }
 
   .dark-mode .analysis-input {
-    background: #3a3a3a;
+    background: #2a2a2a;
     border-color: #555;
     color: #eee;
   }
 
-  .dark-mode .analysis-input:focus {
-    border-color: #8ab4f8;
-  }
+  .dark-mode .analysis-input:focus { border-color: #8ab4f8; }
 
   .analysis-send-btn {
     padding: 8px 16px;
-    background: #007bff;
-    color: white;
+    background: #1a1a1a;
+    color: #fff;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
+    font-family: inherit;
   }
 
-  .analysis-send-btn:hover {
-    background: #0056b3;
-  }
+  .analysis-send-btn:hover { background: #333; }
 
   .dark-mode .analysis-send-btn {
-    background: #8ab4f8;
+    background: #eee;
+    color: #111;
   }
 
-  .dark-mode .analysis-send-btn:hover {
-    background: #6ea5f0;
-  }
+  .dark-mode .analysis-send-btn:hover { background: #ddd; }
 
   .analysis-send-btn:disabled {
     background: #ccc;
@@ -1835,99 +1721,46 @@ color:rgb(0, 0, 0);
 
   .dark-mode .analysis-send-btn:disabled {
     background: #555;
+    color: #999;
   }
 
-  .user-message {
-    margin: 10px 0;
-    padding: 8px 12px;
-    background: #e3f2fd;
-    border-radius: 8px;
-    border-left: 3px solid #2196f3;
-  }
-
-  .dark-mode .user-message {
-    background: #1a2332;
-    border-left: 3px solid #64b5f6;
-  }
-
+  .user-message,
   .ai-message {
-    margin: 10px 0;
+    margin: 8px 0;
     padding: 8px 12px;
-    background: #f1f8e9;
+    background: #dcdddd8a;
     border-radius: 8px;
-    border-left: 3px solid #4caf50;
   }
 
+  .dark-mode .user-message,
   .dark-mode .ai-message {
-    background: #1b3a25;
-    border-left: 3px solid #81c784;
+    background: rgba(255,255,255,0.08);
   }
 
   .error-message {
-    margin: 10px 0;
+    margin: 8px 0;
     padding: 8px 12px;
     background: #ffebee;
     border-radius: 8px;
-    border-left: 3px solid #f44336;
     color: #c62828;
   }
 
   .dark-mode .error-message {
     background: #3a1a1a;
-    border-left: 3px solid #ef5350;
     color: #ef9a9a;
   }
 
-  /* 解析句子玻璃效果样式 */
-  .analysis-window.glass-effect {
-    background: rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(20px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  .analysis-content::-webkit-scrollbar { width: 8px; }
+  .analysis-content::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 8px 0;
   }
-
-  .analysis-window.glass-effect.dark-mode {
-    background: rgba(0, 0, 0, 0.2) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  .analysis-content::-webkit-scrollbar-thumb {
+    background-color: rgba(221, 221, 221, 0.6);
+    border-radius: 4px;
   }
-
-  .analysis-window.glass-effect .sentence-display {
-    background: rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  }
-
-  .analysis-window.glass-effect.dark-mode .sentence-display {
-    background: rgba(0, 0, 0, 0.2) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  }
-
-  .analysis-window.glass-effect .analysis-result {
-    background: rgb(255 255 255 / 0%) !important
-      /* backdrop-filter: blur(8px) !important;*/
-      /* -webkit-backdrop-filter: blur(8px) !important;*/
-      /* border: 1px solid rgba(255, 255, 255, 0.1) !important;*/
-  }
-
-  .analysis-window.glass-effect.dark-mode .analysis-result {
-    background: rgb(0 0 0 / 0%) !important;
-    border: unset !important;
-    backdrop-filter: unset !important;
-  }
-
-  .analysis-window.glass-effect .analysis-header {
-    background: rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(15px) !important;
-    -webkit-backdrop-filter: blur(15px) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-  }
-
-  .analysis-window.glass-effect.dark-mode .analysis-header {
-    background: rgba(0, 0, 0, 0.2) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  .dark-mode .analysis-content::-webkit-scrollbar-thumb {
+    background-color: rgba(85, 85, 85, 0.6);
   }
 `;
 
