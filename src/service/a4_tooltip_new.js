@@ -5620,7 +5620,22 @@ async function handleMouseMoveForTooltip(e,isOffscreen = false, activationContex
     // console.log("wordRangesArrays:  ", wordRangesArrays);
 
     if (wordRangesArrays) {
+    // 性能优化：wordRangesMap 里存的是该词在整页的**所有**出现位置，常见词
+    // （the / and / 的）可达上百条。原实现对每一条都 getBoundingClientRect()，
+    // 是每帧 O(该词出现次数) 次强制 reflow。
+    // 现在先用 caret 定位到具体文本节点 + 偏移，用纯引用/数值比较筛掉不相关的
+    // 条目，只对唯一候选读一次矩形。
+    const located = window.LingKumaHitTest
+      ? window.LingKumaHitTest.locate(e.clientX, e.clientY)
+      : null;
+
     for (const detail of wordRangesArrays) {
+      if (located) {
+        const range = detail.range;
+        // 零布局读取的快速排除
+        if (range.startContainer !== located.textNode) continue;
+        if (located.offset < range.startOffset || located.offset > range.endOffset) continue;
+      }
       const rect = detail.range.getBoundingClientRect();
       if (e.clientX >= rect.left && e.clientX <= rect.right &&
           e.clientY >= rect.top && e.clientY <= rect.bottom) {
@@ -8779,12 +8794,14 @@ function setupMouseListeners() {
         }
 
         // 处理节流
-        if (!throttleTimeout) {
-            throttleTimeout = setTimeout(() => {
-                // console.log(`[a4_tooltip_new.js @ ${window.location.href.substring(0, 50)}] Calling handleMouseMoveForTooltip (throttled)`);
-                handleMouseMoveForTooltip(e, false);
+        // 性能修复：原来这里是 setTimeout(..., 1)，等于几乎不节流——每帧至少
+        // 跑一次完整 handler（内含 elementFromPoint / caretPositionFromPoint /
+        // 多次 getBoundingClientRect）。改为 rAF 对齐，一帧最多一次。
+        if (throttleTimeout === null) {
+            throttleTimeout = requestAnimationFrame(() => {
                 throttleTimeout = null;
-            }, 1);
+                handleMouseMoveForTooltip(e, false);
+            });
         }
     },true);
     // 如果还有其他事件监听器，也在这里用 setTimeout 添加

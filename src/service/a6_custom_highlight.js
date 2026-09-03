@@ -758,11 +758,22 @@ function addCustomHighlightStyles() {
 }
 
 // 添加鼠标事件监听
+// 性能重构：原来同时绑了 mouseover / mouseout / mousemove 三个 capture 监听，
+// 且 mouseover 与 mousemove 各自遍历整个 customWordRangesMap 调 getClientRects()
+// （同一次鼠标动作扫两遍全量 Range）。现在统一订阅 a2 的 hit-test 中心，
+// 由它 rAF 节流并提供 caret 反查，命中判断从 O(词组 Range 总数) 降到 O(1)。
 function addMouseEventListeners() {
-  // 使用 capture 模式和高优先级
-  document.addEventListener('mouseover', handleMouseOver, true);
+  // mouseout 只做"延迟隐藏按钮"，开销极低，保持原样
   document.addEventListener('mouseout', handleMouseOut, true);
-  document.addEventListener('mousemove', handleMouseMove, true);
+
+  if (window.LingKumaHitTest) {
+    window.LingKumaHitTest.subscribe('a6_custom_highlight', handleCustomHighlightPointerMove);
+  } else {
+    // 兜底：a2 未加载时退回自绑监听
+    document.addEventListener('pointermove', (e) => {
+      handleCustomHighlightPointerMove({ x: e.clientX, y: e.clientY, target: e.target, event: e });
+    }, { passive: true });
+  }
 }
 
 // 添加DOM变化监听（轻量级版本 - 避免与正常单词高亮冲突）
@@ -923,6 +934,9 @@ function clearHighlightForTextNodes(textNodes) {
   const customGroups = ['custom-state0', 'custom-state1', 'custom-state2', 'custom-state3', 'custom-state4', 'custom-state5'];
 
   textNodes.forEach(textNode => {
+    // 同步清理 textNode 反向索引
+    customRangeIndexByTextNode.delete(textNode);
+
     // 从 customWordRangesMap 中清理相关的 Range
     for (const [word, ranges] of customWordRangesMap) {
       const filteredRanges = ranges.filter(rangeData => rangeData.textNode !== textNode);
@@ -1193,109 +1207,83 @@ function removeSingleWordHighlight(word) {
   console.log(`单词 "${word}" 的所有高亮已移除，共移除 ${totalRemoved} 个range`);
 }
 
-// 处理鼠标悬浮事件
-function handleMouseOver(event) {
-  if (!customHighlightEnabled) return;
+// 反向索引：textNode -> [rangeData]，用于把"遍历全部 Range 找命中"
+// 换成"由 caret 定位到 textNode 后 O(1) 取候选"。
+// 由 storeCustomWordRange 维护；删除词组时不做清理，靠下面的
+// customWordDetails.has(word) 过滤掉已删除项（与原逻辑一致）。
+const customRangeIndexByTextNode = new Map();
 
-  // 检查鼠标是否在查询按钮上
-  if (customQueryButtons && customQueryButtons.some(button =>
-    button && (button.contains(event.target) || event.target === button))) {
-    // console.log('鼠标悬浮在查询按钮上，跳过词组检测');
-    return;
-  }
-
-  // 检查鼠标位置是否在自定义高亮区域内
-  const mouseX = event.clientX;
-  const mouseY = event.clientY;
-
-  // console.log('鼠标悬浮检测:', mouseX, mouseY, '自定义词组数量:', customWordRangesMap.size);
-
-  // 收集所有匹配的词组
-  const matchedWords = [];
-  for (const [word, ranges] of customWordRangesMap) {
-    // 检查词组是否仍然存在于自定义词组详情中
-    if (!customWordDetails.has(word)) {
-      // console.log('跳过已删除的词组:', word);
-      continue;
-    }
-
-    // console.log('检查词组:', word, '范围数量:', ranges.length);
-    for (const rangeData of ranges) {
-      if (isPointInRange(mouseX, mouseY, rangeData.range)) {
-        // console.log('找到匹配的词组:', word);
-        matchedWords.push(word);
-        break; // 同一个词组只需要添加一次
-      }
-    }
-  }
-
-  // 如果找到匹配的词组，显示多个查询按钮
-  if (matchedWords.length > 0) {
-    showMultipleCustomWordQueryButtons(matchedWords, mouseX, mouseY);
+function indexCustomRangeData(rangeData) {
+  const list = customRangeIndexByTextNode.get(rangeData.textNode);
+  if (list) {
+    list.push(rangeData);
+  } else {
+    customRangeIndexByTextNode.set(rangeData.textNode, [rangeData]);
   }
 }
 
-// 处理鼠标移动事件
-function handleMouseMove(event) {
+// 统一的指针移动处理（替代原 handleMouseOver + handleMouseMove）
+function handleCustomHighlightPointerMove(payload) {
   if (!customHighlightEnabled) return;
-
-  // 检查鼠标是否在任何查询按钮上或按钮内部
-  const isOnAnyButton = customQueryButtons.some(button => {
-    if (!button) return false;
-
-    // 首先检查事件目标是否是按钮或其子元素
-    if (button.contains(event.target) || event.target === button) {
-      // console.log('鼠标在查询按钮或其子元素上，不处理隐藏逻辑');
-      return true;
-    }
-
-    // 然后检查鼠标坐标是否在按钮区域内
-    const buttonRect = button.getBoundingClientRect();
-    const mouseX = event.clientX;
-    const mouseY = event.clientY;
-
-    // 添加一些边距容错
-    const margin = 5;
-    if (mouseX >= (buttonRect.left - margin) && mouseX <= (buttonRect.right + margin) &&
-        mouseY >= (buttonRect.top - margin) && mouseY <= (buttonRect.bottom + margin)) {
-      // console.log('鼠标在查询按钮区域内，不处理隐藏逻辑');
-      return true;
-    }
-
-    return false;
-  });
-
-  if (isOnAnyButton) {
+  // 没有任何词组数据时直接退出，省掉每帧一次 caret 查询
+  if (customWordRangesMap.size === 0) {
+    if (customQueryButtons.length > 0) scheduleHideAllCustomWordQueryButtons();
     return;
   }
 
-  // 检查鼠标位置是否在自定义高亮区域内
-  const mouseX = event.clientX;
-  const mouseY = event.clientY;
+  const mouseX = payload.x;
+  const mouseY = payload.y;
+  const target = payload.target;
 
-  // 收集所有匹配的词组
-  const matchedWords = [];
-  for (const [word, ranges] of customWordRangesMap) {
-    // 检查词组是否仍然存在于自定义词组详情中
-    if (!customWordDetails.has(word)) {
-      // console.log('跳过已删除的词组:', word);
-      continue;
-    }
+  // 检查鼠标是否在任何查询按钮上或按钮内部
+  for (const button of customQueryButtons) {
+    if (!button) continue;
+    // 命中按钮子树时直接返回，不做隐藏逻辑
+    if (button === target || button.contains(target)) return;
 
-    for (const rangeData of ranges) {
-      if (isPointInRange(mouseX, mouseY, rangeData.range)) {
-        // console.log('鼠标移动检测到匹配的词组:', word);
-        matchedWords.push(word);
-        break; // 同一个词组只需要添加一次
-      }
+    // 坐标容错：鼠标刚移出按钮边缘时也算在按钮上
+    const buttonRect = button.getBoundingClientRect();
+    const margin = 5;
+    if (mouseX >= buttonRect.left - margin && mouseX <= buttonRect.right + margin &&
+        mouseY >= buttonRect.top - margin && mouseY <= buttonRect.bottom + margin) {
+      return;
     }
   }
 
-  // 如果找到匹配的词组，显示多个查询按钮
+  const hitTest = window.LingKumaHitTest;
+  if (!hitTest) return;
+
+  // 一次 caret 定位 -> 文本节点 + 偏移
+  const located = hitTest.locate(mouseX, mouseY);
+  if (!located) {
+    scheduleHideAllCustomWordQueryButtons();
+    return;
+  }
+
+  const candidates = customRangeIndexByTextNode.get(located.textNode);
+  if (!candidates || candidates.length === 0) {
+    scheduleHideAllCustomWordQueryButtons();
+    return;
+  }
+
+  // 词组可以互相重叠，所以这里线性扫该文本节点内的候选（数量极小），
+  // 用纯数值比较判断 offset 是否落在 [start, end) 内，零布局读取。
+  const matchedWords = [];
+  const seen = new Set();
+  for (const rangeData of candidates) {
+    const wordKey = rangeData.word.toLowerCase();
+    // 跳过已删除的词组
+    if (!customWordDetails.has(wordKey)) continue;
+    if (seen.has(wordKey)) continue;
+    if (located.offset < rangeData.start || located.offset >= rangeData.end) continue;
+
+    seen.add(wordKey);
+    matchedWords.push(rangeData.word);
+  }
+
   if (matchedWords.length > 0) {
     showMultipleCustomWordQueryButtons(matchedWords, mouseX, mouseY);
   } else {
-    // 如果没有找到匹配的词组，延迟隐藏按钮
     scheduleHideAllCustomWordQueryButtons();
   }
 }
@@ -1313,26 +1301,6 @@ function handleMouseOut(event) {
 
   // 延迟隐藏查询按钮
   scheduleHideAllCustomWordQueryButtons();
-}
-
-// 检查点是否在 Range 内
-function isPointInRange(x, y, range) {
-  try {
-    const rects = range.getClientRects();
-    // console.log('检查 Range 矩形:', rects.length, '个');
-    for (let i = 0; i < rects.length; i++) {
-      const rect = rects[i];
-      // console.log(`矩形 ${i}:`, rect.left, rect.top, rect.right, rect.bottom);
-      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-        // console.log('鼠标在范围内!');
-        return true;
-      }
-    }
-    return false;
-  } catch (error) {
-    console.error('检查点是否在 Range 内时出错:', error);
-    return false;
-  }
 }
 
 // 显示自定义词组查询按钮
@@ -1976,13 +1944,16 @@ function storeCustomWordRange(word, range, textNode, start, end) {
   );
 
   if (!isDuplicate) {
-    customWordRangesMap.get(key).push({
+    const rangeData = {
       range: range,
       textNode: textNode,
       start: start,
       end: end,
       word: word
-    });
+    };
+    customWordRangesMap.get(key).push(rangeData);
+    // 同步维护 textNode 反向索引，供 hit-test 命中查询使用
+    indexCustomRangeData(rangeData);
   }
 }
 
@@ -1995,6 +1966,7 @@ function clearCustomHighlights() {
   });
 
   customWordRangesMap.clear();
+  customRangeIndexByTextNode.clear();
 
   // 清除所有查询按钮
   hideAllCustomWordQueryButtons();

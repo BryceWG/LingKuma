@@ -3633,7 +3633,10 @@ function updateWordExplosionLayout() {
 }
 
 // 鼠标移动事件处理 - 悬停触发模式（基于单词位置信息）
-document.addEventListener('mousemove', (e) => {
+// 性能重构：不再自己绑 mousemove，改为订阅 a2 提供的统一 hit-test 中心，
+// 由它做 rAF 节流（每帧最多派发一次）并共享 caret 定位结果。
+function handleA7PointerMove(payload) {
+  const e = payload.event;
   if (shouldIgnoreA7SyntheticMouseEvent(e)) return;
   // 检查插件总开关
   if (!isPluginEnabled) return;
@@ -3656,7 +3659,7 @@ document.addEventListener('mousemove', (e) => {
   lastMouseMoveEvent = e;
 
   // 获取鼠标下的元素
-  const target = e.target;
+  const target = payload.target;
   if (!target) return;
 
   // 检查是否在弹窗内
@@ -3671,23 +3674,11 @@ document.addEventListener('mousemove', (e) => {
   }
 
   // 排除弹窗、工具栏等UI元素（与高亮黑名单同步）
-  const excludedSelectors = [
-    '.textBasedSub',
-    '[data-no-highlight]',
-    '.vocab-tooltip',
-    '.custom-word-tooltip',
-    '.custom-word-selection-popup',
-    '.custom-word-query-button',
-    '.word-explosion-container'
-  ];
-
-  for (const selector of excludedSelectors) {
-    if (target.matches && target.matches(selector)) {
-      return;
-    }
-    if (target.closest && target.closest(selector)) {
-      return;
-    }
+  // 性能优化：原来对 7 个选择器各做一次 matches() + closest()（每次移动最多
+  // 14 次选择器匹配），合并成一次 closest()，选择器由逗号连接。
+  // closest() 自身包含元素本身，所以不需要额外的 matches()。
+  if (target.closest && target.closest(A7_EXCLUDED_SELECTOR)) {
+    return;
   }
 
   // 清除之前的延迟计时器
@@ -3697,7 +3688,7 @@ document.addEventListener('mousemove', (e) => {
   }
 
   // 使用基于单词位置的检测算法
-  const sentenceInfo = findWordAndSentenceAtPosition(e.clientX, e.clientY);
+  const sentenceInfo = findWordAndSentenceAtPosition(payload.x, payload.y);
 
   if (sentenceInfo && sentenceInfo.sentence && sentenceInfo.sentence.trim().length >= 5) {
     // 检查是否与上次悬停的句子相同，避免重复刷新
@@ -3740,7 +3731,27 @@ document.addEventListener('mousemove', (e) => {
       hoverDelayTimer = null;
     }
   }
-}, true);
+}
+
+// 合并后的排除选择器（原为 7 个选择器分别 matches + closest）
+const A7_EXCLUDED_SELECTOR = [
+  '.textBasedSub',
+  '[data-no-highlight]',
+  '.vocab-tooltip',
+  '.custom-word-tooltip',
+  '.custom-word-selection-popup',
+  '.custom-word-query-button',
+  '.word-explosion-container'
+].join(',');
+
+if (window.LingKumaHitTest) {
+  window.LingKumaHitTest.subscribe('a7_words_boom', handleA7PointerMove);
+} else {
+  // 兜底：a2 未加载时退回自绑监听（保持功能可用）
+  document.addEventListener('pointermove', (e) => {
+    handleA7PointerMove({ x: e.clientX, y: e.clientY, target: e.target, event: e });
+  }, { passive: true });
+}
 
 // 监听鼠标离开文档事件，清除延迟计时器
 document.addEventListener('mouseleave', (e) => {
@@ -4091,6 +4102,10 @@ document.addEventListener('touchcancel', resetA7PendingTouchTap, true);
 // 备用方案：使用传统方法查找单词和句子（当highlightManager不可用时）
 function findWordAndSentenceAtPositionFallback(x, y) {
   try {
+    // 注意：caretRangeFromPoint 是 WebKit/Blink 专有 API，Firefox 上不存在。
+    // 这里显式判断而不是依赖 try/catch，避免高频路径上每帧抛一次异常。
+    if (typeof document.caretRangeFromPoint !== 'function') return null;
+
     // 获取鼠标位置的句子
     const range = document.caretRangeFromPoint(x, y);
     if (!range) return null;
@@ -4194,132 +4209,82 @@ function getSentenceRectFallback(sentence, clickRange) {
 }
 
 // 基于单词位置信息查找鼠标位置的单词和句子
+//
+// 性能重构：原实现每次调用都 Array.from(parent2Text2RawsAllUnknow.entries())
+// 物化整个 Map，再对每个父元素 getBoundingClientRect()、对每个文本节点建 Range
+// 取矩形——长网页上是每次鼠标移动数千次强制 reflow。
+// 现在改为 caretPositionFromPoint 反查：一次 caret 定位拿到 textNode + offset，
+// 直接从 Map 里 O(1) 取到该节点的 raw 数组，再按 offset 二分查找。
 function findWordAndSentenceAtPosition(x, y) {
-  console.log('[WordExplosion] findWordAndSentenceAtPosition 开始，坐标:', { x, y });
-  console.log('[WordExplosion] highlightManager 存在:', !!highlightManager);
-  console.log('[WordExplosion] parent2Text2RawsAllUnknow 存在:', !!(highlightManager && highlightManager.parent2Text2RawsAllUnknow));
-  
   if (!highlightManager || !highlightManager.parent2Text2RawsAllUnknow) {
-    console.log('[WordExplosion] highlightManager 或单词位置数据未初始化，使用备用方案');
     return findWordAndSentenceAtPositionFallback(x, y);
   }
 
   // 如果 highlightManager 有可用的过滤函数，使用它
   const highlightManagerFilter = highlightManager.isNonLanguageSymbol || isNonLanguageSymbol;
+  const hitTest = window.LingKumaHitTest;
 
   try {
-    // 获取所有存储的父元素和文本节点数据
-    const allParents = Array.from(highlightManager.parent2Text2RawsAllUnknow.entries());
-    console.log('[WordExplosion] 存储的父元素数量:', allParents.length);
-
-    let matchedParent = null;
-    let matchedTextNode = null;
-    let parentsChecked = 0;
-
-    for (const [parent, textMap] of allParents) {
-      parentsChecked++;
-      
-      // 确保父元素仍在文档中且可见
-      if (!document.contains(parent)) {
-        continue;
-      }
-
-      // 检查父元素是否可见
-      const parentRect = parent.getBoundingClientRect();
-      if (parentRect.width === 0 || parentRect.height === 0) {
-        continue;
-      }
-
-      // 检查鼠标是否在父元素范围内
-      if (x < parentRect.left || x > parentRect.right || y < parentRect.top || y > parentRect.bottom) {
-        continue;
-      }
-
-      console.log('[WordExplosion] 找到匹配的父元素:', parent.tagName, parent.className, parent.id);
-      matchedParent = parent;
-
-      // 遍历该父元素下的所有文本节点
-      const textEntries = Array.from(textMap.entries());
-      console.log('[WordExplosion] 父元素下的文本节点数量:', textEntries.length);
-      
-      for (const [textNode, rawRanges] of textEntries) {
-        // 确保文本节点仍在文档中
-        if (!document.contains(textNode)) {
-          continue;
-        }
-
-        // 获取文本节点的位置信息
-        let textNodeRect = null;
-        try {
-          // 尝试直接获取文本节点的边界矩形
-          if (textNode.getBoundingClientRect) {
-            textNodeRect = textNode.getBoundingClientRect();
-          } else {
-            // 如果文本节点没有getBoundingClientRect方法，使用Range来获取
-            const tempRange = document.createRange();
-            tempRange.selectNodeContents(textNode);
-            textNodeRect = tempRange.getBoundingClientRect();
-            tempRange.detach();
-          }
-        } catch (e) {
-          console.warn('[WordExplosion] 无法获取文本节点位置信息:', e);
-          continue;
-        }
-
-        if (!textNodeRect || textNodeRect.width === 0 || textNodeRect.height === 0) {
-          continue;
-        }
-
-        // 检查鼠标是否在文本节点范围内
-        if (x < textNodeRect.left || x > textNodeRect.right || y < textNodeRect.top || y > textNodeRect.bottom) {
-          continue;
-        }
-
-        console.log('[WordExplosion] 找到匹配的文本节点:', textNode.textContent.substring(0, 50));
-        console.log('[WordExplosion] 文本节点位置:', textNodeRect);
-        console.log('[WordExplosion] 文本节点单词数量:', rawRanges.length);
-        matchedTextNode = textNode;
-
-        // 首先过滤掉纯数字和标点符号的rawRanges
-        const filteredRanges = rawRanges.filter(raw => !highlightManagerFilter(raw.word));
-        console.log('[WordExplosion] 过滤后的单词数量:', filteredRanges.length);
-
-        // 在过滤后的文本节点中查找鼠标位置的单词
-        const foundWord = findWordAtPositionInTextNode(textNode, filteredRanges, x, y);
-        console.log('[WordExplosion] findWordAtPositionInTextNode 结果:', foundWord);
-        
-        if (foundWord) {
-          // 找到单词后，获取包含该单词的完整句子
-          const {sentence, range: sentenceRange} = getSentenceForWord({
-            range: foundWord.range,
-            word: foundWord.word
-          });
-          console.log('[WordExplosion] getSentenceForWord 返回:', sentence);
-
-          if (sentence) {
-            console.log('[WordExplosion] 成功找到句子和单词:', { word: foundWord.word, sentence: sentence.substring(0, 50) + '...' });
-            return {
-              word: foundWord.word,
-              wordLower: foundWord.wordLower,
-              sentence: sentence,
-              rect: foundWord.rect,
-              textNode: textNode,
-              range: foundWord.range,
-              sentenceRange: sentenceRange // 新增：返回句子的 Range 对象
-            };
-          } else {
-            console.log('[WordExplosion] getSentenceForWord 返回空');
-          }
-        }
-      }
+    if (!hitTest) {
+      return findWordAndSentenceAtPositionFallback(x, y);
     }
-    
-    console.log('[WordExplosion] 检查了', parentsChecked, '个父元素，匹配的父元素:', matchedParent?.tagName, '匹配的文本节点:', matchedTextNode?.textContent?.substring(0, 30));
-    console.log('[WordExplosion] 未找到匹配的单词，使用备用方案');
-    return findWordAndSentenceAtPositionFallback(x, y);
 
-    // 如果没有找到任何单词，返回null
-    return null;
+    // 1) 一次 caret 定位：屏幕坐标 -> 文本节点内偏移
+    const located = hitTest.locate(x, y);
+    if (!located) {
+      return findWordAndSentenceAtPositionFallback(x, y);
+    }
+
+    const textNode = located.textNode;
+    const parent = textNode.parentNode;
+    if (!parent) {
+      return findWordAndSentenceAtPositionFallback(x, y);
+    }
+
+    // 2) O(1) 取出该文本节点已分词的 raw range 列表
+    const textMap = highlightManager.parent2Text2RawsAllUnknow.get(parent);
+    const rawRanges = textMap && textMap.get(textNode);
+    if (!rawRanges || rawRanges.length === 0) {
+      return findWordAndSentenceAtPositionFallback(x, y);
+    }
+
+    // 3) 按 offset 二分查找命中的词（raw 数组按 start 升序）
+    const raw = hitTest.findRawAtOffset(rawRanges, located.offset);
+    if (!raw || highlightManagerFilter(raw.word)) {
+      return findWordAndSentenceAtPositionFallback(x, y);
+    }
+
+    // 4) 复核鼠标是否真的落在这个词的矩形内。
+    //    caret API 在段落空白处也会返回最近的插入点，必须校验，否则鼠标停在
+    //    行尾空白也会触发词爆。这里只读一次矩形。
+    const wordRange = document.createRange();
+    wordRange.setStart(textNode, raw.start);
+    wordRange.setEnd(textNode, raw.end);
+
+    const hitRect = hitTest.isPointInRangeRects(wordRange, x, y, 0);
+    if (!hitRect) {
+      return findWordAndSentenceAtPositionFallback(x, y);
+    }
+
+    // 5) 取包含该词的完整句子
+    const { sentence, range: sentenceRange } = getSentenceForWord({
+      range: wordRange,
+      word: raw.word
+    });
+
+    if (!sentence) {
+      return findWordAndSentenceAtPositionFallback(x, y);
+    }
+
+    return {
+      word: raw.word,
+      wordLower: raw.wordLower,
+      sentence: sentence,
+      rect: hitRect,
+      textNode: textNode,
+      range: wordRange,
+      sentenceRange: sentenceRange
+    };
   } catch (error) {
     console.error('[WordExplosion] 基于位置查找单词失败:', error);
     return null;

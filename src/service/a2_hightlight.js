@@ -206,6 +206,188 @@ function updateWordStatus(word, status, sentence, parent, originalWord, isCustom
 
 
 // =======================
+// 性能优化：扫描期快速过滤 + 分词器复用
+// =======================
+
+// 永不参与高亮的标签。TreeWalker 在 acceptNode 里先按标签名拒绝，
+// 避免这些节点进入 isElementHidden() 走同步样式重算。
+const NON_RENDERED_TAGS = new Set([
+  'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'TITLE', 'META', 'LINK',
+  'TEXTAREA', 'OPTION', 'SELECT', 'VIDEO', 'AUDIO', 'CANVAS', 'SVG', 'IFRAME'
+]);
+
+// Intl.Segmenter 构造需要初始化 ICU 断词数据，开销不小。
+// 原实现对每个文本节点都 new 一次，这里按 locale 缓存实例复用。
+const segmenterCache = new Map();
+function getWordSegmenter(locale) {
+  let segmenter = segmenterCache.get(locale);
+  if (!segmenter) {
+    segmenter = new Intl.Segmenter(locale, { granularity: "word" });
+    segmenterCache.set(locale, segmenter);
+  }
+  return segmenter;
+}
+
+// =======================
+// 统一 hit-test 中心（性能关键）
+// =======================
+//
+// 背景：a4 / a6 / a7 原本各自在 document 上绑 mousemove，并且在回调里遍历
+// 全部 Range 调 getClientRects() 判断鼠标是否命中——复杂度 O(页面词数) 次
+// 强制布局读取，每次鼠标移动一遍。Firefox 的 reflow 是主线程同步的，这是
+// 鼠标移动卡顿的根因。
+//
+// 方案：反向查找取代正向遍历。
+//   caretPositionFromPoint(x, y) 一次调用拿到 { textNode, offset }，
+//   再在该 textNode 自己的 raw range 数组里按 offset 二分查找。
+//   布局读取从 O(页面词数) 降到 1~2 次。
+(function initLingKumaHitTest() {
+  if (window.LingKumaHitTest) return; // 防重复注入
+
+  const subscribers = new Map(); // name -> callback
+  let rafId = null;
+  let pendingEvent = null;
+
+  // 单次任务内的定位结果缓存：同一批订阅者（a4/a6/a7）共用一次 caret 查询。
+  // 用微任务失效而不是帧计数——保证缓存只在同一个同步任务内有效，
+  // 避免"鼠标未动但页面滚动了"时读到过期结果。
+  let cacheValid = false;
+  let cacheScheduled = false;
+  let cacheX = NaN;
+  let cacheY = NaN;
+  let cacheResult = null;
+
+  function invalidateLocateCacheSoon() {
+    if (cacheScheduled) return;
+    cacheScheduled = true;
+    Promise.resolve().then(() => {
+      cacheValid = false;
+      cacheScheduled = false;
+    });
+  }
+
+  // 把屏幕坐标解析成文本节点内的偏移量
+  function locate(x, y) {
+    if (cacheValid && cacheX === x && cacheY === y) {
+      return cacheResult;
+    }
+
+    let result = null;
+    try {
+      if (document.caretPositionFromPoint) {
+        // 标准 API（Firefox 一直支持，Chrome 128+）
+        const pos = document.caretPositionFromPoint(x, y);
+        if (pos && pos.offsetNode && pos.offsetNode.nodeType === 3) {
+          result = { textNode: pos.offsetNode, offset: pos.offset };
+        }
+      } else if (document.caretRangeFromPoint) {
+        // WebKit / 旧 Blink
+        const range = document.caretRangeFromPoint(x, y);
+        if (range && range.startContainer && range.startContainer.nodeType === 3) {
+          result = { textNode: range.startContainer, offset: range.startOffset };
+        }
+      }
+    } catch (e) {
+      result = null;
+    }
+
+    cacheX = x;
+    cacheY = y;
+    cacheResult = result;
+    cacheValid = true;
+    invalidateLocateCacheSoon();
+    return result;
+  }
+
+  // 在按 start 升序排列的 raw range 数组里二分查找覆盖 offset 的项
+  // raws 元素形如 { start, end, word, wordLower }
+  function findRawAtOffset(raws, offset) {
+    if (!raws || raws.length === 0) return null;
+
+    let lo = 0;
+    let hi = raws.length - 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const raw = raws[mid];
+      if (offset < raw.start) {
+        hi = mid - 1;
+      } else if (offset >= raw.end) {
+        lo = mid + 1;
+      } else {
+        return raw;
+      }
+    }
+
+    // caret 落在词的右边界（offset === end）时向左回退一个词，
+    // 这是鼠标停在词尾时最符合直觉的行为
+    const prev = raws[hi];
+    if (prev && offset === prev.end) return prev;
+    return null;
+  }
+
+  // 校验鼠标是否真的落在该 Range 的可视矩形内（含容差）。
+  // caret API 会返回最近的插入点，即使鼠标在段落空白处，所以必须复核。
+  // 只读一次矩形，成本可忽略。
+  function isPointInRangeRects(range, x, y, tolerance) {
+    const pad = tolerance || 0;
+    try {
+      const rects = range.getClientRects();
+      for (let i = 0; i < rects.length; i++) {
+        const r = rects[i];
+        if (x >= r.left - pad && x <= r.right + pad &&
+            y >= r.top - pad && y <= r.bottom + pad) {
+          return r;
+        }
+      }
+    } catch (e) { /* ignore */ }
+    return null;
+  }
+
+  function flush() {
+    rafId = null;
+    const event = pendingEvent;
+    pendingEvent = null;
+    if (!event) return;
+
+    const payload = {
+      x: event.clientX,
+      y: event.clientY,
+      target: event.target,
+      event: event
+    };
+
+    for (const cb of subscribers.values()) {
+      try {
+        cb(payload);
+      } catch (e) {
+        console.error('[HitTest] 订阅者回调出错:', e);
+      }
+    }
+  }
+
+  // 唯一的指针监听器：passive + 每帧最多派发一次
+  document.addEventListener('pointermove', (e) => {
+    if (subscribers.size === 0) return;
+    pendingEvent = e;
+    if (rafId === null) {
+      rafId = requestAnimationFrame(flush);
+    }
+  }, { passive: true });
+
+  window.LingKumaHitTest = {
+    subscribe(name, callback) {
+      subscribers.set(name, callback);
+    },
+    unsubscribe(name) {
+      subscribers.delete(name);
+    },
+    locate,
+    findRawAtOffset,
+    isPointInRangeRects
+  };
+})();
+
+// =======================
 // 高亮系统核心类 - 作用域观察者
 // =======================
 
@@ -665,17 +847,32 @@ class ScopeObserver {
     wordDetails = [];
 
     // 使用TreeWalker遍历所有文本节点
-    const treeWalker = document.createTreeWalker(documentRoot, NodeFilter.SHOW_TEXT);
+    // 性能优化：把过滤下沉到 acceptNode，并且先做廉价判断（空文本 / 标签黑名单），
+    // 只有通过这两道闸门的节点才走 isElementHidden()（内部有样式查询）。
+    const treeWalker = document.createTreeWalker(documentRoot, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) => {
+        const text = node.textContent;
+        // 纯空白文本直接丢弃，长网页里这类节点占比很高
+        if (!text || !text.trim()) return NodeFilter.FILTER_REJECT;
+
+        const parent = node.parentNode;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+
+        // 标签黑名单：script/style/textarea 等，无需查样式即可判定
+        if (NON_RENDERED_TAGS.has(parent.nodeName)) return NodeFilter.FILTER_REJECT;
+
+        if (this.isBase64ImageData(text)) return NodeFilter.FILTER_REJECT;
+        if (this.isElementHidden(parent)) return NodeFilter.FILTER_REJECT;
+
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
     let currentNode = treeWalker.nextNode();
 
-    // 收集所有文本节点
+    // 收集所有文本节点（过滤已在 acceptNode 完成）
     const allTextNodes = [];
     while (currentNode) {
-      const parent = currentNode.parentNode;
-      // 跳过隐藏元素和 Base64 图片数据
-      if (parent && !this.isElementHidden(parent) && !this.isBase64ImageData(currentNode.textContent)) {
-        allTextNodes.push(currentNode);
-      }
+      allTextNodes.push(currentNode);
       currentNode = treeWalker.nextNode();
     }
 
@@ -762,7 +959,7 @@ class ScopeObserver {
         // 日语文本处理
         if (isOrionIOSRuntime()) {
           // iOS设备使用Intl.Segmenter
-          const segmenter = new Intl.Segmenter("ja", { granularity: "word" });
+          const segmenter = getWordSegmenter("ja");
           const segments = segmenter.segment(text);
           for (const segment of segments) {
             if (segment.isWordLike) {
@@ -785,7 +982,7 @@ class ScopeObserver {
           } catch (error) {
             console.error("日语分词失败，降级使用Intl.Segmenter:", error);
             // 降级使用Intl.Segmenter
-            const segmenter = new Intl.Segmenter("ja", { granularity: "word" });
+            const segmenter = getWordSegmenter("ja");
             const segments = segmenter.segment(text);
             for (const segment of segments) {
               if (segment.isWordLike) {
@@ -798,7 +995,7 @@ class ScopeObserver {
           }
         } else {
           // 默认使用Intl.Segmenter
-          const segmenter = new Intl.Segmenter("ja", { granularity: "word" });
+          const segmenter = getWordSegmenter("ja");
           const segments = segmenter.segment(text);
           for (const segment of segments) {
             if (segment.isWordLike) {
@@ -811,7 +1008,7 @@ class ScopeObserver {
         }
       } else if (this.isChinseText(text)) {
         // 中文文本使用Intl.Segmenter
-        const segmenter = new Intl.Segmenter("zh", { granularity: "word" });
+        const segmenter = getWordSegmenter("zh");
         const segments = segmenter.segment(text);
         for (const segment of segments) {
           if (segment.isWordLike) {
@@ -823,7 +1020,7 @@ class ScopeObserver {
         }
       } else if (this.isKoreanText(text)) {
         // 韩语文本使用Intl.Segmenter
-        const segmenter = new Intl.Segmenter("ko", { granularity: "word" });
+        const segmenter = getWordSegmenter("ko");
         const segments = segmenter.segment(text);
         for (const segment of segments) {
           if (segment.isWordLike) {
@@ -835,7 +1032,7 @@ class ScopeObserver {
         }
       } else {
         // 西方文本使用Intl.Segmenter
-        const segmenter = new Intl.Segmenter("en", { granularity: "word" });
+        const segmenter = getWordSegmenter("en");
         const segments = segmenter.segment(text);
         for (const segment of segments) {
           if (segment.isWordLike) {
@@ -1295,9 +1492,8 @@ if (window.location.hostname.includes('youtube.com')) {
       locale = "ko";
     }
 
-    const segmenter = new Intl.Segmenter(locale, {
-      granularity: "word"
-    });
+    // 性能优化：复用缓存的 Segmenter 实例，避免每个文本节点都重新初始化 ICU 断词数据
+    const segmenter = getWordSegmenter(locale);
     const segments = segmenter.segment(text);
     // console.log("中文分词segments", text);
 
@@ -1665,7 +1861,7 @@ if (window.location.hostname.includes('youtube.com')) {
     try {
       // 使用 Intl.Segmenter 进行更准确的、基于语言环境的单词分割。
       // 鉴于示例是德语，我们使用 "de" 区域设置。如果需要支持其他西文，可能需要动态选择或使用更通用的 "en"。
-      const segmenter = new Intl.Segmenter("en", { granularity: "word" });
+      const segmenter = getWordSegmenter("en");
       const segments = segmenter.segment(text);
 
       const ranges = [];
@@ -2145,11 +2341,15 @@ if (window.location.hostname.includes('youtube.com')) {
         acceptNode: (node) => {
           // 过滤掉空白文本节点和在忽略元素中的节点
           if (!node.textContent.trim()) return NodeFilter.FILTER_REJECT;
-          if (this.isElementIgnored(node.parentNode)) return NodeFilter.FILTER_REJECT;
-          // 过滤掉隐藏元素
-          if (this.isElementHidden(node.parentNode)) return NodeFilter.FILTER_REJECT;
+          const parent = node.parentNode;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          // 标签黑名单：无需查样式即可判定，放在最前面减少后续开销
+          if (NON_RENDERED_TAGS.has(parent.nodeName)) return NodeFilter.FILTER_REJECT;
+          if (this.isElementIgnored(parent)) return NodeFilter.FILTER_REJECT;
           // 过滤掉 Base64 图片数据
           if (this.isBase64ImageData(node.textContent)) return NodeFilter.FILTER_REJECT;
+          // 过滤掉隐藏元素（内部有样式查询，放最后）
+          if (this.isElementHidden(parent)) return NodeFilter.FILTER_REJECT;
           return NodeFilter.FILTER_ACCEPT;
         }
       }
@@ -2314,7 +2514,7 @@ if (window.location.hostname.includes('youtube.com')) {
         // 日语文本处理
         if (isOrionIOSRuntime()) {
           // iOS设备使用Intl.Segmenter
-          const segmenter = new Intl.Segmenter("ja", { granularity: "word" });
+          const segmenter = getWordSegmenter("ja");
           const segments = segmenter.segment(text);
           for (const segment of segments) {
             if (segment.isWordLike) {
@@ -2337,7 +2537,7 @@ if (window.location.hostname.includes('youtube.com')) {
           } catch (error) {
             console.error("日语分词失败，降级使用Intl.Segmenter:", error);
             // 降级使用Intl.Segmenter
-            const segmenter = new Intl.Segmenter("ja", { granularity: "word" });
+            const segmenter = getWordSegmenter("ja");
             const segments = segmenter.segment(text);
             for (const segment of segments) {
               if (segment.isWordLike) {
@@ -2350,7 +2550,7 @@ if (window.location.hostname.includes('youtube.com')) {
           }
         } else {
           // 默认使用Intl.Segmenter
-          const segmenter = new Intl.Segmenter("ja", { granularity: "word" });
+          const segmenter = getWordSegmenter("ja");
           const segments = segmenter.segment(text);
           for (const segment of segments) {
             if (segment.isWordLike) {
@@ -2363,7 +2563,7 @@ if (window.location.hostname.includes('youtube.com')) {
         }
       } else if (this.isChinseText(text)) {
         // 中文文本使用Intl.Segmenter
-        const segmenter = new Intl.Segmenter("zh", { granularity: "word" });
+        const segmenter = getWordSegmenter("zh");
         const segments = segmenter.segment(text);
         for (const segment of segments) {
           if (segment.isWordLike) {
@@ -2375,7 +2575,7 @@ if (window.location.hostname.includes('youtube.com')) {
         }
       } else if (this.isKoreanText(text)) {
         // 韩语文本使用Intl.Segmenter
-        const segmenter = new Intl.Segmenter("ko", { granularity: "word" });
+        const segmenter = getWordSegmenter("ko");
         const segments = segmenter.segment(text);
         for (const segment of segments) {
           if (segment.isWordLike) {
@@ -2387,7 +2587,7 @@ if (window.location.hostname.includes('youtube.com')) {
         }
       } else {
         // 西方文本使用Intl.Segmenter
-        const segmenter = new Intl.Segmenter("en", { granularity: "word" });
+        const segmenter = getWordSegmenter("en");
         const segments = segmenter.segment(text);
         for (const segment of segments) {
           if (segment.isWordLike) {
@@ -3183,35 +3383,49 @@ if (window.location.hostname.includes('youtube.com')) {
   }
 
   // 新增：检查元素是否隐藏（包括 display:none, visibility:hidden, hidden属性, type="hidden" 等）
+  // 性能优化：原实现对每个元素逐层向上 getComputedStyle，复杂度 O(DOM 深度)，
+  // 在长网页上是首屏扫描的主要开销（Firefox 的样式重算是主线程同步的）。
+  // 改为优先使用原生 checkVisibility()，一次调用即覆盖整条祖先链。
   isElementHidden(element) {
     if (!element) return true;
+    if (element.nodeType !== 1) return false; // 非元素节点（如 DocumentFragment）不做判断
 
-    // 检查元素自身是否具有 hidden 属性
+    // 廉价判断优先
     if (element.hidden) return true;
-
-    // 检查是否为 hidden 类型的 input 元素
     if (element.tagName === 'INPUT' && element.type === 'hidden') return true;
+    if (NON_RENDERED_TAGS.has(element.nodeName)) return true;
 
-    // 检查 computed style
+    // 原生可见性检测：Chrome 105+ / Firefox 125+
+    // 注意不启用 contentVisibilityAuto，否则 content-visibility:auto 容器里的文本
+    // 会被判定为隐藏，滚动进入视口后不会再触发 MutationObserver，导致永久不高亮。
+    if (typeof element.checkVisibility === 'function') {
+      try {
+        return !element.checkVisibility({
+          checkVisibilityCSS: true,  // 旧字段名，兼容早期实现
+          visibilityProperty: true   // 标准字段名
+        });
+      } catch (e) {
+        // 参数不被识别时退回无参调用（仅检测 display:none）
+        try {
+          return !element.checkVisibility();
+        } catch (e2) { /* 继续走下面的兜底逻辑 */ }
+      }
+    }
+
+    // 兜底：老浏览器仍走逐层检查
     try {
       const style = getComputedStyle(element);
-      // display: none 表示元素完全不渲染
       if (style.display === 'none') return true;
-      // visibility: hidden 表示元素不可见但仍占据空间
       if (style.visibility === 'hidden') return true;
-      // opacity: 0 表示完全透明（可选，根据需求决定是否过滤）
-      // if (style.opacity === '0') return true;
     } catch (e) {
       // 某些情况下 getComputedStyle 可能失败，忽略错误
     }
 
-    // 检查父元素是否隐藏（递归向上检查）
     let parent = element.parentElement;
     while (parent && parent !== document.documentElement) {
       if (parent.hidden) return true;
       try {
-        const parentStyle = getComputedStyle(parent);
-        if (parentStyle.display === 'none') return true;
+        if (getComputedStyle(parent).display === 'none') return true;
       } catch (e) {
         // 忽略错误
       }
