@@ -81,7 +81,6 @@ function initClipSubtitles() {
 
         Object.assign(dragContainer.style, {
             position: 'fixed',
-            left: savedPosition.x,
             top: savedPosition.y,
             cursor: 'move',
             zIndex: '999999',

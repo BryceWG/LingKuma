@@ -7121,21 +7121,16 @@ enableSentenceTTS.addEventListener('change', function(e) {
 
 // 加载状态 初始化
 chrome.storage.local.get('ttsConfig', function(result) {
-  const ttsConfig = result.ttsConfig || {}; // 如果 ttsConfig 不存在，使用空对象
-  // 如果不存在，赋值local
-
-  // 这里设置好像没用，下面的倒是有用了。
-  if (!ttsConfig) {
-    ttsConfig = {
-      wordTTSProvider: 'edge',
-      sentenceTTSProvider: 'edge',
-      wordAudioUrlTemplate: '',
-      wordAudioUrlTemplate2: '',
-      audioUrlNotebook: ''
-    };
-  }
-  // 设置默认值
-
+  // 没保存过配置时用默认值兜底。
+  // 原写法是先 `|| {}` 再 `if (!ttsConfig) { ttsConfig = {...} }`：`{}` 恒为真值，那段分支永远进不去，
+  // 而且它还在给 const 变量赋值（真进得去就是 TypeError），属于彻底失效的默认值逻辑。
+  const ttsConfig = result.ttsConfig || {
+    wordTTSProvider: 'edge',
+    sentenceTTSProvider: 'edge',
+    wordAudioUrlTemplate: '',
+    wordAudioUrlTemplate2: '',
+    audioUrlNotebook: ''
+  };
 
   // TTSTTS 选择器
   document.getElementById('wordTTSProvider').value = ttsConfig.wordTTSProvider || 'edge';
