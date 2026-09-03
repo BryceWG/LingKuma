@@ -1,5 +1,6 @@
 let tooltipResizeObserver = null; // <--- 添加：用于监听 tooltip 大小的 ResizeObserver
 let currentTooltipKeydownHandler = null; // <--- 添加：用于存储当前键盘监听器
+let tooltipManuallyMoved = false; // 用户是否手动拖动过当前弹窗（拖动后不再自动重定位）
 
 let ShouldAutoUpdateStatus = true;
 let lastPlayedTTSWord = null; // <--- 添加这一行
@@ -1009,6 +1010,106 @@ function clampTooltipToViewport(el) {
   }
 }
 
+// 与词爆弹窗做重叠避让：四个方向里挑位移最小且挪完仍在视口内的方案
+function avoidExplosionOverlap(el) {
+  if (!el || !el.parentNode) {return;}
+  if (typeof window.getLingkumaExplosionRect !== 'function') {return;}
+
+  const boomRect = window.getLingkumaExplosionRect();
+  if (!boomRect) {return;}
+
+  const rect = el.getBoundingClientRect();
+  const margin = 8;
+
+  // 没有交叠就不动
+  if (Math.min(rect.right, boomRect.right) - Math.max(rect.left, boomRect.left) <= 0) {return;}
+  if (Math.min(rect.bottom, boomRect.bottom) - Math.max(rect.top, boomRect.top) <= 0) {return;}
+
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+  const toLeft = (boomRect.left - margin) - rect.right; // 挪到词爆弹窗左侧
+  const toRight = (boomRect.right + margin) - rect.left; // 挪到右侧
+  const toUp = (boomRect.top - margin) - rect.bottom; // 挪到上方
+  const toDown = (boomRect.bottom + margin) - rect.top; // 挪到下方
+
+  const candidates = [
+    { axis: 'x', delta: toLeft, fits: (rect.left + toLeft) >= margin },
+    { axis: 'x', delta: toRight, fits: (rect.right + toRight) <= viewportWidth - margin },
+    { axis: 'y', delta: toUp, fits: (rect.top + toUp) >= margin },
+    { axis: 'y', delta: toDown, fits: (rect.bottom + toDown) <= viewportHeight - margin }
+  ].filter((c) => c.fits);
+
+  // 四个方向都放不下时保持原位，交给 clamp 兜底
+  if (candidates.length === 0) {return;}
+
+  candidates.sort((a, b) => Math.abs(a.delta) - Math.abs(b.delta));
+  const best = candidates[0];
+  if (best.axis === 'x') {
+    el.style.left = ((parseFloat(el.style.left) || 0) + best.delta) + 'px';
+  } else {
+    el.style.top = ((parseFloat(el.style.top) || 0) + best.delta) + 'px';
+  }
+}
+
+// 按住顶栏空白处拖动查词弹窗
+function initTooltipDrag(el) {
+  const header = el.querySelector('.fixed-header');
+  if (!header) {return;}
+
+  let dragging = false;
+  let startX = 0;
+  let startY = 0;
+  let startLeft = 0;
+  let startTop = 0;
+
+  const onPointerMove = (e) => {
+    if (!dragging) {return;}
+    el.style.left = (startLeft + (e.clientX - startX)) + 'px';
+    el.style.top = (startTop + (e.clientY - startY)) + 'px';
+  };
+
+  const onPointerUp = () => {
+    if (!dragging) {return;}
+    dragging = false;
+    el.classList.remove('lk-dragging');
+    document.removeEventListener('pointermove', onPointerMove, true);
+    document.removeEventListener('pointerup', onPointerUp, true);
+    document.removeEventListener('pointercancel', onPointerUp, true);
+    clampTooltipToViewport(el);
+  };
+
+  header.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) {return;}
+    // 按钮、文本等交互元素不触发拖动，保证原有点击/选中行为
+    if (e.target.closest && e.target.closest('button, a, input, textarea, select, [contenteditable="true"], .Notes, .tags, #audio-container, .language-square')) {
+      return;
+    }
+
+    dragging = true;
+    tooltipManuallyMoved = true;
+
+    // 拖动后不再让 ResizeObserver 把弹窗拽回单词旁边
+    if (tooltipResizeObserver) {
+      tooltipResizeObserver.disconnect();
+      tooltipResizeObserver = null;
+    }
+
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = parseFloat(el.style.left) || 0;
+    startTop = parseFloat(el.style.top) || 0;
+
+    el.classList.add('lk-dragging');
+    e.preventDefault();
+    e.stopPropagation();
+
+    document.addEventListener('pointermove', onPointerMove, true);
+    document.addEventListener('pointerup', onPointerUp, true);
+    document.addEventListener('pointercancel', onPointerUp, true);
+  });
+}
+
 async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, originalWord, isCustom = false) {
   // 标记tooltip创建开始
   tooltipCreationInProgress = true;
@@ -1055,6 +1156,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
   console.log("显示 tooltip", isCustom ? "(自定义词组)" : "(普通单词)");
   tooltipEl = document.createElement("div");
   tooltipEl.className = "vocab-tooltip";
+  tooltipManuallyMoved = false; // 新弹窗重新按单词定位
 
   // 保存当前tooltipEl的引用，用于异步操作后的验证（触摸屏模式下快速点击保护）
   const currentTooltipElRef = tooltipEl;
@@ -1780,6 +1882,10 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
   // 设置基本HTML
   tooltipEl.innerHTML = tooltipHTML;
   getStorageValues(['enableSidebar']).then(() => applyTooltipSidebarButtonVisibility());
+
+  // 顶栏拖动（需要在 innerHTML 写入后绑定，此时 .fixed-header 才存在）
+  initTooltipDrag(tooltipEl);
+
 
   // 应用背景设置
   if (isBackgroundVideo && backgroundVideoUrl) {
@@ -4694,6 +4800,7 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
         tooltipResizeObserver.disconnect();
       }
       tooltipResizeObserver = new ResizeObserver((entries) => {
+        if (tooltipManuallyMoved) {return;} // 用户拖动过就不再自动跟随单词
         for (let entry of entries) {
           const newHeight = entry.contentRect.height;
           // 重新计算 top 以保持底部位置固定
@@ -4702,6 +4809,9 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
           console.log(`Tooltip height changed to ${newHeight}, adjusted top to ${newTop}`);
 
           // 高度变化后重新做视口边缘避让，确保弹窗完整可见
+          clampTooltipToViewport(tooltipEl);
+          // 再避开词爆弹窗
+          avoidExplosionOverlap(tooltipEl);
           clampTooltipToViewport(tooltipEl);
         }
       });
@@ -4746,7 +4856,10 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
         tooltipResizeObserver.disconnect();
       }
       tooltipResizeObserver = new ResizeObserver(() => {
+        if (tooltipManuallyMoved) {return;} // 用户拖动过就不再自动调整
         if (tooltipEl && !tooltipBeingDestroyed) {
+          clampTooltipToViewport(tooltipEl);
+          avoidExplosionOverlap(tooltipEl);
           clampTooltipToViewport(tooltipEl);
         }
       });
@@ -4772,6 +4885,9 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
       // 位置计算完成后，设置tooltip可见性
       if (tooltipEl) { // 确保tooltipEl仍然存在
         // 显示前做一次视口边缘避让，确保弹窗完整可见（右/下边缘预留8px）
+        clampTooltipToViewport(tooltipEl);
+        // 再避开词爆弹窗，避免两个弹窗叠在一起
+        avoidExplosionOverlap(tooltipEl);
         clampTooltipToViewport(tooltipEl);
         tooltipEl.style.visibility = 'visible'; // 先设为可见
 
@@ -6172,7 +6288,27 @@ body {
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
     height: auto; /* 允许高度自适应 */
+    cursor: move; /* 顶栏可拖动 */
 }
+
+/* 顶栏里的交互元素保持各自的光标 */
+.fixed-header .Notes,
+.fixed-header .tags {
+    cursor: auto;
+}
+
+.fixed-header button,
+.fixed-header a {
+    cursor: pointer;
+}
+
+
+/* 拖动中：禁用过渡与文本选中，避免拖影和误选 */
+.vocab-tooltip.lk-dragging {
+    transition: none !important;
+    user-select: none;
+}
+
 
 /* 可滚动的中间内容区域：上下与分割线的间距统一 8px */
 .scrollable-content {

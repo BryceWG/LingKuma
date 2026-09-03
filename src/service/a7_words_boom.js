@@ -16,6 +16,7 @@ let isMouseInsideExplosion = false; // 鼠标是否在弹窗内部
 let wordExplosionDragging = false; // 是否正在拖动
 let wordExplosionDragOffset = { x: 0, y: 0 }; // 拖动偏移量
 let wordExplosionSavedPosition = null; // 保存的位置
+let wordExplosionManuallyMoved = false; // 本次显示是否被用户拖动过（拖动后不再自动重定位）
 let cachedUIContent = ''; // 缓存当前UI内容，用于对比是否需要更新
 let lastHoverSentence = null; // 缓存上一次悬停的句子，避免重复刷新
 let hoverDelayTimer = null; // 鼠标悬浮延迟计时器
@@ -672,21 +673,22 @@ function createWordExplosionTooltip() {
     }
   });
 
-  // 将按钮添加到右上角容器（从上到下：关闭、TTS）
-  topRightButtons.appendChild(closeBtn);
-  topRightButtons.appendChild(ttsBtn);
-
-  // 添加拖动手柄（仅在手动模式下显示）
+  // 添加拖动手柄（放进右上角按钮列，避免压住正文；自动/手动模式都可拖）
   const dragHandle = document.createElement('div');
   dragHandle.className = 'word-explosion-drag-handle';
   dragHandle.innerHTML = '⋮⋮';
+  dragHandle.title = 'Move';
+
+  // 将按钮添加到右上角容器（从上到下：拖动手柄、关闭、TTS）
+  topRightButtons.appendChild(dragHandle);
+  topRightButtons.appendChild(closeBtn);
+  topRightButtons.appendChild(ttsBtn);
 
   // 内容容器
   const content = document.createElement('div');
   content.className = 'word-explosion-content';
 
   container.appendChild(topRightButtons);
-  container.appendChild(dragHandle);
   container.appendChild(content);
 
   // 添加拖动事件
@@ -789,17 +791,43 @@ function applyWordExplosionTheme(container, forcedIsDark = null) {
   }
 }
 
+// 拖动时让左侧按钮列和连接层跟着弹窗走
+function syncExplosionSideElementsPosition(left, top) {
+  if (!explosionShadowRoot || !wordExplosionEl) {return;}
+
+  const position = wordExplosionEl.style.position || 'absolute';
+  const height = wordExplosionEl.getBoundingClientRect().height;
+
+  const leftButtons = explosionShadowRoot.getElementById('word-explosion-left-buttons-wrapper');
+  if (leftButtons) {
+    leftButtons.style.position = position;
+    leftButtons.style.left = (left - 28) + 'px';
+    leftButtons.style.top = (top + 16) + 'px';
+  }
+
+  const bridge = explosionShadowRoot.getElementById('word-explosion-left-buttons-bridge');
+  if (bridge) {
+    bridge.style.position = position;
+    bridge.style.left = (left - 4) + 'px';
+    bridge.style.top = top + 'px';
+    bridge.style.height = height + 'px';
+  }
+}
+
 // 开始拖动
 function startDragWordExplosion(e) {
   e.preventDefault();
   e.stopPropagation();
 
+  if (!wordExplosionEl) {return;}
+
   wordExplosionDragging = true;
   wordExplosionLocked = true;
+  wordExplosionManuallyMoved = true;
 
-  const rect = wordExplosionEl.getBoundingClientRect();
-  wordExplosionDragOffset.x = e.clientX - rect.left;
-  wordExplosionDragOffset.y = e.clientY - rect.top;
+  // 以 style.left/top 当前值做增量，避免 absolute(页面坐标)/fixed(视口坐标) 两套坐标系混淆
+  wordExplosionDragOffset.x = e.clientX - (parseFloat(wordExplosionEl.style.left) || 0);
+  wordExplosionDragOffset.y = e.clientY - (parseFloat(wordExplosionEl.style.top) || 0);
 
   document.addEventListener('mousemove', dragWordExplosion);
   document.addEventListener('mouseup', stopDragWordExplosion);
@@ -807,13 +835,15 @@ function startDragWordExplosion(e) {
 
 // 拖动中
 function dragWordExplosion(e) {
-  if (!wordExplosionDragging) {return;}
+  if (!wordExplosionDragging || !wordExplosionEl) {return;}
 
   const x = e.clientX - wordExplosionDragOffset.x;
   const y = e.clientY - wordExplosionDragOffset.y;
 
   wordExplosionEl.style.left = x + 'px';
   wordExplosionEl.style.top = y + 'px';
+
+  syncExplosionSideElementsPosition(x, y);
 }
 
 // 停止拖动
@@ -822,14 +852,16 @@ function stopDragWordExplosion() {
 
   wordExplosionDragging = false;
 
-  // 保存位置
-  const rect = wordExplosionEl.getBoundingClientRect();
-  wordExplosionSavedPosition = {
-    x: rect.left,
-    y: rect.top
-  };
+  // 只有手动定位模式才持久化位置；自动模式下拖动只对本次显示生效
+  if (wordExplosionConfig.positionMode === 'manual' && wordExplosionEl) {
+    const rect = wordExplosionEl.getBoundingClientRect();
+    wordExplosionSavedPosition = {
+      x: rect.left,
+      y: rect.top
+    };
 
-  chrome.storage.local.set({ wordExplosionSavedPosition });
+    chrome.storage.local.set({ wordExplosionSavedPosition });
+  }
 
   document.removeEventListener('mousemove', dragWordExplosion);
   document.removeEventListener('mouseup', stopDragWordExplosion);
@@ -1698,10 +1730,10 @@ function showWordExplosion(sentence, sentenceRect = null, sentenceInfo = null) {
     tooltip.style.visibility = 'hidden';
     tooltip.style.display = 'block';
 
-    // 更新拖动手柄显示
+    // 拖动手柄在自动/手动模式下都可用
     const dragHandle = tooltip.querySelector('.word-explosion-drag-handle');
     if (dragHandle) {
-      dragHandle.style.display = wordExplosionConfig.positionMode === 'manual' ? 'flex' : 'none';
+      dragHandle.style.display = 'flex';
     }
 
     // 使用requestAnimationFrame确保浏览器已完成渲染，再进行精确定位
@@ -1798,6 +1830,10 @@ function getStorageValue(key) {
 // 定位弹窗 - 智能上下定位模式
 async function positionWordExplosion(sentenceRect = null) {
   if (!wordExplosionEl) {return;}
+
+  // 重新定位视为一次新的展示，清掉上一次的手动拖动状态
+  wordExplosionManuallyMoved = false;
+
 
   // 获取缩放因子
   // 使用 devicePixelRatio 来检测页面缩放（Ctrl++）
@@ -2138,6 +2174,12 @@ function repositionExplosionWhenAbove() {
   if (!wordExplosionEl || !currentExplosionPosition || !currentExplosionPosition.isAbove) {
     return;
   }
+
+  // 用户拖动过就别再把弹窗拽回句子上方
+  if (wordExplosionManuallyMoved) {
+    return;
+  }
+
 
   const { explosionBottomInPage, minTopInPage } = currentExplosionPosition;
 
@@ -4706,6 +4748,23 @@ function initWordExplosionWithBlacklistCheck(options = {}) {
 // 导出初始化函数供其他模块调用
 window.initWordExplosionSystem = initWordExplosionWithBlacklistCheck;
 
+// 供查词弹窗（a4）做重叠避让：返回词爆弹窗当前占位（视口坐标，含左侧按钮列），不可见时返回 null
+window.getLingkumaExplosionRect = function() {
+  if (!wordExplosionEl) {return null;}
+  if (wordExplosionEl.style.display === 'none' || wordExplosionEl.style.visibility === 'hidden') {return null;}
+
+  const rect = wordExplosionEl.getBoundingClientRect();
+  if (!rect.width || !rect.height) {return null;}
+
+  // 左侧外挂按钮列大约占 28px，一起算进避让区域
+  return {
+    left: rect.left - 32,
+    right: rect.right,
+    top: rect.top,
+    bottom: rect.bottom
+  };
+};
+
 // 注意：单词爆炸系统不再自动初始化
 // 它将由正常单词高亮系统在完成初始化后、词组高亮之前主动调用
 
@@ -5211,24 +5270,23 @@ function injectExplosionStyles() {
       color: #2E7D32;
     }
 
-    /* 拖动手柄 */
+    /* 拖动手柄（位于右上角按钮列顶部） */
     .word-explosion-drag-handle {
-      position: absolute;
-      top: 6px;
-      left: 6px;
       width: 24px;
       height: 24px;
       cursor: move;
       color: #999;
       font-size: 16px;
-      display: none; /* 默认隐藏，手动模式下显示 */
+      display: flex;
       align-items: center;
       justify-content: center;
+      border-radius: 7px;
       user-select: none;
     }
 
     .word-explosion-drag-handle:hover {
       color: #666;
+      background: #f0f0f0;
     }
 
     /* 内容容器：继承外层 max-height，在内层滚动（外层只负责圆角裁剪） */
@@ -5631,6 +5689,7 @@ function injectExplosionStyles() {
 
     .word-explosion-container.dark-mode .word-explosion-drag-handle:hover {
       color: #4FC3F7;
+      background: #3a3a3a;
     }
 
     /* 暗色主题 - 原句 */
