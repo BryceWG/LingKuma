@@ -36,37 +36,6 @@ window.addEventListener('unhandledrejection', function(event) {
     }
 });
 
-// Firefox 把 host_permissions 当成可选权限：未授权时内容脚本不会随新页面注入，
-// 只能靠点击工具栏拿到的临时 activeTab。打开 popup 算用户手势，必须在第一拍请求。
-const HOST_PERMISSION_ORIGINS = { origins: ['<all_urls>'] };
-
-function requestHostPermissions(callback) {
-    if (!chrome.permissions?.request) {
-        callback(true);
-        return;
-    }
-    chrome.permissions.request(HOST_PERMISSION_ORIGINS, function(granted) {
-        callback(granted === true);
-    });
-}
-
-function updateHostPermissionBanner(granted) {
-    const banner = document.getElementById('host-permission-banner');
-    if (banner) {
-        banner.style.display = granted ? 'none' : 'flex';
-    }
-}
-
-requestHostPermissions(function(granted) {
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            updateHostPermissionBanner(granted);
-        });
-    } else {
-        updateHostPermissionBanner(granted);
-    }
-});
-
 // 背景设置相关变量
 let backgroundImageUrl = ''; // 默认无背景图（已移除内置背景库）
 let isBackgroundVideo = false; // 是否使用视频背景
@@ -126,6 +95,32 @@ function hideUpdateNotification() {
   chrome.storage.local.remove(['updateNotification'], function() {
     console.log('更新通知已标记为已读');
   });
+}
+
+function isFirefoxPopup() {
+  return /firefox/i.test(navigator.userAgent || '');
+}
+
+function checkHostPermissionHint() {
+  const banner = document.getElementById('host-permission-banner');
+  const closeBtn = document.getElementById('host-permission-close-btn');
+  if (!banner || !isFirefoxPopup()) {
+    return;
+  }
+
+  chrome.storage.local.get(['hostPermissionHintDismissed'], function(result) {
+    if (result.hostPermissionHintDismissed === true) {
+      return;
+    }
+    banner.style.display = 'flex';
+  });
+
+  if (closeBtn) {
+    closeBtn.onclick = function() {
+      banner.style.display = 'none';
+      chrome.storage.local.set({ hostPermissionHintDismissed: true });
+    };
+  }
 }
 
 // =======================
@@ -692,20 +687,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // 首先进行移动端适配
   initMobileAdaptation();
 
-  const grantHostPermissionBtn = document.getElementById('grant-host-permission-btn');
-  if (grantHostPermissionBtn) {
-    grantHostPermissionBtn.addEventListener('click', function() {
-      requestHostPermissions(function(granted) {
-        updateHostPermissionBanner(granted);
-      });
-    });
-  }
-
   // 初始化设置
   initializeSettings();
 
   // 检查并显示版本更新提示
   checkUpdateNotification();
+  checkHostPermissionHint();
 
   // 加载背景设置
   loadBackgroundSettings().then(() => {
