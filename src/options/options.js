@@ -556,22 +556,8 @@ const i18n = {
     'autoSaveHint': '设置会自动保存',
     'tips': '提示',
     'backgroundNote': '• 弹窗主题模式：自动检测会根据网页的明暗自动调整，固定模式则始终使用选定的主题\n• 背景效果会显示在弹窗的底层，不会影响文字阅读\n• 视频背景会自动循环播放且静音\n• 图片和视频的透明度已调整为适合阅读\n• 如果上传的文件过大，可能会影响性能',
-    // 玻璃材质设置相关翻译
-    'glassEffectSettings': '玻璃材质设置',
-    'glassEffectType': '玻璃效果类型',
-    'glassEffectPreview': '效果预览',
-    'glassEffectAutoSave': '设置会自动保存并应用到弹窗',
-    'glassEffectLiquid': '液态玻璃 (Liquid) ⚠️卡顿，不建议使用',
-    'glassEffectFractal': '分形噪声 (Fractal)',
-    'glassEffectFlip': '翻转 (Flip)',
-    'glassEffectRgbSplit': 'RGB分离 (RGB Split)',
-    'glassEffectPixel': '像素化 (Pixel)',
-    'glassEffectFluted': '凹槽 (Fluted)',
-    'glassEffectTiled': '瓷砖 (Tiled)',
-    'glassEffectMosaic': '马赛克 (Mosaic)',
-    'glassEffectEllipses': '椭圆 (Ellipses)',
-    'glassEffectRough': '粗糙 (Rough)',
-    'glassEffectBulge': '凸起 (Bulge)',
+
+
     'delete': '删除',
     'parallelBatches': '并行导入批次',
     'wordsPerBatch': '每批词数',
@@ -929,22 +915,8 @@ Lingkuma完全开源免费，软件维护不易，如果您感觉该软件对你
     'autoSaveHint': '設定會自動儲存',
     'tips': '提示',
     'backgroundNote': '• 彈窗主題模式：自動偵測會根據網頁的明暗自動調整，固定模式則始終使用選定的主題\n• 背景效果會顯示在彈窗的底層，不會影響文字閱讀\n• 影片背景會自動循環播放且靜音\n• 圖片和影片的透明度已調整為適合閱讀\n• 如果上傳的檔案過大，可能會影響效能',
-    'glassEffectSettings': '玻璃材質設定',
-    'glassEffectType': '玻璃效果類型',
-    'glassEffectPreview': '效果預覽',
-    'glassEffectAutoSave': '設定會自動儲存並套用到彈窗',
-    'glassEffectLiquid': '液態玻璃 (Liquid) ⚠️卡頓，不建議使用',
-    'glassEffectFractal': '分形雜訊 (Fractal)',
-    'glassEffectFlip': '翻轉 (Flip)',
-    'glassEffectRgbSplit': 'RGB分離 (RGB Split)',
-    'glassEffectPixel': '像素化 (Pixel)',
-    'glassEffectFluted': '凹槽 (Fluted)',
-    'glassEffectTiled': '磁磚 (Tiled)',
-    'glassEffectMosaic': '馬賽克 (Mosaic)',
-    'glassEffectEllipses': '橢圓 (Ellipses)',
-    'glassEffectRough': '粗糙 (Rough)',
-    'glassEffectBulge': '凸起 (Bulge)',
     'delete': '刪除',
+
     'parallelBatches': '並行匯入批次',
     'wordsPerBatch': '每批詞數',
     'import': '匯入單字',
@@ -1302,23 +1274,10 @@ Lingkuma完全開源免費，軟體維護不易，如果您感覺該軟體對你
     'autoSaveHint': 'Settings are automatically saved',
     'tips': 'Tips',
     'backgroundNote': '• Tooltip Theme Mode: Auto-detect adjusts based on the webpage\'s theme, while fixed modes always use the selected theme\n• Background effects appear behind the tooltip content and won\'t affect text readability\n• Video backgrounds will automatically loop and are muted\n• Image and video opacity is adjusted for optimal reading experience\n• Large files may impact performance',
-    // Glass effect settings translations
-    'glassEffectSettings': 'Glass Material Settings',
-    'glassEffectType': 'Glass Effect Type',
-    'glassEffectPreview': 'Effect Preview',
-    'glassEffectAutoSave': 'Settings are automatically saved and applied to tooltip',
-    'glassEffectLiquid': 'Liquid Glass (Liquid) ⚠️Laggy, not recommended',
-    'glassEffectFractal': 'Fractal Noise (Fractal)',
-    'glassEffectFlip': 'Flip (Flip)',
-    'glassEffectRgbSplit': 'RGB Split (RGB Split)',
-    'glassEffectPixel': 'Pixelated (Pixel)',
-    'glassEffectFluted': 'Fluted (Fluted)',
-    'glassEffectTiled': 'Tiled (Tiled)',
-    'glassEffectMosaic': 'Mosaic (Mosaic)',
-    'glassEffectEllipses': 'Ellipses (Ellipses)',
-    'glassEffectRough': 'Rough (Rough)',
-    'glassEffectBulge': 'Bulge (Bulge)',
     'delete': 'Delete (0)',
+
+
+
     'parallelBatches': 'Parallel Batches',
     'wordsPerBatch': 'Words Per Batch',
     'import': 'Import Words',
@@ -2460,23 +2419,8 @@ Lingkuma完全開源免費，軟體維護不易，如果您感覺該軟體對你
     'newline': '改行',
     'comma': 'コンマ',
     'wordStatus': '単語の状態',
-    // Glass effect settings translations (Japanese)
-    'glassEffectSettings': 'ガラス素材設定',
-    'glassEffectType': 'ガラス効果タイプ',
-    'glassEffectPreview': '効果プレビュー',
-    'glassEffectAutoSave': '設定は自動的に保存され、ツールチップに適用されます',
-    'glassEffectLiquid': '液体ガラス (Liquid) ⚠️遅延あり、非推奨',
-    'glassEffectFractal': 'フラクタルノイズ (Fractal)',
-    'glassEffectFlip': 'フリップ (Flip)',
-    'glassEffectRgbSplit': 'RGB分離 (RGB Split)',
-    'glassEffectPixel': 'ピクセル化 (Pixel)',
-    'glassEffectFluted': '溝付き (Fluted)',
-    'glassEffectTiled': 'タイル (Tiled)',
-    'glassEffectMosaic': 'モザイク (Mosaic)',
-    'glassEffectEllipses': '楕円 (Ellipses)',
-    'glassEffectRough': '粗い (Rough)',
-    'glassEffectBulge': '膨らみ (Bulge)',
     'delete': '削除 (0)',
+
     'apiBasic': '基本設定',
     'apiLanguageDetection': '言語検出',
     'apiTagAnalysis': '品詞',
@@ -2678,23 +2622,8 @@ Lingkuma完全開源免費，軟體維護不易，如果您感覺該軟體對你
     'newline': 'Nuova linea',
     'comma': 'Virgola',
     'wordStatus': 'Stato Parola',
-    // Glass effect settings translations (Italian)
-    'glassEffectSettings': 'Impostazioni Materiale Vetro',
-    'glassEffectType': 'Tipo Effetto Vetro',
-    'glassEffectPreview': 'Anteprima Effetto',
-    'glassEffectAutoSave': 'Le impostazioni vengono salvate automaticamente e applicate al tooltip',
-    'glassEffectLiquid': 'Vetro Liquido (Liquid) ⚠️Lag, non consigliato',
-    'glassEffectFractal': 'Rumore Frattale (Fractal)',
-    'glassEffectFlip': 'Flip (Flip)',
-    'glassEffectRgbSplit': 'Separazione RGB (RGB Split)',
-    'glassEffectPixel': 'Pixelato (Pixel)',
-    'glassEffectFluted': 'Scanalato (Fluted)',
-    'glassEffectTiled': 'Piastrellato (Tiled)',
-    'glassEffectMosaic': 'Mosaico (Mosaic)',
-    'glassEffectEllipses': 'Ellissi (Ellipses)',
-    'glassEffectRough': 'Ruvido (Rough)',
-    'glassEffectBulge': 'Rigonfiamento (Bulge)',
     'delete': 'Elimina (0)',
+
     'apiBasic': 'Impostazioni Base',
     'apiLanguageDetection': 'Rilevamento Lingua',
     'apiTagAnalysis': 'Parte del Discorso',
@@ -9589,54 +9518,12 @@ function bindDeviceConfigEvents() {
 document.addEventListener('DOMContentLoaded', () => {
   bindDeviceConfigEvents();
   initCustomCapsules();
-  initGlassEffectSettings();
   initKnownSentenceAnimation();
+
 });
 
-// ========== 玻璃材质设置 ==========
-
-// 初始化玻璃材质设置
-function initGlassEffectSettings() {
-  const glassEffectTypeSelect = document.getElementById('glassEffectType');
-
-  if (!glassEffectTypeSelect) {
-    console.warn('玻璃材质选择器元素未找到');
-    return;
-  }
-
-  // 从存储中加载设置
-  chrome.storage.local.get(['glassEffectType'], function(result) {
-    const effectType = result.glassEffectType || 'rough'; // 默认为Rough
-    glassEffectTypeSelect.value = effectType;
-    console.log('已加载玻璃材质设置:', effectType);
-  });
-
-  // 添加change事件监听器，自动保存
-  glassEffectTypeSelect.addEventListener('change', function() {
-    const selectedEffect = this.value;
-
-    // 保存到存储
-    chrome.storage.local.set({ glassEffectType: selectedEffect }, function() {
-      if (chrome.runtime.lastError) {
-        console.error('保存玻璃材质设置时出错:', chrome.runtime.lastError);
-      } else {
-        console.log('玻璃材质设置已保存:', selectedEffect);
-
-        // 通知所有内容脚本更新玻璃效果
-        chrome.tabs.query({}, function(tabs) {
-          tabs.forEach(function(tab) {
-            chrome.tabs.sendMessage(tab.id, {
-              action: "updateGlassEffect",
-              effectType: selectedEffect
-            }).catch((err) => console.log('无法发送消息到标签页:', tab.id, err));
-          });
-        });
-      }
-    });
-  });
-}
-
 // ========== 自定义胶囊管理 ==========
+
 
 // 初始化自定义胶囊功能
 function initCustomCapsules() {

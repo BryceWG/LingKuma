@@ -217,8 +217,8 @@ module.exports = {
         { from: 'src/options/chars/chart.js', to: 'src/options/chars/chart.js', info: { minimized: true } },
         { from: 'src/options/chars/chartjs-adapter-date-fns.js', to: 'src/options/chars/chartjs-adapter-date-fns.js', info: { minimized: true } },
         { from: 'src/plugin/youtubeCaptionInjected.js', to: 'src/plugin/youtubeCaptionInjected.js', info: { minimized: true } },
-        { from: 'src/options/liquid-group/**/*', to: 'src/options/liquid-group/[name][ext]', info: { minimized: true } },
         { from: 'src/service/image/lottie/*.tgs', to: 'src/service/image/lottie/[name][ext]', info: { minimized: true } },
+
         { from: 'src/service/image/lottie/tgs-balloon.html', to: 'src/service/image/lottie/tgs-balloon.html', info: { minimized: true } },
         { from: 'src/service/image/lottie/tgs-balloon.js', to: 'src/service/image/lottie/tgs-balloon.js', info: { minimized: true } },
         { from: 'src/utils/tgs-player.min.js', to: 'src/utils/tgs-player.min.js', info: { minimized: true } },

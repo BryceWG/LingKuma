@@ -550,13 +550,8 @@ function initializeSettings() {
       // 弹窗背景设置默认为开启，默认使用随机SVG背景
       tooltipBackground: { enabled: true, useCustom: false, defaultType: 'svg' },
 
-      // 液体玻璃效果默认关闭
-      liquidGlassEnabled: false,
-      glassEffectType: 'rough', // 默认为Rough
-      // Ask 浮窗已改为简洁卡片，玻璃效果默认关闭
-      analysisGlassEnabled: false,
-
       // Thanox Reading 设置默认值
+
       thanoxReadingEnabled: false,
       thanoxProcessingOpacity: 50, // 处理中的透明值 (0-100)
       thanoxCompletedOpacity: 10, // 处理完成后的透明值 (0-100)

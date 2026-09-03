@@ -121,9 +121,9 @@ Read the [LingKuma Wiki](https://docs.lingkuma.org) for installation, basic usag
 
 - **Bionic Reading**: Improve reading speed and comprehension
 - **SimpRead mode**: Highlight support for a focused reading experience
-- **Liquid Glass popup**: Elegant interface interaction
 
 #### Text-to-speech
+
 
 - **Custom URL entry**: Flexible TTS service configuration
 - **Edge TTS**: High-quality voice synthesis

@@ -99,9 +99,9 @@ const galleryImages = [
 #### Reading Assistance
 - **Bionic Reading**: Improve reading speed and comprehension
 - **SimpRead Mode**: Highlight support, focused reading experience
-- **Liquid Glass Popup**: Elegant interface interaction
 
 #### Text-to-Speech
+
 - **Custom URL Entry**: Flexible TTS service configuration
 - **Edge TTS**: High-quality voice synthesis
 - **Minimax TTS**: Diverse voice options

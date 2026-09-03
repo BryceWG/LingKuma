@@ -236,7 +236,8 @@ async function showCustomWordSelectionPopup(selectedText, rect) {
   // 设置弹窗样式
   let popupStyles = `
     position: absolute;
-    background: rgba(31, 31, 31, 0.85);
+    background: rgb(31, 31, 31);
+
     color: #f0f0f0;
     border: 1px solid #555;
     border-radius: 10px;
@@ -248,8 +249,8 @@ async function showCustomWordSelectionPopup(selectedText, rect) {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     cursor: pointer;
     transition: all 0.2s ease;
-    backdrop-filter: blur(10px);
     user-select: none;
+
     height: 28px;
     display: flex;
     align-items: center;

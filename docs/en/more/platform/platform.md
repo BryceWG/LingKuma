@@ -71,12 +71,7 @@
 
 ### Incompatible Features:
 
-#### **Liquid Glass**
-
-Please manually switch the liquid theme to the normal theme.
-
-![](<./assets/1758997367084.png>)
-
 #### Sidebar
+
 
 Not supported, incompatible.

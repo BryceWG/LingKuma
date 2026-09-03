@@ -8,13 +8,8 @@ let ttsDebounceTimer = null; // <--- 添加: TTS防抖定时器ID
 let wordForDebouncedTTS = null; // <--- 添加: 等待播放TTS的单词信息 {word: string, sentence: string}
 let currentWordRect = null; // <--- 添加：保存当前单词的位置信息，用于mini窗口重新定位
 
-// 液体玻璃效果相关变量
-let liquidGlassEnabled = false; // 液体玻璃效果开关，默认关闭
-let liquidGlassUpdater = null; // 液体玻璃更新函数
-let liquidGlassEnabledCache = null; // 缓存的液体玻璃状态
-let liquidGlassEnabledCacheTime = 0; // 缓存时间戳
-
 // 防止重复执行的变量
+
 let aiTranslationInProgress = new Set(); // 正在进行AI翻译的单词集合
 let tooltipCreationInProgress = false; // 防止重复创建tooltip
 let tooltipBeingDestroyed = false; // 标记tooltip是否正在被销毁
@@ -47,8 +42,8 @@ const A4_STORAGE_CACHE_KEYS = [
   'autoExpandTooltip',
   'clickOnlyTooltip',
   'useOrionTTS',
-  'liquidGlassEnabled',
   'isDarkMode',
+
   'tooltipThemeMode',
   'tooltipBackground',
   'devicePixelRatio',
@@ -65,8 +60,8 @@ const A4_STORAGE_CACHE_KEYS = [
   'autoRequestAITranslations2',
   'autoAddAITranslations',
   'autoAddAITranslationsFromUnknown',
-  'glassEffectType',
   'wordExplosionEnabled',
+
   'explosionPriorityMode',
   'enablePlugin',
   'wordQueryKey',
@@ -132,399 +127,9 @@ async function ensureFullWordDetails(word) {
   return cached;
 }
 
-/**
- * 快速获取液体玻璃状态（带缓存）
- */
-function getLiquidGlassEnabledFast() {
-  // 液体玻璃库已移除（性能优化），此功能永久禁用
-  liquidGlassEnabledCache = false;
-  liquidGlassEnabledCacheTime = Date.now();
-  return Promise.resolve(false);
-}
-
-/**
- * 检测是否为Firefox浏览器
- */
-async function isFirefox() {
-  // return true
-  const userAgent = navigator.userAgent.toLowerCase();
-  // 检测Firefox
-  const isFirefoxBrowser = userAgent.includes('firefox');
-  // 检测Orion浏览器
-  const isOrionBrowser = await isOrion();
-  // 检测iOS设备（iPhone、iPad、Mac）
-  const isIOSDevice = userAgent.includes('iphone') || userAgent.includes('ipad') || userAgent.includes('mac');
-
-  return isFirefoxBrowser || isOrionBrowser || isIOSDevice;
-}
-
-/**
- * 检测是否为Orion浏览器
- */
-async function isOrion() {
-  return await getStorageValue('useOrionTTS');
-}
-
-/**
- * 为弹窗应用液体玻璃效果
- */
-function applyLiquidGlassToTooltip() {
-  return new Promise(async (resolve) => {
-    // 使用快速缓存获取状态
-    const isEnabled = await getLiquidGlassEnabledFast();
-
-    // 检查是否启用液体玻璃效果
-    if (!isEnabled || !tooltipEl) {
-      console.log('液体玻璃效果已禁用或弹窗不存在');
-      resolve();
-      return;
-    }
-
-    // Firefox不支持SVG玻璃效果，使用CSS实现
-    if (await isFirefox()) {
-      console.log('检测到Firefox浏览器，使用CSS玻璃效果');
-      applyFirefoxGlassEffect();
-      resolve();
-      return;
-    }
-
-    // 立即执行液体玻璃效果应用，减少延迟
-    requestAnimationFrame(() => {
-      applyLiquidGlassEffect();
-      // 减少延迟到最小
-      setTimeout(() => {
-        resolve();
-      }, 16); // 一个动画帧的时间
-    });
-  });
-}
-
-/**
- * 为Firefox应用CSS玻璃效果
- */
-function applyFirefoxGlassEffect() {
-  if (!tooltipEl) {
-    console.log('弹窗元素不存在，无法应用Firefox玻璃效果');
-    return;
-  }
-
-  try {
-    // 添加Firefox玻璃效果标记类
-    tooltipEl.classList.add('firefox-glass-effect');
-
-    // 检测当前主题模式
-    getStorageValue('isDarkMode').then((isDark) => {
-      if (isDark) {
-        tooltipEl.classList.add('dark-mode');
-      } else {
-        tooltipEl.classList.add('light-mode');
-      }
-    });
-
-    // 同时为所有胶囊应用Firefox玻璃效果
-    applyGlassEffectToCapsules(true, false);
-
-    console.log('Firefox CSS玻璃效果已应用到弹窗');
-    // 注意：胶囊的玻璃效果会在胶囊创建时自动应用，不需要在这里调用
-  } catch (error) {
-    console.error('应用Firefox玻璃效果失败:', error);
-  }
-}
-
-/**
- * 实际应用液体玻璃效果的函数
- */
-function applyLiquidGlassEffect() {
-  try {
-    // 快速检查弹窗是否存在
-    if (!tooltipEl) {
-      console.log('弹窗不存在，跳过液体玻璃效果应用');
-      return;
-    }
-
-    // 在应用新效果前，快速清理旧容器（如果有的话）
-    const existingContainers = document.querySelectorAll('#tooltip-liquid-glass-container');
-    if (existingContainers.length > 0) {
-      console.log(`快速清理 ${existingContainers.length} 个残留的液体玻璃容器...`);
-      existingContainers.forEach((container) => {
-        try {
-          container.remove();
-        } catch (error) {
-          console.error('清理残留容器时出错:', error);
-        }
-      });
-    }
-
-    // 检查是否已经加载了液体玻璃库
-    if (typeof LiquidGlass === 'undefined') {
-      console.error('LiquidGlass 库未加载，无法应用液体玻璃效果');
-      return;
-    }
-
-    // 获取弹窗的位置和尺寸
-    const tooltipRect = tooltipEl.getBoundingClientRect();
-    const tooltipWidth = tooltipRect.width;
-    const tooltipHeight = tooltipRect.height;
-
-    // 让弹窗背景透明，这样液体玻璃效果可以透过弹窗看到后面的内容
-    tooltipEl.style.setProperty('background-color', 'rgba(255, 255, 255, 0.05)', 'important');
-    tooltipEl.style.setProperty('backdrop-filter', 'none', 'important'); // 移除弹窗自身的模糊效果
-
-    // 添加一个标记类，表示当前使用液体玻璃效果
-    tooltipEl.classList.add('liquid-glass-active');
-
-    // 从缓存中获取玻璃材质类型
-    getStorageValue('glassEffectType').then(function(glassEffectType) {
-      const effectType = glassEffectType || 'rough'; // 默认为Rough
-      console.log('使用玻璃材质类型:', effectType);
-
-      // 配置液体玻璃效果参数 - 优化性能和速度
-      const glassConfig = {
-        width: Math.max(tooltipWidth * 2.5, 400), // 适度减小渲染尺寸以提高性能
-        height: Math.max(tooltipHeight * 2.5, 400),
-        radius: 12, // 圆角半径
-        centerDistortion: 0, // 中心畸变效果
-        centerSize: 13, // 中心大小
-        preBlur: 10, // 减少预模糊以提高渲染速度
-        rainbow: 10, // 彩虹畸变效果
-        effectType: effectType, // 从存储中读取的玻璃效果类型
-        autoResize: true, // 启用自动调整
-        resizeDebounce: 50 // 减少防抖延迟以提高响应速度
-      };
-
-      // 直接在弹窗元素上应用液体玻璃效果 - 在Shadow DOM环境中启用shadowDomSupport
-      liquidGlassUpdater = LiquidGlass.applyToElement(tooltipEl, glassConfig, {
-        preserveContent: true,
-        autoSize: true,
-        mode: 'overlay', // 使用overlay模式
-        shadowDomSupport: true, // 在Shadow DOM环境中启用支持
-        monitorParent: false // 禁用父容器监控，专注于元素自身
-      });
-
-      if (liquidGlassUpdater) {
-        console.log('液体玻璃效果已成功直接应用到弹窗元素');
-      }
-      // 注意：胶囊的玻璃效果会在胶囊创建时自动应用，不需要在这里调用
-    });
-
-  } catch (error) {
-    console.error('应用液体玻璃效果时发生错误:', error);
-  }
-}
-
-/**
- * 清理液体玻璃效果
- */
-function cleanupLiquidGlass() {
-  console.log('开始清理液体玻璃效果...');
-
-  // 清理液体玻璃更新器
-  if (liquidGlassUpdater && typeof liquidGlassUpdater.destroy === 'function') {
-    try {
-      liquidGlassUpdater.destroy();
-      console.log('液体玻璃更新器已销毁');
-    } catch (error) {
-      console.error('销毁液体玻璃更新器时出错:', error);
-    }
-    liquidGlassUpdater = null;
-  }
-
-  // 清理可能残留的独立液体玻璃容器（兼容性清理）
-  const existingContainers = document.querySelectorAll('#tooltip-liquid-glass-container');
-  if (existingContainers.length > 0) {
-    console.log(`清理 ${existingContainers.length} 个残留的独立液体玻璃容器...`);
-    existingContainers.forEach((container) => {
-      try {
-        container.remove();
-        console.log('残留容器已移除');
-      } catch (error) {
-        console.error('移除残留容器时出错:', error);
-      }
-    });
-  }
-
-  // 清理重复的SVG滤镜
-  if (typeof LiquidGlass !== 'undefined' && typeof LiquidGlass.cleanupDuplicateSVGs === 'function') {
-    try {
-      LiquidGlass.cleanupDuplicateSVGs();
-      console.log('重复SVG滤镜已清理');
-    } catch (error) {
-      console.error('清理重复SVG滤镜时出错:', error);
-    }
-  }
-
-  // 恢复弹窗的原始背景样式（只有在弹窗元素存在且仍在DOM中时才操作）
-  if (tooltipEl && tooltipEl.parentNode) {
-    try {
-      // 恢复弹窗的背景样式
-      tooltipEl.style.removeProperty('background-color');
-      tooltipEl.style.removeProperty('backdrop-filter');
-      tooltipEl.classList.remove('liquid-glass-active');
-      tooltipEl.classList.remove('firefox-glass-effect'); // 清理Firefox玻璃效果类
-
-      // 使用setTimeout确保CSS类移除生效后再恢复背景
-      setTimeout(() => {
-        if (!tooltipEl || !tooltipEl.parentNode) {
-          console.log('弹窗已被移除，跳过背景恢复');
-          return;
-        }
-
-        // 恢复视频背景元素的显示（如果存在）
-        const videoBackground = tooltipEl.querySelector('.tooltip-video-background');
-        if (videoBackground) {
-          videoBackground.style.display = '';
-          videoBackground.style.zIndex = '0'; // 确保视频在背景层
-          videoBackground.style.position = 'absolute'; // 确保定位正确
-          console.log('视频背景已恢复显示');
-        }
-
-        // 恢复图片背景的显示（通过CSS伪元素）
-        const existingBgStyle = tooltipEl.querySelector('style[data-bg-style]');
-        if (existingBgStyle) {
-          // 如果有图片背景样式，确保伪元素可见
-          const currentContent = existingBgStyle.textContent;
-          if (currentContent.includes('display: none')) {
-            existingBgStyle.textContent = currentContent.replace(/display:\s*none\s*!important;?/g, '');
-            console.log('图片背景已恢复显示');
-          }
-        }
-
-        console.log('延迟背景恢复完成');
-      }, 50); // 50ms延迟确保CSS类移除生效
-
-      console.log('弹窗背景样式已恢复');
-    } catch (error) {
-      console.error('恢复弹窗背景样式时出错:', error);
-    }
-  } else if (tooltipEl) {
-    console.log('弹窗元素已从DOM中移除，跳过背景样式恢复');
-  }
-
-  // 同时清理所有胶囊的玻璃效果
-  cleanupGlassEffectFromCapsules();
-
-  console.log('液体玻璃效果清理完成');
-}
-
-/**
- * 恢复原始背景
- */
-function restoreOriginalBackground() {
-  if (!tooltipEl) {
-    console.log('弹窗元素不存在，无法恢复背景');
-    return;
-  }
-
-  console.log('开始恢复原始背景...', {
-    isBackgroundVideo,
-    backgroundVideoUrl: backgroundVideoUrl ? '有视频URL' : '无视频URL',
-    backgroundImageUrl: backgroundImageUrl ? '有图片URL' : '无图片URL'
-  });
-
-  // 添加延迟确保CSS类移除生效
-  setTimeout(() => {
-    if (!tooltipEl || !tooltipEl.parentNode) {
-      console.log('弹窗已被移除，跳过背景恢复');
-      return;
-    }
-
-    // 检查当前背景设置
-    if (isBackgroundVideo && backgroundVideoUrl) {
-      // 恢复视频背景
-      console.log('恢复视频背景，URL:', backgroundVideoUrl.substring(0, 50) + '...');
-      let videoEl = tooltipEl.querySelector('.tooltip-video-background');
-
-      if (!videoEl) {
-        // 如果视频元素不存在，重新创建
-        videoEl = document.createElement('video');
-        videoEl.className = 'tooltip-video-background';
-        videoEl.src = backgroundVideoUrl;
-        videoEl.autoplay = true;
-        videoEl.loop = true;
-        videoEl.muted = true;
-        videoEl.playsInline = true;
-        videoEl.style.objectPosition = 'center top';
-        videoEl.style.position = 'absolute';
-        videoEl.style.zIndex = '0';
-
-        // 将视频元素插入到tooltip的最前面
-        tooltipEl.insertBefore(videoEl, tooltipEl.firstChild);
-        console.log('重新创建视频背景元素');
-      } else {
-        // 如果视频元素存在，确保其可见且在正确位置
-        videoEl.style.display = '';
-        videoEl.style.zIndex = '0';
-        videoEl.style.position = 'absolute';
-        console.log('恢复现有视频背景元素');
-      }
-    } else if (backgroundImageUrl) {
-      // 恢复图片背景
-      console.log('恢复图片背景，URL:', backgroundImageUrl.substring(0, 50) + '...');
-      let bgStyle = tooltipEl.querySelector('style[data-bg-style]');
-
-      if (!bgStyle) {
-        // 如果样式元素不存在，重新创建
-        bgStyle = document.createElement('style');
-        bgStyle.setAttribute('data-bg-style', 'true');
-        bgStyle.textContent = `
-          .vocab-tooltip::before {
-            background-image: url(${backgroundImageUrl});
-            ${backgroundImageUrl.toLowerCase().endsWith('.svg') || backgroundImageUrl.includes('data:image/svg+xml') ? 'opacity: 0.05;' : ''}
-          }
-        `;
-        tooltipEl.appendChild(bgStyle);
-        console.log('重新创建图片背景样式');
-      } else {
-        // 如果样式元素存在，确保其内容正确
-        bgStyle.textContent = `
-          .vocab-tooltip::before {
-            background-image: url(${backgroundImageUrl});
-            ${backgroundImageUrl.toLowerCase().endsWith('.svg') || backgroundImageUrl.includes('data:image/svg+xml') ? 'opacity: 0.05;' : ''}
-          }
-        `;
-        console.log('恢复现有图片背景样式');
-      }
-    } else {
-      console.log('没有背景需要恢复');
-    }
-
-    console.log('原始背景恢复完成');
-  }, 100); // 100ms延迟确保CSS类移除生效
-}
-
-/**
- * 全局更新液体玻璃位置的函数
- */
-function updateLiquidGlassPosition() {
-  console.log('updateLiquidGlassPosition 被调用');
-
-  if (!tooltipEl) {
-    console.log('弹窗元素不存在');
-    return;
-  }
-
-  // 由于现在直接在弹窗元素上应用液体玻璃效果，不需要更新独立容器的位置
-  // 液体玻璃效果会自动跟随弹窗元素的变化
-  console.log('液体玻璃效果直接应用在弹窗元素上，无需手动更新位置');
-
-  // 如果需要更新液体玻璃效果的尺寸，可以调用更新器
-  if (liquidGlassUpdater && typeof liquidGlassUpdater === 'function') {
-    try {
-      const tooltipRect = tooltipEl.getBoundingClientRect();
-      liquidGlassUpdater({
-        width: Math.max(tooltipRect.width * 2.5, 400),
-        height: Math.max(tooltipRect.height * 2.5, 400)
-      });
-      console.log('更新了液体玻璃渲染尺寸');
-    } catch (error) {
-      console.error('更新液体玻璃尺寸时出错:', error);
-    }
-  }
-
-  console.log('液体玻璃位置更新完成');
-}
-
 // 添加全局错误处理，防止未处理的Promise错误导致消息通道关闭
+
+
 window.addEventListener('unhandledrejection', function(event) {
   console.error('未处理的Promise错误:', event.reason);
   // 阻止错误传播到控制台，避免影响扩展运行
@@ -575,11 +180,9 @@ function clearAllPopupsAndWindows() {
         tooltipResizeObserver = null;
       }
 
-      // 清理液体玻璃效果
-      cleanupLiquidGlass();
-
       // 清理top layer状态
       cleanupTopLayerState();
+
 
       console.log('主弹窗清理完成');
     } catch (error) {
@@ -629,20 +232,8 @@ function clearAllPopupsAndWindows() {
     console.error('清理Shadow DOM元素时发生错误:', error);
   }
 
-  // 5. 清理任何残留的液体玻璃容器
-  try {
-    const glassContainers = document.querySelectorAll('#tooltip-liquid-glass-container, .liquid-glass-container');
-    glassContainers.forEach((container) => {
-      container.remove();
-    });
-    if (glassContainers.length > 0) {
-      console.log(`清理了 ${glassContainers.length} 个液体玻璃容器`);
-    }
-  } catch (error) {
-    console.error('清理液体玻璃容器时发生错误:', error);
-  }
-
   console.log('所有弹窗和窗口清理完成');
+
 }
 
 // 背景设置相关变量
@@ -861,20 +452,8 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       clearBackgroundSettingsCache();
       sendResponse({ success: true });
       return true;
-    } else if (message.action === "updateGlassEffect") {
-      // 更新玻璃效果类型
-      if (liquidGlassUpdater && message.effectType) {
-        console.log('收到玻璃效果更新消息:', message.effectType);
-        liquidGlassUpdater({
-          effectType: message.effectType
-        });
-        sendResponse({ success: true });
-      } else {
-        console.warn('无法更新玻璃效果: liquidGlassUpdater不存在或effectType未提供');
-        sendResponse({ success: false });
-      }
-      return true;
     } else if (message.action === "updateTooltipThemeMode") {
+
       // 如果当前有弹窗显示，则更新其主题
       if (tooltipEl) {
         const themeMode = message.mode || 'auto';
@@ -897,25 +476,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         }
       }
       return true;
-    } else if (message.action === "toggleLiquidGlass") {
-      // 切换液体玻璃效果
-      liquidGlassEnabled = message.enabled !== undefined ? message.enabled : !liquidGlassEnabled;
-      console.log('液体玻璃效果已', liquidGlassEnabled ? '启用' : '禁用');
-
-      // 清理缓存，确保下次获取最新状态
-      liquidGlassEnabledCache = null;
-      liquidGlassEnabledCacheTime = 0;
-
-      if (!liquidGlassEnabled && tooltipEl) {
-        // 如果禁用了效果且当前有弹窗，立即清理效果
-        cleanupLiquidGlass();
-      }
-
-      sendResponse({ success: true, enabled: liquidGlassEnabled });
-      return true;
     }
   } catch (error) {
     console.error('消息处理错误:', error);
+
     try {
       sendResponse({ success: false, error: error.message });
     } catch (responseError) {
@@ -1279,96 +843,57 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
   tooltipEl.style.zIndex = "2147483647";
   tooltipEl.style.setProperty('z-index', '2147483647', 'important');
 
-  // 预先检查是否启用液体玻璃效果，如果启用则提前设置透明背景
-  getLiquidGlassEnabledFast().then(async (isGlassEnabled) => {
-    if (isGlassEnabled && tooltipEl) {
-      // Firefox使用CSS玻璃效果，其他浏览器使用SVG液体玻璃效果
-      if (await isFirefox()) {
-        tooltipEl.classList.add('firefox-glass-effect');
-        // 检测当前主题模式
-        getStorageValue('isDarkMode').then((isDark) => {
-          if (isDark) {
-            tooltipEl.classList.add('dark-mode');
-          } else {
-            tooltipEl.classList.add('light-mode');
-          }
-        });
-      } else {
-        // 提前设置透明背景，避免显示原始背景
-        tooltipEl.style.setProperty('background-color', 'rgba(255, 255, 255, 0.05)', 'important');
-        tooltipEl.style.setProperty('backdrop-filter', 'none', 'important');
-        tooltipEl.classList.add('liquid-glass-active');
-      }
-    }
-  });
   // tooltipEl.style.transformOrigin = "left top"; // 默认变换原点为左上角
+
   // tooltipEl.style.width = "392px"; // 设置固定宽度，与estimatedTooltipWidth一致
 
-  // 检查是否需要禁用动画（Bionic模式或液体玻璃特效）
+  // 检查是否需要禁用动画（Bionic模式）
   // 保存当前tooltipEl的引用，避免异步操作中访问已清理的全局变量
   const animationTooltipEl = tooltipEl;
-  getStorageValue('liquidGlassEnabled').then((storedLiquidGlassEnabled) => {
-    // 检查tooltipEl是否仍然存在且未被移除，以及tooltip是否正在被销毁
-    if (!animationTooltipEl || !animationTooltipEl.parentNode || tooltipBeingDestroyed) {
-      console.log('tooltipEl 已被移除或tooltip正在被销毁，跳过动画禁用设置');
-      return;
-    }
+  if (!animationTooltipEl || !animationTooltipEl.parentNode || tooltipBeingDestroyed) {
+    console.log('tooltipEl 已被移除或tooltip正在被销毁，跳过动画禁用设置');
+  } else if (isBionicActive) {
+    console.log("[a4_tooltip_new.js] 在Bionic模式下创建弹窗，禁用动画");
 
-    const isGlassEnabled = storedLiquidGlassEnabled !== undefined ? storedLiquidGlassEnabled : liquidGlassEnabled;
-    const shouldDisableAnimation = isBionicActive || isGlassEnabled;
+    animationTooltipEl.style.transition = 'none'; // 禁用过渡动画
+    animationTooltipEl.style.willChange = 'transform'; // 只保留transform的硬件加速
 
-    if (shouldDisableAnimation) {
-      if (isBionicActive) {
-        console.log("[a4_tooltip_new.js] 在Bionic模式下创建弹窗，禁用动画");
+    // 添加相应的类，用于在CSS中禁用其他元素的动画
+    animationTooltipEl.classList.add('bionic-active');
+
+    // 在创建完弹窗后，为Notes元素设置样式
+    // 保存当前tooltipEl的引用，避免异步操作中访问已清理的全局变量
+    const currentTooltipEl = tooltipEl;
+    setTimeout(() => {
+      // 使用保存的引用而不是全局变量
+      if (!currentTooltipEl || !currentTooltipEl.parentNode) {
+        console.error('tooltipEl 已被移除，无法设置Notes元素样式');
+        return;
       }
-      if (isGlassEnabled) {
-        console.log("[a4_tooltip_new.js] 液体玻璃特效启用，禁用opacity动画");
-      }
+      const notesElements = currentTooltipEl.querySelectorAll('.Notes');
+      notesElements.forEach((el) => {
+        el.style.transition = 'none';
+        el.style.color = 'var(--secondary-text-color)'; // 确保颜色立即设置正确
+      });
+    }, 0);
+  } else {
+    // 弹出动画 - 减少动画时间以提高响应速度
+    tooltipEl.style.transition = 'opacity 0.05s ease-in-out';
+    tooltipEl.style.willChange = 'opacity, transform';
 
-      animationTooltipEl.style.transition = 'none'; // 禁用过渡动画
-      animationTooltipEl.style.willChange = 'transform'; // 只保留transform的硬件加速
-
-      // 添加相应的类，用于在CSS中禁用其他元素的动画
-      if (isBionicActive) {
-        animationTooltipEl.classList.add('bionic-active');
-      }
-      if (isGlassEnabled) {
-        animationTooltipEl.classList.add('liquid-glass-active');
-      }
-
-      // 在创建完弹窗后，为Notes元素设置样式
-      // 保存当前tooltipEl的引用，避免异步操作中访问已清理的全局变量
-      const currentTooltipEl = tooltipEl;
-      setTimeout(() => {
-        // 使用保存的引用而不是全局变量
-        if (!currentTooltipEl || !currentTooltipEl.parentNode) {
-          console.error('tooltipEl 已被移除，无法设置Notes元素样式');
-          return;
-        }
-        const notesElements = currentTooltipEl.querySelectorAll('.Notes');
+    // 在非特殊模式下，为Notes元素恢复过渡效果
+    // 保存当前tooltipEl的引用，避免异步操作中访问已清理的全局变量
+    const currentTooltipEl2 = tooltipEl;
+    setTimeout(() => {
+      if (currentTooltipEl2 && currentTooltipEl2.parentNode) {
+        const notesElements = currentTooltipEl2.querySelectorAll('.Notes');
         notesElements.forEach((el) => {
-          el.style.transition = 'none';
-          el.style.color = 'var(--secondary-text-color)'; // 确保颜色立即设置正确
+          el.style.transition = 'background-color 0.1s, color 0.1s, transform 0.1s ease-in-out';
         });
-      }, 0);
-    } else {
-      // 弹出动画 - 减少动画时间以提高响应速度
-      tooltipEl.style.transition = 'opacity 0.05s ease-in-out';
-      tooltipEl.style.willChange = 'opacity, transform';
+      }
+    }, 0);
+  }
 
-      // 在非特殊模式下，为Notes元素恢复过渡效果
-      // 保存当前tooltipEl的引用，避免异步操作中访问已清理的全局变量
-      const currentTooltipEl2 = tooltipEl;
-      setTimeout(() => {
-        if (currentTooltipEl2 && currentTooltipEl2.parentNode) {
-          const notesElements = currentTooltipEl2.querySelectorAll('.Notes');
-          notesElements.forEach((el) => {
-            el.style.transition = 'background-color 0.1s, color 0.1s, transform 0.1s ease-in-out';
-          });
-        }
-      }, 0);
-    }
-  });
 
   // 设置 tooltip 的样式（例如：宽度、高度、滚动等）
   // tooltipEl.style.width = "500px";
@@ -4399,20 +3924,8 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
 
       // 最小化功能：隐藏指定元素，只显示翻译结果
       minimizeTooltip();
-
-      // // 强制重新应用液体玻璃效果 - 改进时序控制
-      // setTimeout(async () => {
-      //   console.log('最小化后开始重新应用液体玻璃效果');
-      //   // 先彻底清理现有效果
-      //   cleanupLiquidGlass();
-
-      //   // 等待清理完成后再重新应用
-      //   setTimeout(async () => {
-      //     console.log('清理完成，重新应用液体玻璃效果');
-      //     await applyLiquidGlassToTooltip();
-      //   }, 100); // 增加清理等待时间
-      // }, 350); // 增加最小化动画等待时间
     });
+
   } else {
     console.error('未找到最小化按钮元素 .minimize-btn-words');
   }
@@ -4600,20 +4113,8 @@ document.addEventListener("keydown", currentTooltipKeydownHandler, false); // <-
 
       // 还原功能：显示所有隐藏的元素
       restoreTooltip();
-
-      // // 强制重新应用液体玻璃效果 - 改进时序控制
-      // setTimeout(async () => {
-      //   console.log('还原后开始重新应用液体玻璃效果');
-      //   // 先彻底清理现有效果
-      //   cleanupLiquidGlass();
-
-      //   // 等待清理完成后再重新应用
-      //   setTimeout(async () => {
-      //     console.log('清理完成，重新应用液体玻璃效果');
-      //     await applyLiquidGlassToTooltip();
-      //   }, 100); // 增加清理等待时间
-      // }, 350); // 增加还原动画等待时间
     });
+
   } else {
     console.error('未找到还原按钮元素 .restore-btn-words');
   }
@@ -5619,13 +5120,8 @@ if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged)
       }
     }
 
-    if (changes.liquidGlassEnabled) {
-      liquidGlassEnabled = changes.liquidGlassEnabled.newValue !== undefined ? changes.liquidGlassEnabled.newValue : liquidGlassEnabled;
-      liquidGlassEnabledCache = liquidGlassEnabled;
-      liquidGlassEnabledCacheTime = Date.now();
-    }
-
     if (changes.enableSidebar) {
+
       applyTooltipSidebarButtonVisibility();
     }
 
@@ -6529,8 +6025,8 @@ html[data-theme='dark'] .sound-icon svg path {
     gap: 8px;
     padding: 4px 12px;
     background: #FBFAF5;
-    backdrop-filter: blur(10px);
     border-radius: 20px;
+
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 2147483646;
     opacity: 0;
@@ -6596,74 +6092,8 @@ html[data-theme='dark'] .sound-icon svg path {
     stroke: #ffffff;
 }
 
-/* ========== 胶囊玻璃效果样式 ========== */
-
-/* Firefox CSS玻璃效果 - 胶囊 */
-.header-buttons-capsule.firefox-glass-effect {
-    background: rgba(255, 255, 255, 0.15) !important;
-    backdrop-filter: blur(20px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
-}
-
-.header-buttons-capsule.firefox-glass-effect.dark-mode {
-    background: rgba(0, 0, 0, 0.25) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* 液体玻璃效果 - 胶囊 */
-.header-buttons-capsule.liquid-glass-active {
-    background: linear-gradient(135deg,
-        rgba(255, 255, 255, 0.15) 0%,
-        rgba(255, 255, 255, 0.08) 50%,
-        rgba(255, 255, 255, 0.12) 100%) !important;
-    backdrop-filter: blur(20px) saturate(180%) brightness(1.1) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.1) !important;
-}
-
-.header-buttons-capsule.liquid-glass-active.dark-mode {
-    background: linear-gradient(135deg,
-        rgba(0, 0, 0, 0.3) 0%,
-        rgba(0, 0, 0, 0.2) 50%,
-        rgba(0, 0, 0, 0.25) 100%) !important;
-    backdrop-filter: blur(20px) saturate(180%) brightness(0.9) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(0.9) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
-}
-
-/* 玻璃效果下的按钮样式优化 */
-.header-buttons-capsule.firefox-glass-effect button,
-.header-buttons-capsule.liquid-glass-active button {
-    background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.header-buttons-capsule.firefox-glass-effect button:hover,
-.header-buttons-capsule.liquid-glass-active button:hover {
-    background: rgba(255, 255, 255, 0.2) !important;
-}
-
-.header-buttons-capsule.firefox-glass-effect.dark-mode button,
-.header-buttons-capsule.liquid-glass-active.dark-mode button {
-    background: rgba(255, 255, 255, 0.08) !important;
-}
-
-.header-buttons-capsule.firefox-glass-effect.dark-mode button:hover,
-.header-buttons-capsule.liquid-glass-active.dark-mode button:hover {
-    background: rgba(255, 255, 255, 0.15) !important;
-}
-
 /* 按钮组容器样式（保留原有的，但现在默认隐藏） */
+
 .header-buttons-container {
     display: flex;
     align-items: center;
@@ -6672,295 +6102,8 @@ html[data-theme='dark'] .sound-icon svg path {
     margin-right: -20px;
 }
 
-/* 液体玻璃激活状态样式 */
-.vocab-tooltip.liquid-glass-active {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: none !important;
-    box-shadow: unset !important;
-    will-change: unset !important;
-}
-
-.vocab-tooltip.liquid-glass-active.dark-mode {
-    background-color: rgba(0, 0, 0, 0.05) !important;
-}
-
-/* 液体玻璃激活时隐藏背景装饰 */
-.vocab-tooltip.liquid-glass-active::before {
-    display: none !important;
-}
-
-/* 液体玻璃激活时隐藏视频背景 */
-.vocab-tooltip.liquid-glass-active .tooltip-video-background {
-    display: none !important;
-}
-
-/* Firefox CSS玻璃效果样式 */
-/* 性能说明：backdrop-filter 只保留在这一层（弹窗容器）。
-   原来 .scrollable-content / .translation-item / .ai-recommendation /
-   .translation-input 等后代也各自写了 backdrop-filter，
-   但它们本来就叠在已经模糊过的父层之上，视觉增益接近零，
-   而 Firefox 会为每一层单独做一次背景快照 + 模糊 pass ——
-   翻译列表有 N 项就是 N 个 backdrop 层。已全部移除，只留背景色做层次区分。 */
-.vocab-tooltip.firefox-glass-effect {
-    background: rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(20px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
-}
-
-.vocab-tooltip.firefox-glass-effect.dark-mode {
-    background: rgba(0, 0, 0, 0.2) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* Firefox玻璃效果下的内容区域 */
-.vocab-tooltip.firefox-glass-effect .scrollable-content {
-    background: rgba(255, 255, 255, 0.05) !important;
-    /*border-radius: 8px;*/
-}
-
-.vocab-tooltip.firefox-glass-effect.dark-mode .scrollable-content {
-    background: rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Firefox玻璃效果下的翻译项 */
-.vocab-tooltip.firefox-glass-effect .translation-item {
-    position: relative;
-    padding-right: 60px;
-    background: rgb(35 27 27 / 10%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 10px;
-    margin: 4px;
-}
-
-.vocab-tooltip.firefox-glass-effect .translation-item:hover {
-    background: rgba(255, 255, 255, 0.2) !important;
-}
-
-.vocab-tooltip.firefox-glass-effect.dark-mode .translation-item {
-    background: rgba(0, 0, 0, 0.2) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-.vocab-tooltip.firefox-glass-effect.dark-mode .translation-item:hover {
-    background: rgba(0, 0, 0, 0.3) !important;
-}
-
-/* Firefox玻璃效果下的AI推荐 */
-.vocab-tooltip.firefox-glass-effect .ai-recommendation {
-    margin-top: 8px;
-    padding: 8px;
-    background: rgba(70, 70, 70, 0.5) !important;
-    /* backdrop-filter 已移除：父层 .firefox-glass-effect 已做模糊，此处叠加无收益 */
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: none !important; /* 保留蓝色左边框 */
-    border-radius: 6px;
-    position: relative;
-    padding-right: 60px; /* 为按钮预留空间 */
-}
-
-.vocab-tooltip.firefox-glass-effect.dark-mode .ai-recommendation {
-    background: rgba(70, 70, 70, 0.55) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: none !important; /* 保留暗色模式的蓝色左边框 */
-}
-
-/* Firefox玻璃效果下的第二个AI推荐 */
-.vocab-tooltip.firefox-glass-effect .ai-recommendation-2 {
-    margin-top: 8px;
-    padding: 8px;
-    background: rgba(70, 70, 70, 0.5) !important;
-    /* backdrop-filter 已移除：父层 .firefox-glass-effect 已做模糊，此处叠加无收益 */
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: none !important; /* 橙色左边框 */
-    border-radius: 6px;
-    position: relative;
-    padding-right: 60px; /* 为按钮预留空间 */
-}
-
-.vocab-tooltip.firefox-glass-effect.dark-mode .ai-recommendation-2 {
-    background: rgba(70, 70, 70, 0.55) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: none !important; /* 保留暗色模式的橙色左边框 */
-}
-
-/* Firefox玻璃效果下隐藏背景装饰 */
-.vocab-tooltip.firefox-glass-effect::before {
-    display: none !important;
-}
-
-/* Firefox玻璃效果下隐藏视频背景 */
-.vocab-tooltip.firefox-glass-effect .tooltip-video-background {
-    display: none !important;
-}
-
-/* Firefox玻璃效果下的最小化状态样式 */
-.vocab-tooltip.firefox-glass-effect.minimized .translation-item {
-    position: relative;
-    padding-right: 60px;
-    background: rgba(255, 255, 255, 0.1) !important;
-    /* backdrop-filter 已移除：父层已做模糊 */
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 10px;
-    margin: 4px;
-    font-weight: bold;
-}
-
-.vocab-tooltip.firefox-glass-effect.minimized .translation-item:hover {
-    background: rgba(255, 255, 255, 0.2) !important;
-}
-
-.vocab-tooltip.firefox-glass-effect.minimized.dark-mode .translation-item {
-    background: rgba(0, 0, 0, 0.2) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    font-weight: bold;
-}
-
-.vocab-tooltip.firefox-glass-effect.minimized.dark-mode .translation-item:hover {
-    background: rgba(0, 0, 0, 0.3) !important;
-}
-
-.vocab-tooltip.firefox-glass-effect.minimized .translation-input {
-    background: rgba(255, 255, 255, 0.05) !important;
-    /* backdrop-filter 已移除：父层已做模糊 */
-}
-
-.vocab-tooltip.firefox-glass-effect.minimized.dark-mode .translation-input {
-    background: rgba(0, 0, 0, 0.1) !important;
-}
-
-.vocab-tooltip.firefox-glass-effect.minimized .ai-recommendation {
-    margin-top: 8px;
-    padding: 8px;
-    background: rgba(70, 70, 70, 0.5) !important;
-    /* backdrop-filter 已移除：父层 .firefox-glass-effect 已做模糊，此处叠加无收益 */
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: none !important; /* 保留蓝色左边框 */
-    border-radius: 6px;
-    position: relative;
-    padding-right: 60px; /* 为按钮预留空间 */
-    font-weight: bold;
-}
-
-.vocab-tooltip.firefox-glass-effect.minimized.dark-mode .ai-recommendation {
-    background: rgba(70, 70, 70, 0.55) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: none !important; /* 保留暗色模式的蓝色左边框 */
-}
-
-.vocab-tooltip.firefox-glass-effect.minimized .ai-recommendation-2 {
-    margin-top: 8px;
-    padding: 8px;
-    background: rgba(70, 70, 70, 0.5) !important;
-    /* backdrop-filter 已移除：父层 .firefox-glass-effect 已做模糊，此处叠加无收益 */
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: none !important; /* 橙色左边框 */
-    border-radius: 6px;
-    position: relative;
-    padding-right: 60px; /* 为按钮预留空间 */
-    font-weight: bold;
-}
-
-.vocab-tooltip.firefox-glass-effect.minimized.dark-mode .ai-recommendation-2 {
-    background: rgba(70, 70, 70, 0.55) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: none !important; /* 保留暗色模式的橙色左边框 */
-}
-
-/* Firefox玻璃效果下的translation-item.ai-recommendation样式 */
-.vocab-tooltip.firefox-glass-effect .translation-item.ai-recommendation {
-    display: flex;
-    align-items: center;
-    margin-top: 8px;
-    padding: 8px;
-    padding: 2px;
-    background: rgba(70, 70, 70, 0.5) !important;
-    /* backdrop-filter 已移除：父层 .firefox-glass-effect 已做模糊，此处叠加无收益 */
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: none !important;
-    border-radius: 10px;
-    position: relative;
-    padding-right: 60px;
-}
-
-.vocab-tooltip.firefox-glass-effect .translation-item.ai-recommendation:hover {
-    background: rgba(85, 85, 85, 0.6) !important;
-}
-
-.vocab-tooltip.firefox-glass-effect.dark-mode .translation-item.ai-recommendation {
-    background: rgba(70, 70, 70, 0.55) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: none !important;
-}
-
-.vocab-tooltip.firefox-glass-effect.dark-mode .translation-item.ai-recommendation:hover {
-    background: rgba(95, 95, 95, 0.65) !important;
-}
-
-/* Firefox玻璃效果下的translation-item.ai-recommendation-2样式 */
-.vocab-tooltip.firefox-glass-effect .translation-item.ai-recommendation-2 {
-    display: flex;
-    align-items: center;
-    margin-top: 8px;
-    padding: 8px;
-    padding: 2px;
-    background: rgba(70, 70, 70, 0.5) !important;
-    /* backdrop-filter 已移除：父层 .firefox-glass-effect 已做模糊，此处叠加无收益 */
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-left: none !important;
-    border-radius: 10px;
-    position: relative;
-    padding-right: 60px;
-}
-
-.vocab-tooltip.firefox-glass-effect .translation-item.ai-recommendation-2:hover {
-    background: rgba(85, 85, 85, 0.6) !important;
-}
-
-.vocab-tooltip.firefox-glass-effect.dark-mode .translation-item.ai-recommendation-2 {
-    background: rgba(70, 70, 70, 0.55) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: none !important;
-}
-
-.vocab-tooltip.firefox-glass-effect.dark-mode .translation-item.ai-recommendation-2:hover {
-    background: rgba(95, 95, 95, 0.65) !important;
-}
-
-/* 最小化状态下的翻译项在液体玻璃激活时的样式 */
-.vocab-tooltip.liquid-glass-active.minimized .translation-item {
-    background: unset !important;
-    /* 原为 backdrop-filter: blur(1px)：视觉上不可辨，但仍会建立一个 backdrop 层，已移除 */
-    font-weight: bold;
-}
-
-.vocab-tooltip.liquid-glass-active.minimized.dark-mode .translation-item {
-    background: #2d2d2dc7 !important;
-    /* 原为 backdrop-filter: blur(1px)：视觉上不可辨，但仍会建立一个 backdrop 层，已移除 */
-    font-weight: bold;
-}
-.vocab-tooltip.liquid-glass-active.minimized.dark-mode .ai-recommendation {
-    background-color:#2d2d2dc7 !important
-
-}
-.vocab-tooltip.liquid-glass-active.minimized.dark-mode .ai-recommendation-2 {
-    background-color:#2d2d2dc7 !important
-
-}
-
-.vocab-tooltip.liquid-glass-active.minimized .translation-input {
-    background:unset !important;
-
-}
-
-.vocab-tooltip.liquid-glass-active.minimized.dark-mode .translation-input {
-        background:unset !important;
-
-}
-
 .close-btn-words {
+
     cursor: pointer;
     /* padding: 4px; */
     /* 移除 margin-right: -7px; 和 margin-top: 5px; 让容器统一管理布局 */
@@ -7121,8 +6264,8 @@ html[data-theme='dark'] .sound-icon svg path {
     padding: 2px 8px;
     border-radius: 4px;
     font-size: 12px;
-    background-color: #dcdddd8a;
-    backdrop-filter: blur(10px);
+    background-color: #dcdddd;
+
     color: var(--text-color);
     margin: 0;
     position: relative; /* 添加相对定位，使删除按钮可以绝对定位 */
@@ -7164,8 +6307,8 @@ html[data-theme='dark'] .sound-icon svg path {
 }
 
 .example-sentence-pair {
-    background: #dcdddd8a;
-    backdrop-filter: blur(10px);
+    background: #dcdddd;
+
     border-radius: 4px;
     margin-bottom:5px;
 }
@@ -7260,8 +6403,8 @@ html[data-theme='dark'] .sound-icon svg path {
     min-height: 30px;
     box-sizing: border-box;
     padding-right: 60px;
-    background: #dcdddd8a;
-    backdrop-filter: blur(10px);
+    background: #dcdddd;
+
     border-radius: 4px;
     margin: 0;
 
@@ -7848,8 +6991,8 @@ shadowRoot.appendChild(style);
     cursor: pointer;
     user-select: none;
 
-    background-color: #dcdddd8a;
-    backdrop-filter: blur(10px);
+    background-color: #dcdddd;
+
 
 }
 
@@ -9396,31 +8539,15 @@ async function updateTooltipAnimationSettings() {
     return;
   }
 
-  // 使用快速缓存获取状态，避免异步延迟
-  const isGlassEnabled = await getLiquidGlassEnabledFast();
-  const shouldDisableAnimation = isBionicActive || isGlassEnabled;
-
-  if (shouldDisableAnimation) {
+  if (isBionicActive) {
     // 添加相应的类标记
-    if (isBionicActive) {
-      tooltipEl.classList.add('bionic-active');
-    }
-    if (isGlassEnabled) {
-      // 等待液体玻璃效果应用完成
-      await applyLiquidGlassToTooltip();
-
-      // 玻璃效果应用完成后，添加标记类
-      if (await isFirefox()) {
-        tooltipEl.classList.add('firefox-glass-effect');
-      } else {
-        tooltipEl.classList.add('liquid-glass-active');
-      }
-    }
+    tooltipEl.classList.add('bionic-active');
   } else {
     // 移除特殊模式的类标记
-    tooltipEl.classList.remove('bionic-active', 'liquid-glass-active', 'firefox-glass-effect');
+    tooltipEl.classList.remove('bionic-active');
   }
 }
+
 
 // --- 新增：清理监听器的辅助函数 ---
 function cleanupTooltipListeners() {
@@ -9480,21 +8607,37 @@ function closeTooltipWithAnimation() {
   tooltipResizeObserver = null;
   currentTooltipKeydownHandler = null;
 
-  // 检查是否需要禁用动画（Bionic模式或液体玻璃特效）
-  getStorageValue('liquidGlassEnabled').then((storedLiquidGlassEnabled) => {
-    const isGlassEnabled = storedLiquidGlassEnabled !== undefined ? storedLiquidGlassEnabled : liquidGlassEnabled;
-    const shouldDisableAnimation = isBionicActive || isGlassEnabled;
+  // 检查是否需要禁用动画（Bionic模式）
+  if (isBionicActive) {
+    // 特殊模式下，立即关闭弹窗，不使用动画
+    console.log("[a4_tooltip_new.js] Bionic模式下立即关闭弹窗，不使用动画");
 
-    if (shouldDisableAnimation) {
-      // 特殊模式下，立即关闭弹窗，不使用动画
-      if (isBionicActive) {
-        console.log("[a4_tooltip_new.js] Bionic模式下立即关闭弹窗，不使用动画");
-      }
-      if (isGlassEnabled) {
-        console.log("[a4_tooltip_new.js] 液体玻璃特效启用，立即关闭弹窗，不使用opacity动画");
-      }
+    // 立即移除元素和监听器
+    if (tooltipToRemove) {
+      tooltipToRemove.remove();
+    }
+    if (observerToDisconnect) {
+      observerToDisconnect.disconnect();
+    }
+    if (listenerToRemove) {
+      document.removeEventListener("keydown", listenerToRemove, false);
+    }
 
-      // 立即移除元素和监听器
+    // 重置销毁标志
+    tooltipBeingDestroyed = false;
+
+    // 重置关闭标志
+    isClosingTooltip = false;
+  } else {
+    // 非特殊模式下，使用动画关闭
+    // 1. 开始淡出动画 - 移除了立即隐藏的步骤，让动画可见
+    if (tooltipToRemove) {
+      tooltipToRemove.style.opacity = '0';
+    }
+
+    // 2. 等待动画完成 (0.08 秒，即 80 毫秒) 弹出动画
+    setTimeout(() => {
+      // 3. 动画完成后，移除元素和监听器
       if (tooltipToRemove) {
         tooltipToRemove.remove();
       }
@@ -9505,44 +8648,13 @@ function closeTooltipWithAnimation() {
         document.removeEventListener("keydown", listenerToRemove, false);
       }
 
-      // 在元素移除后清理液体玻璃效果
-      cleanupLiquidGlass();
-
-      // 重置销毁标志
-      tooltipBeingDestroyed = false;
-
       // 重置关闭标志
       isClosingTooltip = false;
-    } else {
-      // 非特殊模式下，使用动画关闭
-      // 1. 开始淡出动画 - 移除了立即隐藏的步骤，让动画可见
-      if (tooltipToRemove) {
-        tooltipToRemove.style.opacity = '0';
-      }
-
-      // 2. 等待动画完成 (0.08 秒，即 80 毫秒) 弹出动画
-      setTimeout(() => {
-        // 3. 动画完成后，移除元素和监听器
-        if (tooltipToRemove) {
-          tooltipToRemove.remove();
-        }
-        if (observerToDisconnect) {
-          observerToDisconnect.disconnect();
-        }
-        if (listenerToRemove) {
-          document.removeEventListener("keydown", listenerToRemove, false);
-        }
-
-        // 在元素移除后清理液体玻璃效果
-        cleanupLiquidGlass();
-
-        // 重置关闭标志
-        isClosingTooltip = false;
-        tooltipBeingDestroyed = false;
-      }, 1); // 动画持续时间
-    }
-  });
+      tooltipBeingDestroyed = false;
+    }, 1); // 动画持续时间
+  }
 }
+
 
 // 清理top layer状态的函数
 function cleanupTopLayerState() {
@@ -9751,21 +8863,8 @@ function minimizeTooltip() {
   setTimeout(() => {
     repositionMiniTooltip();
   }, 50); // 短暂延迟确保DOM更新完成
-
-  // 强制重新应用液体玻璃效果 - 改进版本
-  setTimeout(() => {
-    console.log('最小化函数中开始重新应用液体玻璃效果');
-    // 先彻底清理现有效果
-    // cleanupLiquidGlass();
-
-    // // 等待清理完成后再重新应用
-    // setTimeout(() => {
-    //   console.log('最小化清理完成，重新应用液体玻璃效果');
-    //   applyLiquidGlassToTooltip();
-    // }, 150); // 增加清理等待时间
-
-  }, 300); // 等待最小化动画完成
 }
+
 
 // 重新定位mini窗口
 async function repositionMiniTooltip() {
@@ -9975,20 +9074,8 @@ function restoreTooltip() {
 
   // 移除最小化标记类
   tooltipEl.classList.remove('minimized');
-
-  // 强制重新应用液体玻璃效果 - 改进版本
-  setTimeout(() => {
-    console.log('还原函数中开始重新应用液体玻璃效果');
-    // 先彻底清理现有效果
-    // cleanupLiquidGlass();
-
-    // 等待清理完成后再重新应用
-    // setTimeout(() => {
-    //   console.log('还原清理完成，重新应用液体玻璃效果');
-    //   applyLiquidGlassToTooltip();
-    // }, 150); // 增加清理等待时间
-  }, 300); // 等待还原动画完成
 }
+
 
 // 显示当前句子翻译的函数
 function showCurrentSentenceTranslation(word, currentSentence) {
@@ -10214,7 +9301,8 @@ async function generateAllCapsules(wrapper, currentWord, shadowRoot, currentSent
     }
   }
 
-  // 1. 创建默认胶囊容器（最小化、关闭按钮，液体玻璃/主题切换按钮已移除）
+  // 1. 创建默认胶囊容器（最小化、关闭按钮，主题切换按钮已移除）
+
   const defaultCapsule = createDefaultCapsule(isDark);
   wrapper.appendChild(defaultCapsule);
 
@@ -10226,34 +9314,8 @@ async function generateAllCapsules(wrapper, currentWord, shadowRoot, currentSent
     const customCapsule = createCustomCapsule(capsuleContainer, containerIndex, currentWord, isDark, currentSentence);
     wrapper.appendChild(customCapsule);
   });
-
-  // 3. 检查是否需要应用玻璃效果（使用CSS效果）
-  const isGlassEnabled = await getLiquidGlassEnabledFast();
-  console.log('胶囊创建时检查玻璃效果状态:', isGlassEnabled);
-
-  if (isGlassEnabled) {
-    // 检查是否为Firefox
-    const isFirefoxBrowser = await isFirefox();
-    console.log('是否为Firefox浏览器:', isFirefoxBrowser);
-
-    // 为所有胶囊添加CSS玻璃效果类
-    const allCapsules = wrapper.querySelectorAll('.header-buttons-capsule');
-    console.log('找到胶囊数量:', allCapsules.length);
-
-    allCapsules.forEach((capsule, index) => {
-      if (isFirefoxBrowser) {
-        capsule.classList.add('firefox-glass-effect');
-        console.log(`胶囊 #${index + 1} 添加了 firefox-glass-effect 类`);
-      } else {
-        capsule.classList.add('liquid-glass-active');
-        console.log(`胶囊 #${index + 1} 添加了 liquid-glass-active 类`);
-      }
-      console.log(`胶囊 #${index + 1} 当前类列表:`, capsule.className);
-    });
-
-    console.log(`已为 ${allCapsules.length} 个胶囊添加CSS玻璃效果`);
-  }
 }
+
 
 // 创建默认胶囊容器
 function createDefaultCapsule(isDark) {
@@ -10412,87 +9474,8 @@ function handleCustomButtonClick(button, currentWord, currentSentence = '') {
   }
 }
 
-/**
- * 为所有胶囊应用玻璃效果
- * @param {boolean} isFirefoxGlass - 是否使用Firefox CSS玻璃效果
- * @param {boolean} isLiquidGlass - 是否使用液体玻璃效果
- */
-function applyGlassEffectToCapsules(isFirefoxGlass, isLiquidGlass) {
-  try {
-    console.log('applyGlassEffectToCapsules 被调用, Firefox:', isFirefoxGlass, 'Liquid:', isLiquidGlass);
-
-    // 获取Shadow DOM中的所有胶囊容器
-    const shadowHost = document.getElementById('lingkuma-tooltip-host');
-    if (!shadowHost || !shadowHost.shadowRoot) {
-      console.log('Shadow Host不存在，无法应用胶囊玻璃效果');
-      return;
-    }
-
-    const capsules = shadowHost.shadowRoot.querySelectorAll('.header-buttons-capsule');
-    if (!capsules || capsules.length === 0) {
-      console.log('未找到胶囊容器，跳过玻璃效果应用');
-      return;
-    }
-
-    console.log(`为 ${capsules.length} 个胶囊应用玻璃效果...`);
-
-    capsules.forEach((capsule, index) => {
-      console.log(`胶囊 #${index + 1} 应用前的类:`, capsule.className);
-
-      if (isFirefoxGlass) {
-        // Firefox CSS玻璃效果
-        capsule.classList.add('firefox-glass-effect');
-        console.log(`胶囊 #${index + 1} 已应用Firefox玻璃效果`);
-      } else if (isLiquidGlass) {
-        // 液体玻璃效果 - 使用CSS效果（性能优化）
-        capsule.classList.add('liquid-glass-active');
-        console.log(`胶囊 #${index + 1} 已应用液体玻璃CSS效果`);
-      }
-
-      console.log(`胶囊 #${index + 1} 应用后的类:`, capsule.className);
-    });
-
-    console.log('所有胶囊玻璃效果应用完成');
-  } catch (error) {
-    console.error('应用胶囊玻璃效果时出错:', error);
-  }
-}
-
-/**
- * 清理所有胶囊的玻璃效果
- */
-function cleanupGlassEffectFromCapsules() {
-  try {
-    // 获取Shadow DOM中的所有胶囊容器
-    const shadowHost = document.getElementById('lingkuma-tooltip-host');
-    if (!shadowHost || !shadowHost.shadowRoot) {
-      console.log('Shadow Host不存在，无法清理胶囊玻璃效果');
-      return;
-    }
-
-    const capsules = shadowHost.shadowRoot.querySelectorAll('.header-buttons-capsule');
-    if (!capsules || capsules.length === 0) {
-      console.log('未找到胶囊容器，跳过玻璃效果清理');
-      return;
-    }
-
-    console.log(`清理 ${capsules.length} 个胶囊的玻璃效果...`);
-
-    capsules.forEach((capsule, index) => {
-      // 移除CSS类
-      capsule.classList.remove('firefox-glass-effect');
-      capsule.classList.remove('liquid-glass-active');
-
-      console.log(`胶囊 #${index + 1} 玻璃效果已清理`);
-    });
-
-    console.log('所有胶囊玻璃效果清理完成');
-  } catch (error) {
-    console.error('清理胶囊玻璃效果时出错:', error);
-  }
-}
-
 // 打开iframe弹窗
+
 function openIframePopup(url, title) {
   // 检查是否已存在iframe弹窗
   let iframePopup = document.getElementById('lingkuma-iframe-popup');

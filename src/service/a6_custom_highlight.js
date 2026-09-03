@@ -1329,7 +1329,8 @@ function showCustomWordQueryButton(word, mouseX, mouseY) {
 
   let buttonStyles = `
     position: absolute;
-    background: rgba(0, 150, 0, 0.9);
+    background: rgb(0, 150, 0);
+
     color: white;
     border: none;
     border-radius: 6px;
@@ -1339,7 +1340,7 @@ function showCustomWordQueryButton(word, mouseX, mouseY) {
     cursor: pointer;
     z-index: 2147483647;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(10px);
+
     user-select: none;
     transition: all 0.2s ease;
   `;
@@ -1584,8 +1585,9 @@ function createCustomWordQueryButton(word, mouseX, mouseY, index) {
 
   let multiButtonStyles = `
     position: absolute;
-    background: rgba(31, 31, 31, 0.85);
+    background: rgb(31, 31, 31);
     color: rgba(255, 255, 255, 0.9);
+
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     padding: 2px 8px;
@@ -1594,7 +1596,7 @@ function createCustomWordQueryButton(word, mouseX, mouseY, index) {
     cursor: pointer;
     z-index: ${2147483647 - index}; /* 确保按钮层级正确 */
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(12px);
+
     transition: all 0.2s ease;
     left: ${left}px;
     top: ${top}px;

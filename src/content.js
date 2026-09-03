@@ -1291,10 +1291,8 @@ function getStorageValue(key) {
   });
 }
 
-// 玻璃切换已移除；保留空实现以免旧调用报错
-function updateAnalysisGlassToggleButton() {}
-
 // Ask 浮窗主题：与 a4 / a7 一致，跟随 tooltipThemeMode（auto 时跟当前页高亮深色模式）
+
 function resolveAnalysisThemeIsDark(themeMode, forcedIsDark = null) {
   if (themeMode === 'dark') {
     return true;
