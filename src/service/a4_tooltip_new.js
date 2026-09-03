@@ -1152,6 +1152,10 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
     });
   }
 
+  // 尽早发起结构化查词：一是让弹窗内容更快到位，二是让 TTS 侧的语言检测能复用这里的 language 结果，
+  // 避免点一个词同时发出「结构化查词」和「单独语言判定」两个请求
+  getTooltipStructuredLookup();
+
   // 检测页面是否为竖排文本模式，如果是则添加保护样式
   if (detectVerticalWritingMode()) {
     tooltipEl.classList.add("vertical-text-protection");

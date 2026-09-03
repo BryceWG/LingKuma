@@ -1,4 +1,78 @@
 // =======================
+// 结构化查词的 language 字段共享注册表
+// =======================
+// 点一个词时，TTS 播放链路（tts.js / orion_tts.js 开头的 fetchLanguageDetection）与弹窗的结构化查词
+// 会并行起跑，两边都需要语言值：前者早于后者，导致同一次点击发出两次语言判定请求。
+// 这里把结构化查词的 promise 按「词+句子」登记出来，让 TTS 侧直接复用它的 language 结果。
+window.structuredLanguagePending = window.structuredLanguagePending || new Map();
+
+function structuredLanguageKey(word, sentence) {
+  return `${String(word || '').toLowerCase()}||${sentence || ''}`;
+}
+
+function registerStructuredLanguagePending(items, sentence, promise) {
+  const keys = items
+    .filter((item) => item.fields.includes('language'))
+    .map((item) => structuredLanguageKey(item.word, sentence));
+  if (!keys.length) {
+    return;
+  }
+  keys.forEach((key) => window.structuredLanguagePending.set(key, promise));
+  const cleanup = () => keys.forEach((key) => {
+    if (window.structuredLanguagePending.get(key) === promise) {
+      window.structuredLanguagePending.delete(key);
+    }
+  });
+  promise.then(cleanup, cleanup);
+}
+
+/**
+ * 复用结构化查词正在进行中的 language 结果。
+ * @param {string} word 待查词
+ * @param {string} sentence 所在句子
+ * @param {number} graceMs 结构化查词可能比调用方晚注册一两个宏任务，允许的等待上限
+ * @returns {Promise<string|null>} 拿到的语言代码，没有则 null
+ */
+function waitForStructuredLanguage(word, sentence, graceMs = 120) {
+  const key = structuredLanguageKey(word, sentence);
+  const pickLanguage = async (promise) => {
+    const result = await promise.catch(() => null);
+    const language = result?.words?.[String(word).toLowerCase()]?.language;
+    if (!language || language === 'auto' || language === '?') {
+      return null;
+    }
+    return String(language).trim() || null;
+  };
+
+  const existing = window.structuredLanguagePending.get(key);
+  if (existing) {
+    return pickLanguage(existing);
+  }
+
+  // 整句朗读不会有对应的结构化查词登记，没必要为它白等
+  if (/\s/.test(String(word || '').trim())) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    const deadline = Date.now() + graceMs;
+    const poll = () => {
+      const pending = window.structuredLanguagePending.get(key);
+      if (pending) {
+        pickLanguage(pending).then(resolve);
+        return;
+      }
+      if (Date.now() >= deadline) {
+        resolve(null);
+        return;
+      }
+      setTimeout(poll, 20);
+    };
+    poll();
+  });
+}
+
+// =======================
 // 修改后的 AI 语言检测函数：使用自定义提示词(如有配置)进行语言检测
 // =======================
 async function fetchLanguageDetection(word, sentence) {
@@ -30,6 +104,14 @@ async function fetchLanguageDetection(word, sentence) {
     }
   } catch (error) {
     console.log("获取数据库语言信息失败，继续AI检测:", error);
+  }
+
+  // 3. 复用结构化查词正在进行中的 language 结果（点词时弹窗/词爆会带 language 字段一起请求），
+  //    避免同一次点击既发结构化请求又发一次单独的语言判定请求
+  const reusedLanguage = await waitForStructuredLanguage(word, sentence);
+  if (reusedLanguage) {
+    console.log("复用结构化查词的语言结果", reusedLanguage);
+    return reusedLanguage.length > 7 ? "?" : reusedLanguage;
   }
 
   console.log("数据库中不存在语言，开始AI检测");
@@ -644,6 +726,8 @@ async function fetchStructuredWordLookup({ sentence, items = [], sentenceTransla
   })();
 
   window.structuredLookupInflight.set(inflightKey, lookupPromise);
+  // 让 TTS 侧的 fetchLanguageDetection 能复用这里的 language 结果，避免重复的单独语言请求
+  registerStructuredLanguagePending(normalizedItems, sentence, lookupPromise);
   try {
     return await lookupPromise;
   } finally {
