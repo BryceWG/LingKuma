@@ -18,5 +18,13 @@
   "word_highlight_button_scope_global": {
     "message": "全局",
     "description": "Popup option for applying the word highlight floating button globally"
+  },
+  "host_permission_needed": {
+    "message": "Firefox 需要授权访问网页后，插件才能在打开新页面时自动加载。",
+    "description": "Popup banner explaining why Firefox host permission is required"
+  },
+  "host_permission_grant": {
+    "message": "授权访问所有网站",
+    "description": "Popup button to request all-sites host permission on Firefox"
   }
 }

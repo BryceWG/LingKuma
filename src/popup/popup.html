@@ -1179,6 +1179,28 @@
       color: var(--ios-accent);
     }
 
+    .host-permission-banner {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0 12px 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--ios-card);
+      border: 1px solid var(--ios-border);
+      color: var(--ios-text);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .host-permission-banner button {
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      background: var(--ios-accent);
+      color: #fff;
+      cursor: pointer;
+    }
+
     [data-theme="dark"] .popup-hero {
       background:
         radial-gradient(circle at top right, rgba(217, 119, 87, 0.16), transparent 34%),
@@ -1267,6 +1289,11 @@
       <button id="update-close-btn" class="update-close-btn" title="关闭">×</button>
     </div>
   </section>
+
+  <div id="host-permission-banner" class="host-permission-banner">
+    <span data-i18n="host_permission_needed">Firefox 需要授权访问网页后，插件才能在打开新页面时自动加载。</span>
+    <button type="button" id="grant-host-permission-btn" data-i18n="host_permission_grant">授权访问所有网站</button>
+  </div>
 
   <div class="popup-toolbar">
     <div class="theme-buttons">

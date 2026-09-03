@@ -18,5 +18,13 @@
   "word_highlight_button_scope_global": {
     "message": "Global",
     "description": "Popup option for applying the word highlight floating button globally"
+  },
+  "host_permission_needed": {
+    "message": "Firefox needs permission to access websites before LingKuma can load automatically on new pages.",
+    "description": "Popup banner explaining why Firefox host permission is required"
+  },
+  "host_permission_grant": {
+    "message": "Allow access to all websites",
+    "description": "Popup button to request all-sites host permission on Firefox"
   }
 }
