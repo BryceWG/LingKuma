@@ -6286,9 +6286,6 @@ window.onload = function() {
 
 }); // 结束 DOMContentLoaded
 
-// ... (现有的 window.onload, switchTab, backup/restore 等函数) ...
-
-// 更新 switchTab 函数以确保在切换时清除状态消息 (可选但推荐)
 document.getElementById('audioUrlNotebook').addEventListener('input', debounce(function(e) {
   chrome.storage.local.get(['ttsConfig'], function(result) {
       const ttsConfig = result.ttsConfig || {};
@@ -6296,105 +6293,6 @@ document.getElementById('audioUrlNotebook').addEventListener('input', debounce(f
       chrome.storage.local.set({ ttsConfig: ttsConfig });
   });
 }, 500));
-
-function switchTab(panelId) {
-  // 隐藏所有面板
-  panels.forEach((panel) => panel.classList.add('hidden'));
-  // 移除所有主菜单和子菜单按钮的 active 状态 (简化处理，可以按需细化)
-  document.querySelectorAll('.sidebar button, .submenu button').forEach((btn) => btn.classList.remove('active'));
-
-  // 控制webdavStatus的显示/隐藏
-  const webdavStatusDiv = document.getElementById('webdavStatus');
-  if (webdavStatusDiv) {
-    if (panelId === 'panel-webdav') {
-      webdavStatusDiv.style.display = 'block';
-    } else {
-      webdavStatusDiv.style.display = 'none';
-    }
-  }
-
-  // 显示目标面板
-  const targetPanel = document.getElementById(panelId);
-  if (targetPanel) {
-    targetPanel.classList.remove('hidden');
-
-    // 清除 OhMyGpt 面板的状态消息 (如果切换到的是这个面板)
-    if (panelId === 'panel-subscription-ohmygpt') {
-        const statusSpans = targetPanel.querySelectorAll('span[id$="Status"], span[id$="StatusSpan"]'); // 选择所有状态 span
-        statusSpans.forEach((span) => { span.textContent = ''; }); // 清空文本内容
-        // 尝试获取并显示到期时间
-        const currentUserId = document.getElementById('ohmygptUserId').value;
-        if (currentUserId) {
-            fetchAndDisplayOhMyGptExpiryDate(currentUserId);
-        } else {
-            // 如果没有 UserID，确保到期时间显示为 N/A
-            const expiryDisplay = document.getElementById('ohmygptExpiryDateDisplay');
-            const expiryStatus = document.getElementById('ohmygptExpiryStatus');
-            if (expiryDisplay) {expiryDisplay.textContent = 'N/A';}
-            if (expiryStatus) {
-                expiryStatus.textContent = chrome.i18n.getMessage('ohmygptExpiryStatusNoUserId') || '需要先获取 User ID';
-                expiryStatus.style.color = 'orange';
-            }
-        }
-    }
-
-    // 找到对应的菜单按钮并设为 active (需要更复杂的逻辑来处理主/子菜单)
-    // 尝试查找 ID 匹配的按钮
-    const buttonId = `tab-${panelId.replace('panel-', '').replace(/-/g, '-')}`; // 尝试构造按钮 ID
-    const targetButton = document.getElementById(buttonId);
-    if (targetButton) {
-      // 如果是子菜单按钮，需要同时激活父菜单按钮
-      const parentMenu = targetButton.closest('.submenu')?.previousElementSibling;
-      if (parentMenu && parentMenu.matches('.sidebar > button')) {
-          parentMenu.classList.add('active');
-          // 确保父菜单的箭头是展开状态
-          const arrow = parentMenu.querySelector('.arrow');
-          if (arrow) {arrow.innerHTML = '▼';}
-          // 确保子菜单是展开的
-          const submenu = targetButton.closest('.submenu');
-          if (submenu && submenu.style.maxHeight !== submenu.scrollHeight + 'px') {
-              submenu.style.maxHeight = submenu.scrollHeight + 'px';
-          }
-      }
-      targetButton.classList.add('active');
-    } else {
-        // 如果找不到对应的 tab 按钮 (例如直接调用 switchTab 时)，
-        // 尝试根据 panelId 激活父菜单（如果适用）
-        const panelElement = document.getElementById(panelId);
-        const parentButton = findParentMenuButtonForPanel(panelId); // 需要实现这个辅助函数或类似逻辑
-        if (parentButton) {
-            parentButton.classList.add('active');
-             // 确保父菜单的箭头是展开状态
-            const arrow = parentButton.querySelector('.arrow');
-            if (arrow) {arrow.innerHTML = '▼';}
-             // 确保子菜单是展开的
-            const submenu = parentButton.nextElementSibling;
-             if (submenu && submenu.classList.contains('submenu') && submenu.style.maxHeight !== submenu.scrollHeight + 'px') {
-                 submenu.style.maxHeight = submenu.scrollHeight + 'px';
-             }
-        }
-    }
-  } else {
-    console.warn(`Panel with ID ${panelId} not found.`);
-  }
-}
-
-// 辅助函数示例 (需要根据你的 HTML 结构调整)
-function findParentMenuButtonForPanel(panelId) {
-    if (panelId.startsWith('panel-api-')) {return document.getElementById('menu-api');}
-    if (panelId.startsWith('panel-tts-')) {return document.getElementById('menu-tts');}
-    if (panelId.startsWith('panel-subscription-')) {return null;}
-    if (panelId.startsWith('panel-word-') || panelId === 'panel-table' || panelId === 'panel-cloud-wordlist') {return document.getElementById('menu-wordlist');}
-    // 新增：数据库操作菜单的面板
-    if (panelId === 'panel-cloud-db' || panelId === 'panel-webdav' || panelId === 'panel-word-operations' || panelId === 'panel-import' || panelId === 'panel-backup') {
-        return document.getElementById('menu-database');
-    }
-    // 新增：EPUB文本修复菜单的面板
-    if (panelId === 'panel-epub' || panelId === 'panel-epub-telegraph' || panelId === 'panel-epub-roman-clean') {
-        return document.getElementById('menu-epub');
-    }
-    return null; // 其他面板没有父菜单
-}
 
 
 // 新增面板切换逻辑（更新：新增关于页面处理逻辑）
@@ -6794,7 +6692,7 @@ const DEFAULT_PROMPTS = {
   `,
 
 aiLanguageDetectionPrompt: '请判断以下句子中单词 \'{word}\' 在句子\'{sentence}\'中所使用的语言，仅返回ISO 639-1国际标准化组织ISO 639语言代码标准(如en, de, fr等)',
-  aiSentenceTranslationPrompt: '请将句子: \'{sentence}\'翻译为中文，并将句子中单词"\'{word}\'\"对应的中文的部分用Markdown加粗显示。只返回翻译结果，不要额外说明。',
+  aiSentenceTranslationPrompt: '请将句子: \'{sentence}\'翻译为中文，并将句子中单词"\'{word}\'"对应的中文的部分用Markdown加粗显示。只返回翻译结果，不要额外说明。',
   aiAnalysisPrompt: '直译： 我敬畏地观察着两位可怕的战士一次又一次地交叉他们的剑。 解析： 1.- Ich beobachte ehrfürchtig: "我敬畏地观察"。   - Ich: "我"，主语。   - beobachte: "观察"，动词"beobachten"的第一人称单数形式。   - ehrfürchtig: "敬畏地"，副词，表示对某事物的尊敬或畏惧。 2.- wie die beiden furchterregenden Krieger immer wieder ihre Klingen kreuzen: "两位可怕的战士一次又一次地交叉他们的剑"。   - wie: "如何"，引导方式状语从句。   - die beiden furchterregenden Krieger: "这两位可怕的战士"。     - die beiden: "这两位"，指示代词。     - furchterregenden: "可怕的"，形容词，表示"令人恐惧"。     - Krieger: "战士"，名词，指战斗者。   - immer wieder: "一次又一次"，副词短语，表示重复发生。   - ihre Klingen kreuzen: "交叉他们的剑"。      - ihre: "他们的"，物主代词。     - Klingen: "剑"，名词，表示剑或刀刃。     - kreuzen: "交叉"，动词，表示交叉或交锋。 借鉴上面解析格式，用中文解析下列英语/德语等其他语言的句子: {sentence}',
   sidebarAIPrompt: '直译： 我敬畏地观察着两位可怕的战士一次又一次地交叉他们的剑。 解析： 1.- Ich beobachte ehrfürchtig: "我敬畏地观察"。   - Ich: "我"，主语。   - beobachte: "观察"，动词"beobachten"的第一人称单数形式。   - ehrfürchtig: "敬畏地"，副词，表示对某事物的尊敬或畏惧。 2.- wie die beiden furchterregenden Krieger immer wieder ihre Klingen kreuzen: "两位可怕的战士一次又一次地交叉他们的剑"。   - wie: "如何"，引导方式状语从句。   - die beiden furchterregenden Krieger: "这两位可怕的战士"。     - die beiden: "这两位"，指示代词。     - furchterregenden: "可怕的"，形容词，表示"令人恐惧"。     - Krieger: "战士"，名词，指战斗者。   - immer wieder: "一次又一次"，副词短语，表示重复发生。   - ihre Klingen kreuzen: "交叉他们的剑"。      - ihre: "他们的"，物主代词。     - Klingen: "剑"，名词，表示剑或刀刃。     - kreuzen: "交叉"，动词，表示交叉或交锋。 借鉴上面解析格式，用中文解析下列英语/德语等其他语言的句子: {sentence}',
   aiTagAnalysisPrompt: `
