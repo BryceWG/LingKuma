@@ -1696,6 +1696,16 @@
 
     </div>
 
+    <div class="toggle">
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <div class="tooltip-container">
+          <label for="enableSidebar" data-i18n="use_sidebar">使用 Sidebar</label>
+          <span class="tooltip-text" data-i18n="use_sidebar_tooltip">关闭后，单词弹窗、词爆和顶部菜单不再显示侧边栏按钮。<br>Firefox 上侧边栏经常无法打开，可在此关闭。</span>
+        </div>
+        <input type="checkbox" id="enableSidebar" checked>
+      </div>
+    </div>
+
     <!-- 高亮动词功能 -->
     <div class="toggle">
       <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
@@ -2414,7 +2424,7 @@
       <label for="analysisWindowBtn" data-i18n="analysis_window">弹窗句子解析</label>
       <input type="text" id="analysisWindowBtn" class="key-input" readonly maxlength="1">
     </div>
-    <div class="input-group">
+    <div class="input-group" id="sidePanelShortcutGroup">
       <label for="sidePanelBtn" data-i18n="side_panel">侧边栏句子解析</label>
       <input type="text" id="sidePanelBtn" class="key-input" readonly maxlength="1">
     </div>

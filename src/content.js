@@ -1977,8 +1977,8 @@ function handleSidebarAnalysis() {
 
 
       // 检查侧边栏功能是否开启
-      chrome.storage.local.get('sidePanelBtn', function(result) {
-        if (result.sidePanelBtn !== false) {
+      chrome.storage.local.get({ enableSidebar: true }, function(result) {
+        if (result.enableSidebar !== false) {
           // 高亮句子
           try {
             highlightSentence(hoveredDetail, sentence);

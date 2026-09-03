@@ -446,6 +446,7 @@ function initializeSettings() {
       isDarkTheme: true,
       enablePlugin: false,
       enableWaifu: false,
+      enableSidebar: true, // 侧边栏入口默认开启；关闭后隐藏各类菜单中的侧栏按钮
       bionicEnabled: false,
       clipSubtitles: false,
       readingRuler: false,
@@ -3567,9 +3568,37 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+function applySidebarUiVisibility(enabled) {
+  const openSidebarBtn = document.getElementById('openSidebar');
+  const shortcutGroup = document.getElementById('sidePanelShortcutGroup');
+  if (openSidebarBtn) {
+    openSidebarBtn.style.display = enabled ? '' : 'none';
+  }
+  if (shortcutGroup) {
+    shortcutGroup.style.display = enabled ? '' : 'none';
+  }
+}
+
 // 添加打开侧栏按钮的事件监听
 document.addEventListener('DOMContentLoaded', function() {
   const openSidebarBtn = document.getElementById('openSidebar');
+  const enableSidebar = document.getElementById('enableSidebar');
+
+  chrome.storage.local.get({ enableSidebar: true }, function(result) {
+    const enabled = result.enableSidebar !== false;
+    if (enableSidebar) {
+      enableSidebar.checked = enabled;
+    }
+    applySidebarUiVisibility(enabled);
+  });
+
+  if (enableSidebar) {
+    enableSidebar.addEventListener('change', function(e) {
+      const enabled = e.target.checked;
+      chrome.storage.local.set({ enableSidebar: enabled });
+      applySidebarUiVisibility(enabled);
+    });
+  }
 
   if (openSidebarBtn) {
     openSidebarBtn.addEventListener('click', function() {
@@ -3757,6 +3786,8 @@ const i18n = {
     "youtube_font_family": "字体样式",
     "lingq_blocker": "LingqBlocker",
     "lingq_blocker_tooltip": "自动删除LingQ网站的模态框和隐藏高亮",
+    "use_sidebar": "使用 Sidebar",
+    "use_sidebar_tooltip": "关闭后，单词弹窗、词爆和顶部菜单不再显示侧边栏按钮。<br>Firefox 上侧边栏经常无法打开，可在此关闭。",
 
     // 添加新快捷键翻译
     "word_status_0": "单词状态 0 (未知)",
@@ -3964,6 +3995,8 @@ const i18n = {
     "youtube_font_family": "Font Family",
     "lingq_blocker": "LingqBlocker",
     "lingq_blocker_tooltip": "Automatically remove LingQ website modals and hide highlights",
+    "use_sidebar": "Use Sidebar",
+    "use_sidebar_tooltip": "When off, sidebar buttons are hidden from the word popup, word explosion, and the top menu.<br>Firefox often fails to open the sidebar; you can turn this off.",
 
     // 添加新快捷键翻译
     "word_status_0": "Word Status 0 (Unknown)",
@@ -4143,6 +4176,8 @@ const i18n = {
     "youtube_font_family": "字型樣式",
     "lingq_blocker": "LingqBlocker",
     "lingq_blocker_tooltip": "自動刪除LingQ網站的彈窗和隱藏高亮",
+    "use_sidebar": "使用 Sidebar",
+    "use_sidebar_tooltip": "關閉後，單字彈窗、詞爆和頂部選單不再顯示側邊欄按鈕。<br>Firefox 上側邊欄經常無法開啟，可在此關閉。",
     "word_status_0": "單字狀態 0 (未知)",
     "word_status_1": "單字狀態 1 (新)",
     "word_status_2": "單字狀態 2 (已知)",
@@ -4314,6 +4349,8 @@ const i18n = {
         "youtube_font_family": "Schriftfamilie",
         "lingq_blocker": "LingqBlocker",
         "lingq_blocker_tooltip": "LingQ-Website-Modals automatisch entfernen und Hervorhebungen ausblenden",
+        "use_sidebar": "Sidebar verwenden",
+        "use_sidebar_tooltip": "Wenn aus, werden Sidebar-Schaltflächen in Wort-Popup, Wortexplosion und dem oberen Menü ausgeblendet.<br>Unter Firefox öffnet die Sidebar oft nicht; Sie können sie hier deaktivieren.",
         "word_status_0": "Wortstatus 0 (Unbekannt)",
         "word_status_1": "Wortstatus 1 (Neu)",
         "word_status_2": "Wortstatus 2 (Bekannt)",
@@ -4483,6 +4520,8 @@ const i18n = {
         "youtube_font_family": "Famille de police",
         "lingq_blocker": "LingqBlocker",
         "lingq_blocker_tooltip": "Supprimer automatiquement les modals du site LingQ et masquer les surbrillances",
+        "use_sidebar": "Utiliser la barre latérale",
+        "use_sidebar_tooltip": "Une fois désactivé, les boutons de barre latérale disparaissent du popup mot, de l'explosion de mots et du menu supérieur.<br>Sous Firefox, la barre latérale ne s'ouvre souvent pas ; vous pouvez la désactiver ici.",
         "word_status_0": "Statut mot 0 (Inconnu)",
         "word_status_1": "Statut mot 1 (Nouveau)",
         "word_status_2": "Statut mot 2 (Connu)",
@@ -4655,6 +4694,8 @@ const i18n = {
         "youtube_font_family": "Familia de fuente",
         "lingq_blocker": "LingqBlocker",
         "lingq_blocker_tooltip": "Eliminar automáticamente los modales del sitio LingQ y ocultar resaltados",
+        "use_sidebar": "Usar barra lateral",
+        "use_sidebar_tooltip": "Al desactivarlo, los botones de la barra lateral se ocultan en el popup de palabras, la explosión de palabras y el menú superior.<br>En Firefox la barra lateral a menudo no se abre; puedes desactivarla aquí.",
         "word_status_0": "Estado palabra 0 (Desconocido)",
         "word_status_1": "Estado palabra 1 (Nuevo)",
         "word_status_2": "Estado palabra 2 (Conocido)",
@@ -4827,6 +4868,8 @@ const i18n = {
           "youtube_font_family": "フォントファミリー",
           "lingq_blocker": "LingqBlocker",
           "lingq_blocker_tooltip": "LingQサイトのモーダルを自動的に削除し、ハイライトを非表示にする",
+          "use_sidebar": "サイドバーを使う",
+          "use_sidebar_tooltip": "オフにすると、単語ポップアップ・単語爆発・上部メニューからサイドバーボタンが消えます。<br>Firefox ではサイドバーが開かないことが多いので、ここで無効にできます。",
           "word_status_0": "単語ステータス 0 (未知)",
           "word_status_1": "単語ステータス 1 (新規)",
           "word_status_2": "単語ステータス 2 (既知)",
@@ -4999,6 +5042,8 @@ const i18n = {
           "youtube_font_family": "글꼴 패밀리",
           "lingq_blocker": "LingqBlocker",
           "lingq_blocker_tooltip": "LingQ 웹사이트의 모달을 자동으로 제거하고 하이라이트를 숨깁니다",
+          "use_sidebar": "사이드바 사용",
+          "use_sidebar_tooltip": "끄면 단어 팝업, 단어 폭발, 상단 메뉴에서 사이드바 버튼이 숨겨집니다.<br>Firefox에서는 사이드바가 자주 열리지 않으니 여기서 끌 수 있습니다.",
           "word_status_0": "단어 상태 0 (모르는 단어)",
           "word_status_1": "단어 상태 1 (새 단어)",
           "word_status_2": "단어 상태 2 (아는 단어)",
@@ -5160,6 +5205,8 @@ const i18n = {
           "youtube_font_family": "Семейство шрифтов",
           "lingq_blocker": "LingqBlocker",
           "lingq_blocker_tooltip": "Автоматически удалять модальные окна сайта LingQ и скрывать подсветку",
+          "use_sidebar": "Использовать боковую панель",
+          "use_sidebar_tooltip": "Если выключить, кнопки боковой панели скрываются в попапе слова, взрыве слов и верхнем меню.<br>В Firefox боковая панель часто не открывается; здесь её можно отключить.",
           "word_status_0": "Статус слова 0 (Неизвестное)",
           "word_status_1": "Статус слова 1 (Новое)",
           "word_status_2": "Статус слова 2 (Известное)",
@@ -5318,6 +5365,8 @@ const i18n = {
           "youtube_font_family": "Famiglia di caratteri",
           "lingq_blocker": "LingqBlocker",
           "lingq_blocker_tooltip": "Rimuovi automaticamente le modali del sito LingQ e nascondi l'evidenziazione",
+          "use_sidebar": "Usa barra laterale",
+          "use_sidebar_tooltip": "Se disattivato, i pulsanti della barra laterale scompaiono dal popup parola, dall'esplosione parole e dal menu in alto.<br>Su Firefox la barra laterale spesso non si apre; puoi disattivarla qui.",
           "word_status_0": "Stato parola 0 (Sconosciuto)",
           "word_status_1": "Stato parola 1 (Nuovo)",
           "word_status_2": "Stato parola 2 (Conosciuto)",

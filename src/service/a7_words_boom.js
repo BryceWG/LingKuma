@@ -70,7 +70,8 @@ const A7_STORAGE_CACHE_KEYS = [
   'explosionSentenceTranslationCount',
   'pluginBlacklistWebsites',
   'explosionHighlightSpeed',
-  'highlightSpeed'
+  'highlightSpeed',
+  'enableSidebar'
 ];
 const a7StorageCache = Object.create(null);
 let a7StorageCachePreloadPromise = null;
@@ -213,6 +214,9 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
       if (!wordExplosionEnabled) {
         hideWordExplosion();
       }
+    }
+    if (changes.enableSidebar) {
+      applyExplosionSidebarButtonVisibility(changes.enableSidebar.newValue !== false);
     }
     if (changes.wordExplosionTriggerMode) {
       wordExplosionConfig.triggerMode = changes.wordExplosionTriggerMode.newValue;
@@ -481,6 +485,11 @@ function createWordExplosionTooltip() {
   sidebarBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     handleExplosionSidebarClick();
+  });
+  getA7StorageValues(['enableSidebar']).then((result) => {
+    if (result.enableSidebar === false) {
+      sidebarBtn.style.display = 'none';
+    }
   });
 
   // 添加一键已知按钮到左侧
@@ -1619,6 +1628,14 @@ function getA7CachedStorageValue(key, fallbackValue = undefined) {
 
   preloadA7StorageCache();
   return fallbackValue;
+}
+
+function applyExplosionSidebarButtonVisibility(enabled) {
+  const root = explosionShadowRoot || wordExplosionEl;
+  const btn = root && root.querySelector ? root.querySelector('.word-explosion-sidebar-btn') : null;
+  if (btn) {
+    btn.style.display = enabled ? '' : 'none';
+  }
 }
 
 function getA7StorageValues(keys) {
@@ -4872,6 +4889,9 @@ function handleExplosionAnalysisClick() {
 
 // 处理侧栏句子解析按钮点击
 function handleExplosionSidebarClick() {
+  if (getA7CachedStorageValue('enableSidebar', true) === false) {
+    return;
+  }
   if (!currentExplosionSentence) {
     console.error('[WordExplosion] 没有当前句子');
     return;

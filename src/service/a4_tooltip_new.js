@@ -73,7 +73,8 @@ const A4_STORAGE_CACHE_KEYS = [
   'analysisWindowKey',
   'sidePanelKey',
   'sentenceExplosionKey',
-  'sidebarWidth'
+  'sidebarWidth',
+  'enableSidebar'
 ];
 const a4StorageCache = Object.create(null);
 let a4StorageCachePreloadPromise = null;
@@ -1692,6 +1693,7 @@ async function showEnhancedTooltipForWord(word, sentence, wordRect, parent, orig
 
   // 设置基本HTML
   tooltipEl.innerHTML = tooltipHTML;
+  getStorageValues(['enableSidebar']).then(() => applyTooltipSidebarButtonVisibility());
 
   // 应用背景设置
   if (isBackgroundVideo && backgroundVideoUrl) {
@@ -5138,6 +5140,9 @@ function updateStatusToggleButton(tooltipEl, currentStatus) {
     sidebarBtn.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (!isSidebarFeatureEnabled()) {
+        return;
+      }
 
       try {
         // 直接使用当前弹窗中的单词和句子信息
@@ -5504,6 +5509,18 @@ function getCachedStorageValue(key, fallbackValue = undefined) {
   return fallbackValue;
 }
 
+function isSidebarFeatureEnabled() {
+  return getCachedStorageValue('enableSidebar', true) !== false;
+}
+
+function applyTooltipSidebarButtonVisibility() {
+  if (!tooltipEl) return;
+  const sidebarBtn = tooltipEl.querySelector('.sidebar-btn');
+  if (sidebarBtn) {
+    sidebarBtn.style.display = isSidebarFeatureEnabled() ? '' : 'none';
+  }
+}
+
 function getStorageValues(keys) {
   const keyList = Array.isArray(keys) ? keys : [keys];
   const values = {};
@@ -5561,6 +5578,10 @@ if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged)
       liquidGlassEnabled = changes.liquidGlassEnabled.newValue !== undefined ? changes.liquidGlassEnabled.newValue : liquidGlassEnabled;
       liquidGlassEnabledCache = liquidGlassEnabled;
       liquidGlassEnabledCacheTime = Date.now();
+    }
+
+    if (changes.enableSidebar) {
+      applyTooltipSidebarButtonVisibility();
     }
 
     if (changes.highlightPageThemeOverrides) {
@@ -8947,7 +8968,7 @@ document.addEventListener('keydown', function(e) {
   }
 
   // 获取用户自定义快捷键
-  getStorageValues(['wordQueryKey', 'copySentenceKey', 'analysisWindowKey', 'sidePanelKey', 'sentenceExplosionKey']).then(function(result) {
+  getStorageValues(['wordQueryKey', 'copySentenceKey', 'analysisWindowKey', 'sidePanelKey', 'sentenceExplosionKey', 'enableSidebar']).then(function(result) {
     const wordQueryKey = (result.wordQueryKey || 'q').toLowerCase();
     const copySentenceKey = (result.copySentenceKey || 'w').toLowerCase();
     const analysisWindowKey = (result.analysisWindowKey || 'e').toLowerCase();
@@ -9035,6 +9056,9 @@ document.addEventListener('keydown', function(e) {
       e.preventDefault();
       e.stopPropagation();
     } else if (e.key.toLowerCase() === sidePanelKey) {
+      if (result.enableSidebar === false) {
+        return;
+      }
       // 打开侧栏，进行句子解析
       handleSidebarAnalysis();
 
