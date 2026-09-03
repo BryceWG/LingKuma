@@ -24,7 +24,7 @@ async function handleFixNakedText() {
     fixButton.disabled = true; // 直接使用 fixButton
     // 可选：同时禁用拆分按钮，防止并发操作
     // const processButton = document.getElementById('processEpubButton'); // 删除此行，变量由 epubSplitter.js 提供
-    if (processButton) processButton.disabled = true; // 直接使用 processButton
+    if (processButton) {processButton.disabled = true;} // 直接使用 processButton
 
 
     try {
@@ -68,7 +68,7 @@ async function handleFixNakedText() {
             // 如果希望用户能再次点击（即使无修改），则设为 false
             // fixButton.disabled = false;
             // 恢复拆分按钮状态 (如果之前禁用了它)
-             if (processButton) processButton.disabled = (window.selectedEpubFile === null); // 直接使用 processButton
+             if (processButton) {processButton.disabled = (window.selectedEpubFile === null);} // 直接使用 processButton
 
             // 不需要下载，也不需要清空文件选择
             return;
@@ -91,7 +91,7 @@ async function handleFixNakedText() {
         document.getElementById('epubFileInput').value = '';
         // 确保两个按钮都禁用
         fixButton.disabled = true; // 直接使用 fixButton
-        if (processButton) processButton.disabled = true; // 直接使用 processButton
+        if (processButton) {processButton.disabled = true;} // 直接使用 processButton
 
 
     } catch (error) {
@@ -102,7 +102,7 @@ async function handleFixNakedText() {
         fixButton.textContent = originalFixButtonText;
         fixButton.disabled = false; // 允许重试
         // 恢复拆分按钮状态 (如果之前禁用了它)
-        if (processButton) processButton.disabled = (window.selectedEpubFile === null); // 直接使用 processButton
+        if (processButton) {processButton.disabled = (window.selectedEpubFile === null);} // 直接使用 processButton
     }
 }
 
@@ -122,7 +122,7 @@ function wrapNakedTextNodes(htmlContent) {
 
     function wrapCollectedNodes() {
         if (needsWrapping.length > 0) {
-            const combinedText = needsWrapping.map(node => node.textContent).join('');
+            const combinedText = needsWrapping.map((node) => node.textContent).join('');
             if (combinedText.trim() !== '') {
                 const p = doc.createElement('p');
                 p.textContent = combinedText; // 直接设置文本内容，避免创建不必要的子文本节点
@@ -131,13 +131,13 @@ function wrapNakedTextNodes(htmlContent) {
                 console.log("包裹了裸文本:", combinedText.substring(0, 50) + "...");
             } else {
                  // 如果合并后只有空白，也需要将其添加回去，以保持结构
-                 needsWrapping.forEach(node => newNodes.push(node.cloneNode(true)));
+                 needsWrapping.forEach((node) => newNodes.push(node.cloneNode(true)));
             }
             needsWrapping = []; // 清空临时数组
         }
     }
 
-    body.childNodes.forEach(node => {
+    body.childNodes.forEach((node) => {
         if (node.nodeType === Node.TEXT_NODE) {
             // 是文本节点，先收集起来
             needsWrapping.push(node);
@@ -160,7 +160,7 @@ function wrapNakedTextNodes(htmlContent) {
             body.removeChild(body.firstChild);
         }
         // 添加新节点
-        newNodes.forEach(newNode => {
+        newNodes.forEach((newNode) => {
             body.appendChild(newNode);
         });
 
@@ -172,4 +172,4 @@ function wrapNakedTextNodes(htmlContent) {
         // 没有修改，返回原始内容
         return { modifiedContent: htmlContent, fileChanged: false };
     }
-} 
+}

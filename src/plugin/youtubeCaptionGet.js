@@ -85,7 +85,7 @@
 
       // 为不同格式创建链接
       const formats = ['json3', 'vtt', 'srt', 'ttml'];
-      formats.forEach(format => {
+      formats.forEach((format) => {
         const formatUrl = url.includes('fmt=')
           ? url.replace(/fmt=[^&]+/, `fmt=${format}`)
           : `${url}&fmt=${format}`;
@@ -328,7 +328,7 @@ function getAvailableSubtitleTracks() {
   }
 }
 
-function forceSubtitleAndGetJsonUrl(closeAfterGet = true){
+function forceSubtitleAndGetJsonUrl(closeAfterGet = true) {
   // 返回一个Promise，以便可以等待结果
   return new Promise((resolve) => {
     console.log('等待6秒后触发字幕...');

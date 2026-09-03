@@ -2,7 +2,7 @@
 // 纯JavaScript实现，不依赖chrome.runtime.onMessage通信
 
 
-//搞笑；Orion记不住信任。IOS不信任本地证书。权威证书不授权本地地址。
+// 搞笑；Orion记不住信任。IOS不信任本地证书。权威证书不授权本地地址。
 
 // 音频播放器实例 - 分离单词和句子播放器
 let orion_wordAudioPlayer = null;
@@ -94,24 +94,24 @@ function orion_isSentenceText(text, lang) {
 }
 
 function orion_getTerminalPunctuatedSingleWord(text) {
-    if (typeof text !== 'string') return null;
+    if (typeof text !== 'string') {return null;}
 
     const trimmedText = text.trim();
     const match = trimmedText.match(/^(.+)([.?。？])$/u);
-    if (!match) return null;
+    if (!match) {return null;}
 
     const word = match[1].trim();
-    if (!word || /\s/u.test(word)) return null;
+    if (!word || /\s/u.test(word)) {return null;}
 
     // 仅处理末尾一个句号或问号的单词，避免把缩写、省略号等误判为单词。
-    if (/[。！？.!?]/u.test(word)) return null;
+    if (/[。！？.!?]/u.test(word)) {return null;}
 
     return word;
 }
 
 function orion_isLikelySentenceText(text, sentence) {
-    if (!text) return false;
-    if (orion_getTerminalPunctuatedSingleWord(text)) return false;
+    if (!text) {return false;}
+    if (orion_getTerminalPunctuatedSingleWord(text)) {return false;}
 
     const normalizedText = text.trim();
     const normalizedSentence = (sentence || '').trim();
@@ -133,7 +133,7 @@ function orion_isLikelySentenceText(text, sentence) {
 async function orion_playText(params) {
     const { text: rawText, count = 1, sentence } = params;
     const text = orion_getTerminalPunctuatedSingleWord(rawText) || rawText;
-    if (!text) return;
+    if (!text) {return;}
     // 语言检测已切换为tts主流程的AI检测
     const likelySentence = orion_isLikelySentenceText(text, sentence);
     const sentenceTTSAutoDetectLanguageValue = await orion_getStorageData('sentenceTTSAutoDetectLanguage');
@@ -155,7 +155,7 @@ async function orion_playText(params) {
     } else if (!isSentence && enableWordTTS === false) {
         canPlayTTS = false;
     }
-    if (!canPlayTTS) return;
+    if (!canPlayTTS) {return;}
     if (isSentence) {
         orion_stopSentenceAudio();
     } else {
@@ -268,7 +268,7 @@ async function orion_playCustom(word, count, urlType = 1, sentence = "", langOve
         };
 
         // 播放音频
-        orion_wordAudioPlayer.play().catch(error => {
+        orion_wordAudioPlayer.play().catch((error) => {
             console.error('播放单词出错:', error);
             console.log('iOS设备需要用户交互才能播放音频，请点击播放按钮');
         });
@@ -372,7 +372,7 @@ async function orion_playMinimaxi(sentence, lang) {
         orion_pendingAudioData = [];
 
         // 初始化MediaSource
-        await new Promise(resolve => {
+        await new Promise((resolve) => {
             orion_mediaSource.addEventListener('sourceopen', () => {
                 orion_sourceBuffer = orion_mediaSource.addSourceBuffer('audio/mpeg');
                 orion_sourceBuffer.addEventListener('updateend', () => {
@@ -418,7 +418,7 @@ async function orion_playMinimaxi(sentence, lang) {
 
             while (true) {
                 const endIndex = buffer.indexOf('\n\n');
-                if (endIndex === -1) break;
+                if (endIndex === -1) {break;}
 
                 const chunk = buffer.slice(0, endIndex);
                 buffer = buffer.slice(endIndex + 2);
@@ -449,7 +449,7 @@ async function orion_playMinimaxi(sentence, lang) {
             if (!initialBufferingComplete && initialChunksCount >= MIN_INITIAL_CHUNKS) {
                 initialBufferingComplete = true;
                 console.log('初始缓冲完成，开始播放');
-                orion_sentenceAudioPlayer.play().catch(e => console.error('播放启动失败:', e));
+                orion_sentenceAudioPlayer.play().catch((e) => console.error('播放启动失败:', e));
             }
         }
     } catch (error) {
@@ -478,7 +478,7 @@ function orion_getGptTTSMimeType(format) {
 
 function orion_normalizeGptTTSVoice(voice) {
     const value = String(voice || 'alloy').trim();
-    if (!value) return 'alloy';
+    if (!value) {return 'alloy';}
     if (value.startsWith('{')) {
         try {
             return JSON.parse(value);
@@ -596,8 +596,8 @@ function orion_normalizeSupertoneLanguage(language, model, isStream = false) {
 
 function orion_splitSupertoneText(text, maxLength = 300) {
     const normalizedText = String(text || '').replace(/\s+/g, ' ').trim();
-    if (!normalizedText) return [];
-    if (normalizedText.length <= maxLength) return [normalizedText];
+    if (!normalizedText) {return [];}
+    if (normalizedText.length <= maxLength) {return [normalizedText];}
 
     const chunks = [];
     let remaining = normalizedText;
@@ -617,7 +617,7 @@ function orion_splitSupertoneText(text, maxLength = 300) {
         chunks.push(remaining.slice(0, splitAt).trim());
         remaining = remaining.slice(splitAt).trim();
     }
-    if (remaining) chunks.push(remaining);
+    if (remaining) {chunks.push(remaining);}
     return chunks;
 }
 
@@ -706,7 +706,7 @@ async function orion_playSupertoneStream(config, chunks, mimeType, isSentence, c
             const reader = response.body.getReader();
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) break;
+                if (done) {break;}
                 buffers.push(value);
             }
         }
@@ -728,7 +728,7 @@ async function orion_playSupertoneStream(config, chunks, mimeType, isSentence, c
         orion_wordAudioPlayer = player;
     }
 
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
         orion_mediaSource.addEventListener('sourceopen', () => {
             orion_sourceBuffer = orion_mediaSource.addSourceBuffer('audio/mpeg');
             orion_sourceBuffer.addEventListener('updateend', () => {
@@ -746,7 +746,7 @@ async function orion_playSupertoneStream(config, chunks, mimeType, isSentence, c
         const reader = response.body.getReader();
         while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {break;}
             recordedChunks.push(value);
             const buffer = value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength);
             if (orion_sourceBuffer.updating || orion_pendingAudioData.length > 0) {
@@ -756,7 +756,7 @@ async function orion_playSupertoneStream(config, chunks, mimeType, isSentence, c
             }
             if (!hasStarted) {
                 hasStarted = true;
-                player.play().catch(error => console.error('Orion Supertone stream playback failed:', error));
+                player.play().catch((error) => console.error('Orion Supertone stream playback failed:', error));
             }
         }
     }
@@ -802,7 +802,7 @@ async function orion_playSupertoneTTS(text, isSentence, count = 1, langOverride 
         }
 
         const chunks = orion_splitSupertoneText(text);
-        if (chunks.length === 0) return;
+        if (chunks.length === 0) {return;}
 
         const mimeType = orion_getSupertoneTTSMimeType(config.supertoneOutputFormat);
         if ((config.supertoneMode || 'stream') === 'stream') {
@@ -822,9 +822,9 @@ async function orion_playSupertoneTTS(text, isSentence, count = 1, langOverride 
 }
 
 function orion_appendAudioChunk(hexString) {
-    if (!hexString || !orion_sourceBuffer) return null;
+    if (!hexString || !orion_sourceBuffer) {return null;}
 
-    const bytes = new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+    const bytes = new Uint8Array(hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 
     if (orion_sourceBuffer.updating || orion_pendingAudioData.length > 0) {
         orion_pendingAudioData.push(bytes.buffer);
@@ -867,14 +867,14 @@ async function orion_playLocalSpeech(text, lang, isSentence) {
 
     // 根据不同语言优化语音参数
     const languageSettings = {
-        'zh': { rate: 0.9, pitch: 1.0, volume: 0.95 },  // 中文
+        'zh': { rate: 0.9, pitch: 1.0, volume: 0.95 }, // 中文
         'ja': { rate: 0.85, pitch: 1.0, volume: 0.95 }, // 日语
-        'ko': { rate: 0.9, pitch: 1.0, volume: 1.0 },   // 韩语
-        'de': { rate: 0.9, pitch: 1.0, volume: 1.0 },   // 德语
-        'fr': { rate: 0.9, pitch: 1.0, volume: 1.0 },   // 法语
-        'es': { rate: 0.9, pitch: 1.0, volume: 1.0 },   // 西班牙语
-        'ru': { rate: 0.85, pitch: 1.0, volume: 1.0 },  // 俄语
-        'en': { rate: 0.95, pitch: 1.0, volume: 1.0 }   // 英语
+        'ko': { rate: 0.9, pitch: 1.0, volume: 1.0 }, // 韩语
+        'de': { rate: 0.9, pitch: 1.0, volume: 1.0 }, // 德语
+        'fr': { rate: 0.9, pitch: 1.0, volume: 1.0 }, // 法语
+        'es': { rate: 0.9, pitch: 1.0, volume: 1.0 }, // 西班牙语
+        'ru': { rate: 0.85, pitch: 1.0, volume: 1.0 }, // 俄语
+        'en': { rate: 0.95, pitch: 1.0, volume: 1.0 } // 英语
     };
 
     // 获取语言的基础代码
@@ -903,7 +903,7 @@ async function orion_playLocalSpeech(text, lang, isSentence) {
     let voices = window.speechSynthesis.getVoices();
 
     // 按语言筛选语音
-    const matchingVoices = voices.filter(voice =>
+    const matchingVoices = voices.filter((voice) =>
         voice.lang && voice.lang.toLowerCase().startsWith(baseLang)
     );
 
@@ -911,15 +911,15 @@ async function orion_playLocalSpeech(text, lang, isSentence) {
     const getVoiceScore = (voice) => {
         let score = 0;
         // Google 语音优先
-        if (voice.name.includes('Google')) score += 5;
+        if (voice.name.includes('Google')) {score += 5;}
         // Microsoft 语音次之
-        else if (voice.name.includes('Microsoft')) score += 4;
+        else if (voice.name.includes('Microsoft')) {score += 4;}
         // 自然语音
-        else if (voice.name.includes('Natural')) score += 3;
+        else if (voice.name.includes('Natural')) {score += 3;}
         // 本地语音
-        else if (!voice.localService) score += 2;
+        else if (!voice.localService) {score += 2;}
         // 完全匹配语言代码的优先
-        if (voice.lang.toLowerCase() === actualLang || voice.lang.toLowerCase().startsWith(baseLang)) score += 2;
+        if (voice.lang.toLowerCase() === actualLang || voice.lang.toLowerCase().startsWith(baseLang)) {score += 2;}
         return score;
     };
 
@@ -1050,7 +1050,7 @@ async function orion_playEdgeTTS(text, lang, isSentence) {
         };
 
         // 尝试播放
-        orion_wordAudioPlayer.play().catch(e => {
+        orion_wordAudioPlayer.play().catch((e) => {
             console.error('Orion TTS: Error playing word audio from edge:', e);
 
             // 在iOS Safari中，如果自动播放失败，提示用户点击播放
@@ -1123,7 +1123,7 @@ function orion_setAudioUrl(url) {
         orion_globalAudioElement.src = url;
 
         // 尝试播放
-        orion_globalAudioElement.play().catch(error => {
+        orion_globalAudioElement.play().catch((error) => {
             console.error('播放全局音频出错:', error);
             console.log('iOS设备需要用户交互才能播放音频，请点击播放按钮');
         });

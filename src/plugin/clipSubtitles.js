@@ -24,7 +24,7 @@ function initClipSubtitles() {
         untertitle_position: { x: '50%', y: '20px' }
     }, function(result) {
         // 如果开关关闭，则不执行后续逻辑
-        if (!result.clipSubtitles) return;
+        if (!result.clipSubtitles) {return;}
 
         const savedPosition = result.untertitle_position;
 
@@ -86,8 +86,8 @@ function initClipSubtitles() {
             cursor: 'move',
             zIndex: '999999',
             pointerEvents: 'none',
-            width: '100vw',       // 固定视口宽度
-            minWidth: '100vw',    // 防止宽度收缩
+            width: '100vw', // 固定视口宽度
+            minWidth: '100vw', // 防止宽度收缩
             display: 'flex',
             justifyContent: 'center', // 内容水平居中
             // 如果初始位置为居中，则使用 translate 实现居中
@@ -229,7 +229,7 @@ function initClipSubtitles() {
 
 
         function renderClipboardText(clipText) {
-            if (!clipText || clipText === lastClipboardText) return;
+            if (!clipText || clipText === lastClipboardText) {return;}
             lastClipboardText = clipText;
 
             const tempDiv = document.createElement('div');
@@ -246,7 +246,7 @@ function initClipSubtitles() {
         });
 
         chrome.storage.onChanged.addListener((changes, areaName) => {
-            if (areaName !== 'local' || !changes.clipboardContent) return;
+            if (areaName !== 'local' || !changes.clipboardContent) {return;}
             renderClipboardText(changes.clipboardContent.newValue || '');
         });
     });

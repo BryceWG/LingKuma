@@ -1,4 +1,4 @@
-// telegraph 会在唯一网页名后面添加以UTC-0 的“-月-日”后缀。 
+// telegraph 会在唯一网页名后面添加以UTC-0 的“-月-日”后缀。
 // 例如：https://telegra.ph/test-05-04
 // 因此，我们要为每个过程的 每个网页名字 添加同一个 一个随机数。就是说比如10个网页，要给后面添加相同的随机数。 然后获取UTC-0的日期。
 // 这样，我们就可以获取网页的具体链接了。而不用等网页创建之后再获取。 而且即使是相同的epub文件，因为我们会每次添加不同的随机数，也不会冲突。
@@ -8,7 +8,7 @@
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms)); // 新增 sleep 函数
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)); // 新增 sleep 函数
 
     const epubFileInput = document.getElementById('epubFile');
     const convertButton = document.getElementById('convertToTelegraphButton');
@@ -59,13 +59,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const bPart = bParts[i];
 
             if (isNaN(aPart) || isNaN(bPart)) { // 如果任一部分不是数字，则按字符串比较
-                if (aPart < bPart) return -1;
-                if (aPart > bPart) return 1;
+                if (aPart < bPart) {return -1;}
+                if (aPart > bPart) {return 1;}
             } else { // 如果两部分都是数字
                 const numA = parseInt(aPart, 10);
                 const numB = parseInt(bPart, 10);
-                if (numA < numB) return -1;
-                if (numA > numB) return 1;
+                if (numA < numB) {return -1;}
+                if (numA > numB) {return 1;}
             }
         }
         // 如果所有共同部分都相同，则较短的字符串优先
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 辅助函数：清理标题用于 URL 路径
     function sanitizeTitleForPath(title) {
-        if (!title) return 'untitled'; // 如果原始标题为空或未定义，返回默认值
+        if (!title) {return 'untitled';} // 如果原始标题为空或未定义，返回默认值
         let sanitized = String(title) // 确保是字符串
             .toLowerCase()
             .replace(/\./g, '-') // 将所有小数点替换为连字符
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/[^\u4e00-\u9fa5a-z0-9]+/g, '-') // 移除非(中文、字母、数字)的字符，替换为连字符
             .replace(/-+/g, '-') // 将多个连续的连字符替换为单个连字符
             .replace(/^-+|-+$/g, ''); // 移除开头和结尾的连字符
-        
+
         // 如果处理后为空（例如，标题全是特殊字符）
         if (sanitized.length === 0) {
             return 'untitled';
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 我们需要为 sharedRandomIdentifier 和可能的连字符留出空间
         const identifierLength = sharedRandomIdentifier ? sharedRandomIdentifier.length + 1 : 0; // +1 for the hyphen
         const maxLength = 60 - identifierLength; // 为标题部分预留的长度
-        
+
         // 截断逻辑，确保考虑 URI 编码后的长度
         if (encodeURIComponent(sanitized).length > maxLength) {
             let tempSanitized = sanitized;
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 再次清理可能在末尾产生的连字符
             sanitized = tempSanitized.replace(/-+$/g, '');
         }
-        
+
         // 如果经过所有处理（包括截断）后为空，则返回默认值
         return sanitized || 'untitled';
     }
@@ -128,11 +128,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function splitLargeChapter(chapter, maxSize = TELEGRAPH_CONTENT_LIMIT) {
         const originalFileName = chapter.fileName;
         const htmlContent = chapter.htmlContent;
-        
+
         // 首先检查是否需要切分
         const estimatedSize = estimateContentSize(htmlContent, originalFileName);
         console.log(`章节 "${originalFileName}" 预估大小: ${estimatedSize} 字节 (限制: ${maxSize})`);
-        
+
         if (estimatedSize <= maxSize) {
             // 不需要切分，返回原章节（添加标记）
             return [{
@@ -144,12 +144,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         console.log(`章节 "${originalFileName}" 超过大小限制，开始智能切分...`);
-        
+
         // 解析 HTML 内容
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
         const body = doc.body;
-        
+
         if (!body) {
             console.warn(`章节 "${originalFileName}" 无法解析 body，返回原内容`);
             return [{
@@ -163,11 +163,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 获取所有顶级块级元素作为切分单元
         const blockElements = [];
         const supportedBlockTags = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'ul', 'ol', 'table', 'figure', 'aside', 'hr', 'br'];
-        
+
         // 收集所有子节点
         const collectNodes = (parent) => {
             const nodes = [];
-            parent.childNodes.forEach(child => {
+            parent.childNodes.forEach((child) => {
                 if (child.nodeType === Node.ELEMENT_NODE) {
                     nodes.push(child);
                 } else if (child.nodeType === Node.TEXT_NODE) {
@@ -184,24 +184,24 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const allNodes = collectNodes(body);
-        
+
         // 将节点分组，每组不超过大小限制
         const splitParts = [];
         let currentPart = [];
         let currentSize = 0;
-        
+
         // 估算单个节点的 Telegraph 内容大小
         const estimateNodeSize = (node) => {
             const tempDiv = doc.createElement('div');
             tempDiv.appendChild(node.cloneNode(true));
             const tempNodes = htmlToTelegraphNodes(tempDiv.innerHTML, 'temp');
-            if (!tempNodes || tempNodes.length === 0) return 0;
+            if (!tempNodes || tempNodes.length === 0) {return 0;}
             return new Blob([JSON.stringify(tempNodes)]).size;
         };
 
         for (const node of allNodes) {
             const nodeSize = estimateNodeSize(node);
-            
+
             // 如果单个节点就超过限制，需要进一步切分
             if (nodeSize > maxSize) {
                 // 先保存当前部分
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentPart = [];
                     currentSize = 0;
                 }
-                
+
                 // 对超大节点进行细粒度切分
                 const subParts = splitLargeNode(node, maxSize, doc);
                 for (const subPart of subParts) {
@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentSize += nodeSize;
             }
         }
-        
+
         // 保存最后一部分
         if (currentPart.length > 0) {
             splitParts.push(currentPart);
@@ -238,13 +238,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // 将节点组转换回 HTML 内容
         const result = splitParts.map((partNodes, index) => {
             const tempDiv = doc.createElement('div');
-            partNodes.forEach(node => {
+            partNodes.forEach((node) => {
                 tempDiv.appendChild(node.cloneNode(true));
             });
-            
+
             // 生成新的文件名：原名称-序号
             const newFileName = `${originalFileName}-${index + 1}`;
-            
+
             return {
                 fileName: newFileName,
                 htmlContent: tempDiv.innerHTML,
@@ -262,21 +262,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // 辅助函数：切分超大节点（按句子边界切分）
     function splitLargeNode(node, maxSize, doc) {
         const tagName = node.nodeName.toLowerCase();
-        
+
         // 对于段落等文本节点，按句子切分
         if (['p', 'div', 'blockquote', 'li', 'td', 'th'].includes(tagName)) {
             const text = node.textContent;
-            
+
             // 如果文本很短，直接返回
             if (new Blob([text]).size <= maxSize) {
                 return [node];
             }
-            
+
             // 按句子切分（使用中英文句子边界）
             const sentences = text.split(/(?<=[。！？!?.\n])/g);
             const parts = [];
             let currentText = '';
-            
+
             for (const sentence of sentences) {
                 const testText = currentText + sentence;
                 // 估算大小（简化计算，实际 Telegraph 节点会有额外开销）
@@ -292,32 +292,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentText = testText;
                 }
             }
-            
+
             // 保存最后一段
             if (currentText.trim()) {
                 const newP = doc.createElement('p');
                 newP.textContent = currentText.trim();
                 parts.push(newP);
             }
-            
+
             return parts.length > 0 ? parts : [node];
         }
-        
+
         // 对于其他类型的节点，尝试递归处理子节点
         if (node.childNodes && node.childNodes.length > 0) {
             const childParts = [];
             let currentGroup = [];
             let currentSize = 0;
-            
-            node.childNodes.forEach(child => {
+
+            node.childNodes.forEach((child) => {
                 if (child.nodeType === Node.TEXT_NODE) {
                     const text = child.textContent;
                     const textSize = new Blob([text]).size;
-                    
+
                     if (currentSize + textSize > maxSize && currentGroup.length > 0) {
                         // 创建包含当前组的容器
                         const container = doc.createElement(tagName);
-                        currentGroup.forEach(c => container.appendChild(c.cloneNode(true)));
+                        currentGroup.forEach((c) => container.appendChild(c.cloneNode(true)));
                         childParts.push(container);
                         currentGroup = [child.cloneNode(true)];
                         currentSize = textSize;
@@ -327,13 +327,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } else if (child.nodeType === Node.ELEMENT_NODE) {
                     const childSize = estimateNodeSizeSimple(child);
-                    
+
                     if (childSize > maxSize) {
                         // 递归切分
                         const subParts = splitLargeNode(child, maxSize, doc);
                         if (currentGroup.length > 0) {
                             const container = doc.createElement(tagName);
-                            currentGroup.forEach(c => container.appendChild(c.cloneNode(true)));
+                            currentGroup.forEach((c) => container.appendChild(c.cloneNode(true)));
                             childParts.push(container);
                             currentGroup = [];
                             currentSize = 0;
@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         childParts.push(...subParts);
                     } else if (currentSize + childSize > maxSize && currentGroup.length > 0) {
                         const container = doc.createElement(tagName);
-                        currentGroup.forEach(c => container.appendChild(c.cloneNode(true)));
+                        currentGroup.forEach((c) => container.appendChild(c.cloneNode(true)));
                         childParts.push(container);
                         currentGroup = [child.cloneNode(true)];
                         currentSize = childSize;
@@ -351,16 +351,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
-            
+
             if (currentGroup.length > 0) {
                 const container = doc.createElement(tagName);
-                currentGroup.forEach(c => container.appendChild(c.cloneNode(true)));
+                currentGroup.forEach((c) => container.appendChild(c.cloneNode(true)));
                 childParts.push(container);
             }
-            
+
             return childParts.length > 0 ? childParts : [node];
         }
-        
+
         // 无法切分，返回原节点
         return [node];
     }
@@ -373,12 +373,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // 辅助函数：处理所有章节，进行切分判断
     function processChaptersWithSplitting(chapters) {
         const processedChapters = [];
-        
+
         for (const chapter of chapters) {
             const splitResult = splitLargeChapter(chapter);
             processedChapters.push(...splitResult);
         }
-        
+
         console.log(`章节处理完成：原始 ${chapters.length} 章，处理后 ${processedChapters.length} 章`);
         return processedChapters;
     }
@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 例如： "OEBPS/Text/chapter1.xhtml", "OEBPS/Text/chapter10.xhtml"
                     return naturalSort(zipEntryA.name.toLowerCase(), zipEntryB.name.toLowerCase());
                 });
-                console.log('Sorted chapter files by name:', chapterFiles.map(f => f.name)); // 调试日志
+                console.log('Sorted chapter files by name:', chapterFiles.map((f) => f.name)); // 调试日志
             }
 
             if (chapterFiles.length === 0) {
@@ -479,11 +479,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             statusArea.textContent = `找到 ${chapterFiles.length} 个正确排序的章节文件。正在提取内容...`; // 更新状态文本
             console.log(`Found and sorted ${chapterFiles.length} potential chapter files:`); // 更新日志文本
-            
+
             for (const zipEntry of chapterFiles) {
                 const fileName = zipEntry.name.split('/').pop(); // 获取文件名
                 const fileContent = await zipEntry.async('string'); // 获取文件内容字符串
-                
+
                 // 提取 body 内容
                 // 使用 DOMParser 解析 HTML 字符串
                 const parser = new DOMParser();
@@ -493,33 +493,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 清理软连字符（soft hyphen, U+00AD），防止高亮位移和点击问题
                 // 软连字符在EPUB中用于指示换行位置，但在Telegraph中会导致显示和交互问题
                 const cleanedContent = bodyContent.replace(/\u00ad/g, '');
-                
+
                 epubChapters.push({
                     fileName: fileName,
-                    htmlContent: cleanedContent 
+                    htmlContent: cleanedContent
                 });
                 console.log(`- 已提取: ${fileName}`);
             }
 
             if (epubChapters.length > 0) {
-                statusArea.innerHTML = `成功提取 ${epubChapters.length} 个章节：<br> - ${epubChapters.map(c => c.fileName).join('<br> - ')} <br><br>正在检查章节大小并进行智能切分...`;
+                statusArea.innerHTML = `成功提取 ${epubChapters.length} 个章节：<br> - ${epubChapters.map((c) => c.fileName).join('<br> - ')} <br><br>正在检查章节大小并进行智能切分...`;
                 console.log('提取完成的章节数据:', epubChapters);
-                
+
                 // 检查章节大小并进行智能切分
                 const originalCount = epubChapters.length;
                 epubChapters = processChaptersWithSplitting(epubChapters);
                 const finalCount = epubChapters.length;
-                
+
                 // 统计切分情况
-                const splitChapters = epubChapters.filter(c => c.isSplit);
+                const splitChapters = epubChapters.filter((c) => c.isSplit);
                 if (splitChapters.length > 0) {
-                    const splitOriginals = [...new Set(splitChapters.map(c => c.originalFileName))];
+                    const splitOriginals = [...new Set(splitChapters.map((c) => c.originalFileName))];
                     statusArea.innerHTML = `章节处理完成：原始 ${originalCount} 章，处理后 ${finalCount} 章<br>其中 ${splitOriginals.length} 个章节被切分为 ${splitChapters.length} 部分<br><br>准备发布到 Telegra.ph...`;
                     console.log(`切分统计：${splitOriginals.length} 个原始章节被切分，共产生 ${splitChapters.length} 个子章节`);
                 } else {
                     statusArea.innerHTML = `成功提取 ${epubChapters.length} 个章节，无需切分。<br><br>准备发布到 Telegra.ph...`;
                 }
-                
+
                 // 开始发布流程
                 initiateTelegraphPublishing();
             } else {
@@ -538,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function initiateTelegraphPublishing() {
         statusArea.textContent = '正在获取 Telegra.ph 授权...';
-        if(publishedPagesArea) publishedPagesArea.innerHTML = ''; // 清空之前的发布结果
+        if (publishedPagesArea) {publishedPagesArea.innerHTML = '';} // 清空之前的发布结果
 
         try {
             const accessToken = await getAccessToken();
@@ -601,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function createTelegraphAccount(shortName = TELEGRAPH_SHORT_NAME, authorName = '') {
         const params = new URLSearchParams({
-            short_name: shortName,
+            short_name: shortName
         });
         if (authorName) { // author_name 是可选的
             params.append('author_name', authorName);
@@ -616,13 +616,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Telegra.ph API createAccount 请求失败:', response.status, errorData);
                 throw new Error(`Telegra.ph API 错误 (createAccount): ${errorData.error || `HTTP ${response.status}`}`);
             }
-            
+
             const data = await response.json();
 
             if (data.ok && data.result && data.result.access_token) {
                 console.log('Telegra.ph 账户创建成功:', data.result);
                 const accessToken = data.result.access_token;
-                
+
                 await new Promise((resolveStore, rejectStore) => {
                     chrome.storage.local.set({ [TELEGRAPH_ACCOUNT_KEY]: accessToken }, () => {
                         if (chrome.runtime.lastError) {
@@ -649,15 +649,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function publishToTelegraph(accessToken, chapters) {
         statusArea.innerHTML = `准备发布 ${chapters.length} 个章节... 共享标识符: ${sharedRandomIdentifier}, UTC 日期: ${utcDateString}.<br>请稍候，这可能需要一些时间。`;
-        if (publishedPagesArea) publishedPagesArea.innerHTML = '<h4>发布结果：</h4><div id="publishedLinksContainer"></div>';
-        
+        if (publishedPagesArea) {publishedPagesArea.innerHTML = '<h4>发布结果：</h4><div id="publishedLinksContainer"></div>';}
+
         const linksContainer = document.getElementById('publishedLinksContainer');
         let successCount = 0;
         let errorCount = 0;
         const publishedPagesInfo = []; // 用于存储成功发布的页面信息 { title: string, url: string, originalFileName: string }
 
         // 预先生成所有章节的预测 URL，用于导航
-        const predictedUrls = chapters.map(chapter => {
+        const predictedUrls = chapters.map((chapter) => {
             const sanitizedFileName = sanitizeTitleForPath(chapter.fileName);
             // 预测 URL 结构: https://telegra.ph/{sanitizedFileName}-{sharedRandomIdentifier}-{MM-DD}
             // 这里的 sanitizedFileName 已经经过处理，sharedRandomIdentifier 会被 Telegra.ph 根据我们传递的 title 附加
@@ -676,21 +676,21 @@ document.addEventListener('DOMContentLoaded', () => {
             // 格式: sanitizedOriginalFileName-sharedRandomIdentifier
             const sanitizedBaseTitle = sanitizeTitleForPath(originalFileName);
             const titleForTelegraphApi = `${sanitizedBaseTitle}-${sharedRandomIdentifier}`;
-            
+
             statusArea.innerHTML = `正在发布 ${chapters.length} 个章节中的第 ${i + 1} 章: "${displayChapterTitle}" (API title: ${titleForTelegraphApi})...`;
-            
+
             try {
                 console.log(`处理章节: ${displayChapterTitle}, HTML 长度: ${chapter.htmlContent.length}`);
-                
+
                 let contentNodes = htmlToTelegraphNodes(chapter.htmlContent, displayChapterTitle);
 
                 if (!contentNodes || contentNodes.length === 0) {
                     console.warn(`章节 "${displayChapterTitle}" 的内容转换后为空。`);
                 }
-                
+
                 // 添加导航链接 (使用预测的 URL)
                 let finalContentNodes = [];
-                
+
                 // 上一页链接 (如果存在)
                 if (i > 0) {
                     finalContentNodes.push({
@@ -719,13 +719,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         }]
                     });
                 }
-                
-                finalContentNodes = finalContentNodes.filter(node => node);
+
+                finalContentNodes = finalContentNodes.filter((node) => node);
 
                 if (finalContentNodes.length === 0 && (!contentNodes || contentNodes.length === 0)) {
                     console.warn(`章节 "${displayChapterTitle}" 最终内容节点和原始内容都为空，但仍尝试发布（可能仅标题）或依赖API处理。`);
                 }
-                 if (finalContentNodes.length === 0 && chapters.length ===1){
+                 if (finalContentNodes.length === 0 && chapters.length === 1) {
                      console.warn(`章节 "${displayChapterTitle}" 内容为空，且是唯一章节，可能发布失败。`);
                  }
 
@@ -739,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     errorCount++;
                     continue;
                 }
-                
+
                 console.log(`为章节 "${displayChapterTitle}" 生成了 ${finalContentNodes.length} 个 Telegra.ph 节点 (包含导航)。`);
 
                 // 使用构造好的 titleForTelegraphApi 调用 createTelegraphPage
@@ -749,11 +749,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     successCount++;
                     const actualUrl = pageResult.url; // Telegra.ph 返回的实际 URL
                     console.log(`章节 "${displayChapterTitle}" (API title: "${titleForTelegraphApi}") 发布成功: ${actualUrl}`);
-                    
+
                     // 存储发布信息，包含切分相关的元数据
-                    publishedPagesInfo.push({ 
-                        title: displayChapterTitle, 
-                        url: actualUrl, 
+                    publishedPagesInfo.push({
+                        title: displayChapterTitle,
+                        url: actualUrl,
                         originalFileName: originalFileName,
                         // 如果是切分章节，添加额外信息
                         isSplit: chapter.isSplit || false,
@@ -761,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         originalChapterName: chapter.originalFileName || originalFileName,
                         totalSplitParts: chapter.totalSplitParts || 1
                     });
-                    
+
                     if (linksContainer) {
                         const p = document.createElement('p');
                         p.innerHTML = `章节 "${displayChapterTitle}" 发布成功: <a href="${actualUrl}" target="_blank">${actualUrl}</a> (预测: ${predictedUrls[i]})`;
@@ -801,19 +801,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const epubFileName = epubFileInput.files[0] ? epubFileInput.files[0].name.replace(/\.epub$/i, '') : 'EPUB';
             const tocTitle = `${epubFileName} - 目录`;
             const tocNodes = [{ tag: 'h3', children: [tocTitle] }];
-            
+
             // 生成目录项，支持切分章节的友好显示
-            const ulChildren = publishedPagesInfo.map(page => {
+            const ulChildren = publishedPagesInfo.map((page) => {
                 // 生成显示名称
                 let displayName = page.originalFileName || page.title;
-                
+
                 // 如果是切分章节，显示更友好的名称
                 if (page.isSplit && page.totalSplitParts > 1) {
                     // 格式：原章节名-序号 或 原章节名 (序号/总数)
                     // 使用 "原章节名-序号" 格式
                     displayName = `${page.originalChapterName}-${page.splitIndex}`;
                 }
-                
+
                 return {
                     tag: 'li',
                     children: [{
@@ -860,7 +860,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
              statusArea.innerHTML = `所有章节处理完毕。<br>成功发布: ${successCount} 章。<br>失败或跳过: ${errorCount} 章。<br>没有成功发布的章节，无法创建目录。`;
         }
-        
+
         // 更新最终状态信息
         let finalMessage = `发布流程结束。<br>成功发布章节: ${successCount}。<br>失败或跳过章节: ${errorCount}。`;
         if (publishedPagesInfo.length > 0 && linksContainer.querySelector('a[href*="telegra.ph"]')) { // 检查是否有目录链接
@@ -897,7 +897,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const telegraphNode = {};
             let isValidTag = false;
             const tagName = element.nodeName.toLowerCase();
-            
+
             // Telegra.ph 支持的标签
             const supportedTags = ['a', 'aside', 'b', 'blockquote', 'br', 'code', 'em', 'figcaption', 'figure', 'h3', 'h4', 'hr', 'i', 'iframe', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'u', 'ul', 'video'];
 
@@ -944,12 +944,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // 处理子节点 (children)
             const children = [];
             if (element.childNodes && element.childNodes.length > 0) {
-                element.childNodes.forEach(child => {
+                element.childNodes.forEach((child) => {
                     if (child.nodeType === Node.ELEMENT_NODE) {
                         const childNodes = convertElementToNode(child); // 可能返回单个节点或节点数组
                         if (childNodes) {
                             if (Array.isArray(childNodes)) {
-                                children.push(...childNodes.filter(cn => cn)); // 过滤掉 null 或 undefined
+                                children.push(...childNodes.filter((cn) => cn)); // 过滤掉 null 或 undefined
                             } else {
                                 children.push(childNodes);
                             }
@@ -961,7 +961,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // 但如果只是纯粹的空白节点，可以考虑忽略
                         if (textContent.trim()) {
                              children.push(textContent); // Telegra.ph 接受字符串作为子节点
-                        } else if (element.childNodes.length === 1 && !textContent.trim()){
+                        } else if (element.childNodes.length === 1 && !textContent.trim()) {
                             // 如果一个元素只包含一个空白文本节点，则忽略它
                         } else if (textContent) { // 保留包含换行符等的文本节点
                             children.push(textContent);
@@ -975,7 +975,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (children.length > 0 && !isValidTag) {
                 // 如果标签本身不被支持，但它有子节点，则返回其子节点（扁平化）
                 // 这有助于提取嵌套在不支持标签内的有效内容
-                return children.length === 1 ? (children[0] || null) : children.filter(c => c);
+                return children.length === 1 ? (children[0] || null) : children.filter((c) => c);
             }
 
 
@@ -992,16 +992,16 @@ document.addEventListener('DOMContentLoaded', () => {
                      return telegraphNode;
                 }
             }
-            
+
             return null; // 对于完全不支持或处理后为空的节点
         }
 
-        body.childNodes.forEach(childElement => {
+        body.childNodes.forEach((childElement) => {
             if (childElement.nodeType === Node.ELEMENT_NODE) {
                 const convertedNodes = convertElementToNode(childElement);
                 if (convertedNodes) {
                     if (Array.isArray(convertedNodes)) {
-                        nodes.push(...convertedNodes.filter(cn => cn));
+                        nodes.push(...convertedNodes.filter((cn) => cn));
                     } else {
                         nodes.push(convertedNodes);
                     }
@@ -1014,9 +1014,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
-        
+
         console.log(`转换完成: ${chapterFileName}, 生成 ${nodes.length} 个根节点。`, nodes);
-        return nodes.filter(n => n); // 再次过滤以防万一
+        return nodes.filter((n) => n); // 再次过滤以防万一
     }
 
     async function createTelegraphPage(accessToken, title, contentNodes, returnContent = false) {

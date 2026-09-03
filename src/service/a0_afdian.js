@@ -160,7 +160,7 @@ async function checkAndRefreshSubscription() {
     const storageAPI = typeof browser !== 'undefined' ? browser : chrome;
     const runtimeAPI = typeof browser !== 'undefined' ? browser : chrome;
 
-    const storageResult = await new Promise(resolve => {
+    const storageResult = await new Promise((resolve) => {
       storageAPI.storage.local.get(['cloudConfig', 'subscriptionConfig'], resolve);
     });
 
@@ -194,7 +194,7 @@ async function checkAndRefreshSubscription() {
 
     if (refreshResponse?.success) {
       if (refreshResponse.subscriptionExpireAt) {
-        await new Promise(resolve => {
+        await new Promise((resolve) => {
           storageAPI.storage.local.get(['cloudConfig'], (result) => {
             const cloudConfig = result.cloudConfig || {};
             cloudConfig.subscriptionExpireAt = refreshResponse.subscriptionExpireAt;

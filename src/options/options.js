@@ -153,7 +153,7 @@ function applyBackgroundSettings(bgSettings) {
         const createTiledBackground = () => {
           // 清除现有的视频元素（保留原始视频）
           const clones = videoContainer.querySelectorAll('.video-clone');
-          clones.forEach(clone => clone.remove());
+          clones.forEach((clone) => clone.remove());
 
           // 获取容器和视频的尺寸
           const containerWidth = videoContainer.offsetWidth;
@@ -174,7 +174,7 @@ function applyBackgroundSettings(bgSettings) {
           for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
               // 跳过左上角的原始视频位置
-              if (row === 0 && col === 0) continue;
+              if (row === 0 && col === 0) {continue;}
 
               const clone = video.cloneNode(true);
               clone.classList.add('video-clone');
@@ -267,7 +267,7 @@ function applyBackgroundSettings(bgSettings) {
         const createTiledBackground = () => {
           // 清除现有的视频元素（保留原始视频）
           const clones = videoContainer.querySelectorAll('.video-clone');
-          clones.forEach(clone => clone.remove());
+          clones.forEach((clone) => clone.remove());
 
           // 获取容器和视频的尺寸
           const containerWidth = videoContainer.offsetWidth;
@@ -288,7 +288,7 @@ function applyBackgroundSettings(bgSettings) {
           for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
               // 跳过左上角的原始视频位置
-              if (row === 0 && col === 0) continue;
+              if (row === 0 && col === 0) {continue;}
 
               const clone = video.cloneNode(true);
               clone.classList.add('video-clone');
@@ -366,7 +366,7 @@ function applyBackgroundSettings(bgSettings) {
         video.addEventListener('loadedmetadata', function() {
           const createTiledBackground = () => {
             const clones = videoContainer.querySelectorAll('.video-clone');
-            clones.forEach(clone => clone.remove());
+            clones.forEach((clone) => clone.remove());
 
             const containerWidth = videoContainer.offsetWidth;
             const containerHeight = videoContainer.offsetHeight;
@@ -382,7 +382,7 @@ function applyBackgroundSettings(bgSettings) {
 
             for (let row = 0; row < rows; row++) {
               for (let col = 0; col < cols; col++) {
-                if (row === 0 && col === 0) continue;
+                if (row === 0 && col === 0) {continue;}
 
                 const clone = video.cloneNode(true);
                 clone.classList.add('video-clone');
@@ -428,7 +428,7 @@ function applyBackgroundSettings(bgSettings) {
         "src/service/image/pattern.png",
         "src/service/image/pattern2.png",
         "src/service/image/pattern3.png",
-        ...tgPngFiles.map(filename => `src/service/image/tg_png/${filename}`)
+        ...tgPngFiles.map((filename) => `src/service/image/tg_png/${filename}`)
       ];
 
       const randomIndex = Math.floor(Math.random() * imageUrls.length);
@@ -832,7 +832,7 @@ Lingkuma完全开源免费，软件维护不易，如果您感觉该软件对你
 <br>单词默认存放在本地，捐赠后可使用官方公益单词实时云同步，多设备无缝使用。（插件配置因内涵API等敏感信息，目前仅支持用户自己通过Webdav进行多设备同步）
     `
     ,
-    'donationNote2': 
+    'donationNote2':
 `您仍可通过以下方式免费进行同步
 <br>1. 通过【坚果云 Webdav】进行免费多设备同步，但非实时，多设备必须手动上传和下载。
 <br>2. 访问<a href="https://shared-server.lingkuma.org" target="_blank">【公益服务器列表】</a>使用网友提供的服务器；
@@ -1198,7 +1198,7 @@ Lingkuma完全开源免费，软件维护不易，如果您感觉该软件对你
 Lingkuma完全開源免費，軟體維護不易，如果您感覺該軟體對你有幫助，歡迎透過<a href="https://afdian.com/a/lingkuma" target="_blank">愛發電</a>，或微信掃碼贊助。
 <br>單字預設存放在本地，捐贈後可使用官方公益單字即時雲端同步，多裝置無縫使用。（外掛設定因內涵API等敏感資訊，目前僅支援使用者自己透過Webdav進行多裝置同步）
     `,
-    'donationNote2': 
+    'donationNote2':
 `您仍可透過以下方式免費進行同步
 <br>1. 透過【堅果雲 Webdav】進行免費多裝置同步，但非即時，多裝置必須手動上傳和下載。
 <br>2. 存取<a href="https://shared-server.lingkuma.org" target="_blank">【公益伺服器列表】</a>使用網友提供的伺服器；
@@ -3149,7 +3149,7 @@ function translate(key, params = {}) {
   let text = (i18n && i18n[currentLang] && i18n[currentLang][key]) ? i18n[currentLang][key] : key;
 
   // 替换参数
-  Object.keys(params).forEach(param => {
+  Object.keys(params).forEach((param) => {
     text = text.replace(`{${param}}`, params[param]);
   });
 
@@ -3169,14 +3169,14 @@ function updatePageLanguage(lang) {
     const elements = document.querySelectorAll('[data-i18n]');
 
     // 应用翻译
-    elements.forEach(el => {
+    elements.forEach((el) => {
       const key = el.getAttribute('data-i18n');
       // 检查是否有附加后缀
       const suffix = el.getAttribute('data-i18n-suffix') || '';
 
       if (i18n[currentLang] && i18n[currentLang][key]) {
         // 根据元素类型设置内容
-        if (el.tagName === 'LABEL' || el.tagName === 'DIV' || el.tagName === 'BUTTON' || el.tagName === 'SPAN'|| el.tagName === 'H2'|| el.tagName === 'H3' || el.tagName === 'H1' || el.tagName === 'SMALL') {
+        if (el.tagName === 'LABEL' || el.tagName === 'DIV' || el.tagName === 'BUTTON' || el.tagName === 'SPAN' || el.tagName === 'H2' || el.tagName === 'H3' || el.tagName === 'H1' || el.tagName === 'SMALL') {
           el.innerHTML = i18n[currentLang][key] + suffix;
         } else if (el.tagName === 'INPUT' && (el.getAttribute('type') === 'text' || el.getAttribute('type') === 'search')) {
           el.placeholder = i18n[currentLang][key] + suffix;
@@ -3239,7 +3239,7 @@ function openDB() {
 
 // 保留并修改 updateWordStatus 函数
 function updateWordStatus(word, status, language) {
-  return openDB().then(db => {
+  return openDB().then((db) => {
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(["wordDetails"], "readwrite");
       const store = transaction.objectStore("wordDetails");
@@ -3294,14 +3294,14 @@ function updateWordStatus(word, status, language) {
 // 新增:从 wordDetails 获取所有单词
 function getAllWords() {
   console.log("[options.js] 开始获取所有单词");
-  return openDB().then(db => {
+  return openDB().then((db) => {
     console.log("[options.js] 数据库已打开,准备查询单词");
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(["wordDetails"], "readonly");
       const store = transaction.objectStore("wordDetails");
       const request = store.getAll();
       request.onsuccess = function(e) {
-        const words = e.target.result.map(item => item.word);
+        const words = e.target.result.map((item) => item.word);
         console.log("[options.js] 成功获取单词数量:", words.length);
         resolve(words);
       };
@@ -3310,7 +3310,7 @@ function getAllWords() {
         reject(e.target.error);
       };
     });
-  }).catch(err => {
+  }).catch((err) => {
     console.error("[options.js] getAllWords 失败:", err);
     throw err;
   });
@@ -3318,7 +3318,7 @@ function getAllWords() {
 
 // 新增：按状态获取单词
 function getWordsByStatus(status) {
-  return openDB().then(db => {
+  return openDB().then((db) => {
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(["wordDetails"], "readonly");
       const store = transaction.objectStore("wordDetails");
@@ -3337,7 +3337,7 @@ function getWordsByStatus(status) {
 
 // 新增：清空 wordDetails
 function clearAllWords() {
-  return openDB().then(db => {
+  return openDB().then((db) => {
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(["wordDetails"], "readwrite");
       const store = transaction.objectStore("wordDetails");
@@ -3373,7 +3373,7 @@ let selectedWords = new Set(); // 存储选中的单词
 // 更新操作按钮的显示状态
 function updateBulkActionButtons() {
   const bulkActionsDiv = document.getElementById("bulkActions");
-  if (!bulkActionsDiv) return;
+  if (!bulkActionsDiv) {return;}
 
   if (selectedWords.size > 0) {
     bulkActionsDiv.style.display = "flex";
@@ -3388,7 +3388,7 @@ function updateBulkActionButtons() {
 
 // 删除选中的单词
 function deleteSelectedWords() {
-  if (selectedWords.size === 0) return;
+  if (selectedWords.size === 0) {return;}
 
   const wordsToDelete = Array.from(selectedWords);
   console.log('[options.js] 准备删除的单词:', wordsToDelete);
@@ -3396,7 +3396,7 @@ function deleteSelectedWords() {
   let errorCount = 0;
 
   // 使用 Promise.all 并行删除所有单词
-  const deletePromises = wordsToDelete.map(word => {
+  const deletePromises = wordsToDelete.map((word) => {
     console.log('[options.js] 删除单词:', word, '类型:', typeof word, '长度:', word.length);
 
     // 每个单词调用两个删除接口：小写化的和原型的
@@ -3432,8 +3432,8 @@ function deleteSelectedWords() {
     return Promise.all([deletePromise1, deletePromise2]).then(() => {
       deletedCount++;
       // 从前端数据中删除
-      wordsArray = wordsArray.filter(w => w !== word);
-      filteredWordsArray = filteredWordsArray.filter(w => w !== word);
+      wordsArray = wordsArray.filter((w) => w !== word);
+      filteredWordsArray = filteredWordsArray.filter((w) => w !== word);
       delete wordDetailsMap[word];
     }).catch(() => {
       errorCount++;
@@ -3541,16 +3541,16 @@ function displayPage(page) {
     const selectAllCheckbox = document.getElementById("selectAllCheckbox");
     if (selectAllCheckbox) {
       // 设置全选框的状态
-      const allPageWordsSelected = pageWords.every(word => selectedWords.has(word));
+      const allPageWordsSelected = pageWords.every((word) => selectedWords.has(word));
       selectAllCheckbox.checked = allPageWordsSelected && pageWords.length > 0;
 
       selectAllCheckbox.addEventListener("change", function() {
         if (this.checked) {
           // 全选当前页
-          pageWords.forEach(word => selectedWords.add(word));
+          pageWords.forEach((word) => selectedWords.add(word));
         } else {
           // 取消当前页全选
-          pageWords.forEach(word => selectedWords.delete(word));
+          pageWords.forEach((word) => selectedWords.delete(word));
         }
         displayPage(currentPage); // 重新渲染以更新复选框状态
         updateBulkActionButtons();
@@ -3558,7 +3558,7 @@ function displayPage(page) {
     }
 
     // 添加单词行
-    pageWords.forEach(word => {
+    pageWords.forEach((word) => {
       const wordItemDiv = document.createElement("div");
       wordItemDiv.className = "expandable-word-item word-item"; // 应用基础和特定样式
 
@@ -3566,7 +3566,7 @@ function displayPage(page) {
       const details = wordDetailsMap[word] || {};
       const status = details.status || '未知';
       let statusText = '未知';
-      switch(status) {
+      switch (status) {
         case '0': statusText = translate('delete') || 'Delete'; break;
         case '1': statusText = translate('learning') || 'Learning'; break;
         case '2': statusText = translate('familiar') || 'Familiar'; break;
@@ -3644,7 +3644,7 @@ function displayPage(page) {
           // 更新全选框状态
           const selectAllCheckbox = document.getElementById("selectAllCheckbox");
           if (selectAllCheckbox) {
-            const allPageWordsSelected = pageWords.every(w => selectedWords.has(w));
+            const allPageWordsSelected = pageWords.every((w) => selectedWords.has(w));
             selectAllCheckbox.checked = allPageWordsSelected && pageWords.length > 0;
           }
         });
@@ -3664,7 +3664,7 @@ function displayPage(page) {
             <div class="word-detail-item">
               <span class="detail-label">标签:</span>
               <div class="detail-content tags-container">
-                ${tags.map(tag => `<span class="tag-item">${tag}</span>`).join('')}
+                ${tags.map((tag) => `<span class="tag-item">${tag}</span>`).join('')}
               </div>
             </div>
           </div>`;
@@ -3685,7 +3685,7 @@ function displayPage(page) {
             <div class="word-detail-item">
               <span class="detail-label">翻译:</span>
               <ul class="detail-list">
-                ${translations.map(t => `<li class="translation-item">${t}</li>`).join('')}
+                ${translations.map((t) => `<li class="translation-item">${t}</li>`).join('')}
               </ul>
             </div>
           </div>`;
@@ -3706,7 +3706,7 @@ function displayPage(page) {
             <div class="word-detail-item">
               <span class="detail-label">例句:</span>
               <div class="detail-list sentences-container">
-                ${sentences.map(s => {
+                ${sentences.map((s) => {
                   // 创建正则表达式来匹配term，不区分大小写
                   const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
                   // 替换例句中的term为带有高亮的版本
@@ -3798,7 +3798,7 @@ function applyFilters() {
   // 获取选中的状态（多选）
   const selectedStatuses = [];
   const statusCheckboxes = document.querySelectorAll('[id^="statusFilter_"]:checked');
-  statusCheckboxes.forEach(checkbox => {
+  statusCheckboxes.forEach((checkbox) => {
     if (checkbox.value !== 'all') {
       selectedStatuses.push(parseInt(checkbox.value));
     }
@@ -3830,13 +3830,13 @@ function applyFilters() {
   console.log('[options.js] 应用筛选条件:', filters);
 
   // 调用新的筛选接口
-  getFilteredWordDetails(filters).then(allDetailsMap => {
+  getFilteredWordDetails(filters).then((allDetailsMap) => {
     wordDetailsMap = allDetailsMap;
     filteredWordsArray = Object.keys(allDetailsMap).sort();
 
     currentPage = 1;
     updatePagination();
-  }).catch(err => {
+  }).catch((err) => {
     console.error("应用筛选时获取单词详情失败:", err);
     const wordListEl = document.getElementById("wordList");
     if (wordListEl) {
@@ -3933,9 +3933,9 @@ function importWords() {
     // 根据选择的分隔符分割单词
     let words = [];
     if (separator === 'newline') {
-      words = content.split(/\r?\n/).filter(word => word.trim() !== '');
+      words = content.split(/\r?\n/).filter((word) => word.trim() !== '');
     } else {
-      words = content.split(',').map(word => word.trim()).filter(word => word !== '');
+      words = content.split(',').map((word) => word.trim()).filter((word) => word !== '');
     }
 
     if (words.length === 0) {
@@ -4004,7 +4004,7 @@ function importWordsParallel(words, language, status, batchSize, parallelBatches
     const currentBatch = batches[currentBatchIndex];
     activeBatches++;
 
-    const promises = currentBatch.map(word => {
+    const promises = currentBatch.map((word) => {
       return new Promise((resolve) => {
         // 只需更新 wordDetails，不再需要添加到 knownWords
         updateWordStatus(word, status, language).then(() => {
@@ -4031,7 +4031,7 @@ function importWordsParallel(words, language, status, batchSize, parallelBatches
         statusEl.textContent = `导入完成，共导入 ${processedWords} 个单词`;
 
         // 刷新单词列表
-        getAllWords().then(words => {
+        getAllWords().then((words) => {
           wordsArray = words.sort();
           filteredWordsArray = [...wordsArray];
           updatePagination();
@@ -4055,7 +4055,7 @@ function clearWordList() {
       wordDetailsMap = {};
       updatePagination();
       document.getElementById('importStatus').textContent = '已清空所有单词';
-    }).catch(err => {
+    }).catch((err) => {
       console.error("清空单词列表失败:", err);
       alert('清空单词列表失败');
     });
@@ -4079,7 +4079,7 @@ function initLocalTTSSettings() {
     voiceSelect.appendChild(autoOption);
 
     // 添加所有可用的语音
-    voices.forEach(voice => {
+    voices.forEach((voice) => {
       const option = document.createElement('option');
       option.value = voice.name;
       option.textContent = `${voice.name} (${voice.lang})`;
@@ -4133,7 +4133,7 @@ function saveLocalTTSSettings() {
 function initEdgeTTSSettings() {
   // 导入Edge TTS声音列表
   // import('../plugin/edge_list.js').then(module => {
-    import('./edge_list.js').then(module => {
+    import('./edge_list.js').then((module) => {
     const edgeVoiceList = module.edgeVoiceList;
     const voiceSelect = document.getElementById('edgeTTSVoice');
 
@@ -4149,7 +4149,7 @@ function initEdgeTTSSettings() {
     });
 
     // 添加所有可用的语音
-    edgeVoiceList.forEach(voice => {
+    edgeVoiceList.forEach((voice) => {
       const option = document.createElement('option');
       option.value = voice.ShortName;
       option.textContent = `${voice.FriendlyName} (${voice.Locale})`;
@@ -4173,7 +4173,7 @@ function initEdgeTTSSettings() {
         voiceSelect.value = ttsConfig.edgeTTSVoice;
       } else {
         // 默认设置为英语声音
-        const defaultVoice = edgeVoiceList.find(v => v.ShortName === 'en-US-AriaNeural');
+        const defaultVoice = edgeVoiceList.find((v) => v.ShortName === 'en-US-AriaNeural');
         if (defaultVoice) {
           voiceSelect.value = defaultVoice.ShortName;
         }
@@ -4264,7 +4264,7 @@ function initEdgeTTSSettings() {
         });
       });
     });
-  }).catch(error => {
+  }).catch((error) => {
     console.error('加载Edge TTS声音列表失败:', error);
   });
 }
@@ -4303,7 +4303,7 @@ function initGptTTSSettings() {
     'gptTTSResponseFormat',
     'gptTTSSpeed',
     'gptTTSInstructions'
-  ].forEach(id => {
+  ].forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
       element.addEventListener(element.tagName === 'SELECT' ? 'change' : 'input', debounce(saveGptTTSSettings, 500));
@@ -4381,7 +4381,7 @@ function initSupertoneTTSSettings() {
     'supertoneOutputFormat',
     'supertoneSpeed',
     'supertoneMode'
-  ].forEach(id => {
+  ].forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
       element.addEventListener(element.tagName === 'SELECT' ? 'change' : 'input', debounce(saveSupertoneTTSSettings, 500));
@@ -4486,16 +4486,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const authMount = document.getElementById('ohmygptAuthMount');
     const donateMount = document.getElementById('ohmygptDonateMount');
 
-    if (!legacyPanel) return;
+    if (!legacyPanel) {return;}
 
-    const legacySections = Array.from(legacyPanel.children).filter(child => child.classList && child.classList.contains('settings-section'));
-    const introNote = Array.from(legacyPanel.children).find(child => child.classList && child.classList.contains('multilingual-note'));
+    const legacySections = Array.from(legacyPanel.children).filter((child) => child.classList && child.classList.contains('settings-section'));
+    const introNote = Array.from(legacyPanel.children).find((child) => child.classList && child.classList.contains('multilingual-note'));
     const authSection = legacySections[0];
     const donateSection = legacySections[1];
 
     if (authMount && !authMount.dataset.mounted) {
-      if (introNote) authMount.appendChild(introNote);
-      if (authSection) authMount.appendChild(authSection);
+      if (introNote) {authMount.appendChild(introNote);}
+      if (authSection) {authMount.appendChild(authSection);}
       authMount.dataset.mounted = 'true';
     }
 
@@ -4537,10 +4537,10 @@ chrome.storage.local.get('aiConfig', function(result) {
     document.getElementById('ohmygptModel').value = result.aiConfig.ohmygptModel || 'gemini-2.5-flash'; // 新增：加载 OhMyGpt 模型，若无则默认为 gpt-4o-mini
     document.getElementById('ohmygptTemperature').value = result.aiConfig.ohmygptTemperature !== undefined ? result.aiConfig.ohmygptTemperature : 1;
 
-    //如果ohmygptModel为空，则设置为gemini-2.5-flash
+    // 如果ohmygptModel为空，则设置为gemini-2.5-flash
     if (!result.aiConfig.ohmygptModel) {
 
-      //同步设置aiconfig的ohmygptModel
+      // 同步设置aiconfig的ohmygptModel
       chrome.storage.local.get('aiConfig', function(result) {
         const aiConfig = result.aiConfig || {};
         aiConfig.ohmygptModel = 'gemini-2.5-flash';
@@ -4684,7 +4684,7 @@ chrome.storage.local.get('aiConfig', function(result) {
   // 初始化所有textarea的高度
   setTimeout(() => {
     const textareas = document.querySelectorAll('textarea[data-auto-save="true"]');
-    textareas.forEach(textarea => {
+    textareas.forEach((textarea) => {
       textarea.style.height = 'auto';
       textarea.style.height = textarea.scrollHeight + 'px';
     });
@@ -4716,32 +4716,32 @@ function loadCustomApiProfiles(callback) {
         currentEditingId: null
       };
     }
-    if (callback) callback();
+    if (callback) {callback();}
   });
 }
 
 function saveCustomApiProfiles(callback) {
   chrome.storage.local.set({ customApiProfiles: customApiProfiles }, function() {
     console.log('Custom API profiles saved:', customApiProfiles);
-    if (callback) callback();
+    if (callback) {callback();}
   });
 }
 
 function renderCustomApiTabs() {
   const tabsContainer = document.getElementById('customApiTabs');
-  if (!tabsContainer) return;
-  
+  if (!tabsContainer) {return;}
+
   tabsContainer.innerHTML = '';
-  
-  customApiProfiles.profiles.forEach(profile => {
+
+  customApiProfiles.profiles.forEach((profile) => {
     const tab = document.createElement('div');
     tab.className = 'custom-api-tab';
     tab.dataset.profileId = profile.id;
-    
+
     const isActive = profile.id === customApiProfiles.activeProfileId;
     const isEditing = profile.id === customApiProfiles.currentEditingId;
     const enablePolling = profile.enablePolling === true;
-    
+
     tab.style.cssText = `
       display: flex; align-items: center; gap: 5px; padding: 6px 12px;
       border-radius: 4px 4px 0 0; cursor: pointer; font-size: 13px;
@@ -4750,7 +4750,7 @@ function renderCustomApiTabs() {
       color: var(--text-primary, #333);
       ${isActive ? 'border-bottom: 2px solid var(--primary-color, #4CAF50);' : ''}
     `;
-    
+
     const copyProfileLabel = translate('copyProfile');
     const copyProfileTitle = `${copyProfileLabel} ${profile.name || 'Unnamed'}`;
 
@@ -4767,12 +4767,12 @@ function renderCustomApiTabs() {
         color: var(--text-secondary, #666); font-size: 14px;
       " title="Delete">×</button>
     `;
-    
+
     tab.querySelector('.tab-name').addEventListener('click', function(e) {
       e.stopPropagation();
       switchToProfile(profile.id);
     });
-    
+
     tab.querySelector('.copy-tab-btn').addEventListener('click', function(e) {
       e.stopPropagation();
       duplicateProfile(profile.id);
@@ -4782,17 +4782,17 @@ function renderCustomApiTabs() {
       e.stopPropagation();
       deleteProfile(profile.id);
     });
-    
+
     tabsContainer.appendChild(tab);
   });
 }
 
 function renderActiveProfileSelect() {
   const select = document.getElementById('activeProfileSelect');
-  if (!select) return;
-  
+  if (!select) {return;}
+
   select.innerHTML = '';
-  
+
   if (customApiProfiles.profiles.length === 0) {
     const option = document.createElement('option');
     option.value = '';
@@ -4800,8 +4800,8 @@ function renderActiveProfileSelect() {
     select.appendChild(option);
     return;
   }
-  
-  customApiProfiles.profiles.forEach(profile => {
+
+  customApiProfiles.profiles.forEach((profile) => {
     const option = document.createElement('option');
     option.value = profile.id;
     option.textContent = profile.name || 'Unnamed';
@@ -4813,11 +4813,11 @@ function renderActiveProfileSelect() {
 }
 
 function loadProfileToForm(profileId) {
-  const profile = customApiProfiles.profiles.find(p => p.id === profileId);
-  if (!profile) return;
-  
+  const profile = customApiProfiles.profiles.find((p) => p.id === profileId);
+  if (!profile) {return;}
+
   customApiProfiles.currentEditingId = profileId;
-  
+
   document.getElementById('profileName').value = profile.name || '';
   document.getElementById('apiBaseURL').value = profile.apiBaseURL || '';
   document.getElementById('apiKey').value = profile.apiKey || '';
@@ -4828,7 +4828,7 @@ function loadProfileToForm(profileId) {
   document.getElementById('excludeTemperature').checked = profile.excludeTemperature === true;
   // 加载自定义请求体参数
   document.getElementById('customRequestBody').value = profile.customRequestBody || '';
-  
+
   renderCustomApiTabs();
 }
 
@@ -4838,11 +4838,11 @@ function switchToProfile(profileId) {
 }
 
 function saveCurrentProfile() {
-  if (!customApiProfiles.currentEditingId) return;
-  
-  const profile = customApiProfiles.profiles.find(p => p.id === customApiProfiles.currentEditingId);
-  if (!profile) return;
-  
+  if (!customApiProfiles.currentEditingId) {return;}
+
+  const profile = customApiProfiles.profiles.find((p) => p.id === customApiProfiles.currentEditingId);
+  if (!profile) {return;}
+
   profile.name = document.getElementById('profileName').value || 'Unnamed';
   profile.apiBaseURL = document.getElementById('apiBaseURL').value;
   profile.apiKey = document.getElementById('apiKey').value;
@@ -4853,11 +4853,11 @@ function saveCurrentProfile() {
   profile.excludeTemperature = document.getElementById('excludeTemperature').checked;
   // 保存自定义请求体参数
   profile.customRequestBody = document.getElementById('customRequestBody').value || '';
-  
+
   saveCustomApiProfiles();
   renderCustomApiTabs();
   renderActiveProfileSelect();
-  
+
   if (customApiProfiles.activeProfileId === customApiProfiles.currentEditingId) {
     syncActiveProfileToAiConfig();
   }
@@ -4867,7 +4867,7 @@ function getCopiedProfileName(sourceName) {
   const baseName = sourceName || 'Unnamed';
   const suffix = translate('profileCopyNameSuffix') || 'Copy';
   const candidate = `${baseName} ${suffix}`;
-  const existingNames = new Set(customApiProfiles.profiles.map(profile => profile.name));
+  const existingNames = new Set(customApiProfiles.profiles.map((profile) => profile.name));
 
   if (!existingNames.has(candidate)) {
     return candidate;
@@ -4882,7 +4882,7 @@ function getCopiedProfileName(sourceName) {
 
 function addNewProfile() {
   saveCurrentProfile();
-  
+
   const newProfile = {
     id: generateUUID(),
     name: `Config ${customApiProfiles.profiles.length + 1}`,
@@ -4894,10 +4894,10 @@ function addNewProfile() {
     excludeTemperature: false, // 默认不排除 temperature 参数
     customRequestBody: '' // 初始化自定义请求体参数
   };
-  
+
   customApiProfiles.profiles.push(newProfile);
   customApiProfiles.currentEditingId = newProfile.id;
-  
+
   saveCustomApiProfiles();
   renderCustomApiTabs();
   renderActiveProfileSelect();
@@ -4907,8 +4907,8 @@ function addNewProfile() {
 function duplicateProfile(profileId) {
   saveCurrentProfile();
 
-  const sourceProfile = customApiProfiles.profiles.find(p => p.id === profileId);
-  if (!sourceProfile) return;
+  const sourceProfile = customApiProfiles.profiles.find((p) => p.id === profileId);
+  if (!sourceProfile) {return;}
 
   const newProfile = {
     ...sourceProfile,
@@ -4931,35 +4931,35 @@ function deleteProfile(profileId) {
     alert('Cannot delete the last config');
     return;
   }
-  
-  const index = customApiProfiles.profiles.findIndex(p => p.id === profileId);
-  if (index === -1) return;
-  
+
+  const index = customApiProfiles.profiles.findIndex((p) => p.id === profileId);
+  if (index === -1) {return;}
+
   customApiProfiles.profiles.splice(index, 1);
-  
+
   if (customApiProfiles.activeProfileId === profileId) {
     customApiProfiles.activeProfileId = customApiProfiles.profiles[0]?.id || null;
     syncActiveProfileToAiConfig();
   }
-  
+
   if (customApiProfiles.currentEditingId === profileId) {
     customApiProfiles.currentEditingId = customApiProfiles.profiles[0]?.id || null;
     if (customApiProfiles.currentEditingId) {
       loadProfileToForm(customApiProfiles.currentEditingId);
     }
   }
-  
+
   saveCustomApiProfiles();
   renderCustomApiTabs();
   renderActiveProfileSelect();
 }
 
 function activateProfile(profileId) {
-  if (!profileId) return;
-  
-  const profile = customApiProfiles.profiles.find(p => p.id === profileId);
-  if (!profile) return;
-  
+  if (!profileId) {return;}
+
+  const profile = customApiProfiles.profiles.find((p) => p.id === profileId);
+  if (!profile) {return;}
+
   customApiProfiles.activeProfileId = profileId;
   saveCustomApiProfiles();
   renderCustomApiTabs();
@@ -4968,18 +4968,18 @@ function activateProfile(profileId) {
 }
 
 function syncActiveProfileToAiConfig() {
-  if (!customApiProfiles.activeProfileId) return;
-  
-  const profile = customApiProfiles.profiles.find(p => p.id === customApiProfiles.activeProfileId);
-  if (!profile) return;
-  
+  if (!customApiProfiles.activeProfileId) {return;}
+
+  const profile = customApiProfiles.profiles.find((p) => p.id === customApiProfiles.activeProfileId);
+  if (!profile) {return;}
+
   chrome.storage.local.get('aiConfig', function(result) {
     const aiConfig = result.aiConfig || {};
     aiConfig.apiBaseURL = profile.apiBaseURL || '';
     aiConfig.apiKey = profile.apiKey || '';
     aiConfig.apiModel = profile.apiModel || '';
     aiConfig.apiTemperature = profile.apiTemperature !== undefined ? profile.apiTemperature : 1;
-    
+
     chrome.storage.local.set({ aiConfig: aiConfig }, function() {
       console.log('Active profile synced to aiConfig:', profile.name);
     });
@@ -5002,11 +5002,11 @@ function initCustomApiProfilesManager() {
           excludeTemperature: false, // 默认不排除 temperature 参数
           customRequestBody: '' // 初始化自定义请求体参数
         };
-        
+
         customApiProfiles.profiles.push(defaultProfile);
         customApiProfiles.activeProfileId = defaultProfile.id;
         customApiProfiles.currentEditingId = defaultProfile.id;
-        
+
         saveCustomApiProfiles();
         renderCustomApiTabs();
         renderActiveProfileSelect();
@@ -5023,7 +5023,7 @@ function initCustomApiProfilesManager() {
       }
     }
   });
-  
+
   const addBtn = document.getElementById('addCustomProfileBtn');
   if (addBtn) {
     addBtn.addEventListener('click', addNewProfile);
@@ -5031,16 +5031,16 @@ function initCustomApiProfilesManager() {
   } else {
     console.warn('addCustomProfileBtn not found');
   }
-  
+
   const selectEl = document.getElementById('activeProfileSelect');
   if (selectEl) {
     selectEl.addEventListener('change', function() {
       activateProfile(this.value);
     });
   }
-  
+
   const inputs = ['profileName', 'apiBaseURL', 'apiKey', 'apiModel', 'apiTemperature', 'customRequestBody'];
-  inputs.forEach(id => {
+  inputs.forEach((id) => {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener('input', debounce(function() {
@@ -5048,14 +5048,14 @@ function initCustomApiProfilesManager() {
       }, 500));
     }
   });
-  
+
   const profilePollingCheckbox = document.getElementById('profileEnablePolling');
   if (profilePollingCheckbox) {
     profilePollingCheckbox.addEventListener('change', function() {
       saveCurrentProfile();
     });
   }
-  
+
   // excludeTemperature 开关事件监听
   const excludeTemperatureCheckbox = document.getElementById('excludeTemperature');
   if (excludeTemperatureCheckbox) {
@@ -5063,7 +5063,7 @@ function initCustomApiProfilesManager() {
       saveCurrentProfile();
     });
   }
-  
+
   const pollingCheckbox = document.getElementById('enableApiPolling');
   if (pollingCheckbox) {
     chrome.storage.local.get('aiConfig', function(result) {
@@ -5095,14 +5095,14 @@ const ZEROZERO_MODELS_URL = 'https://api.0-0.pro/v1/models';
 
 function setZeroZeroModelStatus(message, color = 'var(--text-secondary, #666)') {
   const status = document.getElementById('zerozeroModelStatus');
-  if (!status) return;
+  if (!status) {return;}
   status.textContent = message || '';
   status.style.color = color;
 }
 
 function renderZeroZeroModels(models, selectedModel = '') {
   const select = document.getElementById('zerozeroModelSelect');
-  if (!select) return;
+  if (!select) {return;}
 
   select.innerHTML = '';
   if (!Array.isArray(models) || models.length === 0) {
@@ -5113,9 +5113,9 @@ function renderZeroZeroModels(models, selectedModel = '') {
     return;
   }
 
-  models.forEach(model => {
+  models.forEach((model) => {
     const modelId = typeof model === 'string' ? model : model?.id;
-    if (!modelId) return;
+    if (!modelId) {return;}
 
     const option = document.createElement('option');
     option.value = modelId;
@@ -5123,7 +5123,7 @@ function renderZeroZeroModels(models, selectedModel = '') {
     select.appendChild(option);
   });
 
-  if (selectedModel && Array.from(select.options).some(option => option.value === selectedModel)) {
+  if (selectedModel && Array.from(select.options).some((option) => option.value === selectedModel)) {
     select.value = selectedModel;
   } else if (select.options.length > 0) {
     select.selectedIndex = 0;
@@ -5131,11 +5131,11 @@ function renderZeroZeroModels(models, selectedModel = '') {
 }
 
 function normalizeZeroZeroModels(data) {
-  if (!data || !Array.isArray(data.data)) return [];
+  if (!data || !Array.isArray(data.data)) {return [];}
 
   return data.data
-    .filter(model => model && model.id)
-    .map(model => ({
+    .filter((model) => model && model.id)
+    .map((model) => ({
       id: model.id,
       owned_by: model.owned_by || ''
     }))
@@ -5147,7 +5147,7 @@ function saveZeroZeroAiConfig(patch, callback) {
     const aiConfig = result.aiConfig || {};
     Object.assign(aiConfig, patch, { zerozeroBaseUrl: ZEROZERO_BASE_URL });
     chrome.storage.local.set({ aiConfig: aiConfig }, function() {
-      if (typeof callback === 'function') callback(aiConfig);
+      if (typeof callback === 'function') {callback(aiConfig);}
     });
   });
 }
@@ -5187,13 +5187,13 @@ async function refreshZeroZeroModels() {
     return;
   }
 
-  if (refreshBtn) refreshBtn.disabled = true;
+  if (refreshBtn) {refreshBtn.disabled = true;}
   setZeroZeroModelStatus('正在获取 0-0 模型列表...', 'orange');
 
   try {
     const models = await fetchZeroZeroModels(apiKey);
     const selectedBeforeFetch = select?.value || '';
-    const nextSelected = selectedBeforeFetch && models.some(model => model.id === selectedBeforeFetch)
+    const nextSelected = selectedBeforeFetch && models.some((model) => model.id === selectedBeforeFetch)
       ? selectedBeforeFetch
       : (models[0]?.id || '');
 
@@ -5212,7 +5212,7 @@ async function refreshZeroZeroModels() {
   } catch (error) {
     setZeroZeroModelStatus(`获取模型失败：${error.message || error}`, 'red');
   } finally {
-    if (refreshBtn) refreshBtn.disabled = false;
+    if (refreshBtn) {refreshBtn.disabled = false;}
   }
 }
 
@@ -5222,11 +5222,11 @@ function initZeroZeroSettings() {
   const select = document.getElementById('zerozeroModelSelect');
   const refreshBtn = document.getElementById('zerozeroRefreshModelsBtn');
 
-  if (baseUrlInput) baseUrlInput.value = ZEROZERO_BASE_URL;
+  if (baseUrlInput) {baseUrlInput.value = ZEROZERO_BASE_URL;}
 
   chrome.storage.local.get('aiConfig', function(result) {
     const aiConfig = result.aiConfig || {};
-    if (keyInput) keyInput.value = aiConfig.zerozeroApiKey || '';
+    if (keyInput) {keyInput.value = aiConfig.zerozeroApiKey || '';}
     renderZeroZeroModels(aiConfig.zerozeroModels || [], aiConfig.zerozeroModel || '');
   });
 
@@ -5236,7 +5236,7 @@ function initZeroZeroSettings() {
     keyInput.addEventListener('input', debounce(function() {
       const apiKey = this.value.trim();
       saveZeroZeroAiConfig({ zerozeroApiKey: apiKey });
-      if (apiKey.length >= 8) refreshZeroZeroModels();
+      if (apiKey.length >= 8) {refreshZeroZeroModels();}
     }, 800));
     keyInput.dataset.zerozeroInitialized = 'true';
   }
@@ -5269,26 +5269,26 @@ function updateApiChannelUI(channel) {
   const ohmygptSettings = document.getElementById('ohmygptSettings');
   const ohmygptAuthDetails = document.getElementById('ohmygptAuthDetails');
   const zerozeroSettings = document.getElementById('zerozeroSettings');
-  
+
   if (channel === 'ohmygpt') {
-    if (customApiSettings) customApiSettings.style.display = 'none';
-    if (ohmygptSettings) ohmygptSettings.style.display = 'flex';
-    if (ohmygptAuthDetails) ohmygptAuthDetails.style.display = 'block';
-    if (zerozeroSettings) zerozeroSettings.style.display = 'none';
+    if (customApiSettings) {customApiSettings.style.display = 'none';}
+    if (ohmygptSettings) {ohmygptSettings.style.display = 'flex';}
+    if (ohmygptAuthDetails) {ohmygptAuthDetails.style.display = 'block';}
+    if (zerozeroSettings) {zerozeroSettings.style.display = 'none';}
   } else if (channel === 'zerozero') {
-    if (customApiSettings) customApiSettings.style.display = 'none';
-    if (ohmygptSettings) ohmygptSettings.style.display = 'none';
-    if (ohmygptAuthDetails) ohmygptAuthDetails.style.display = 'none';
-    if (zerozeroSettings) zerozeroSettings.style.display = 'block';
+    if (customApiSettings) {customApiSettings.style.display = 'none';}
+    if (ohmygptSettings) {ohmygptSettings.style.display = 'none';}
+    if (ohmygptAuthDetails) {ohmygptAuthDetails.style.display = 'none';}
+    if (zerozeroSettings) {zerozeroSettings.style.display = 'block';}
   } else {
-    if (customApiSettings) customApiSettings.style.display = 'block';
-    if (ohmygptSettings) ohmygptSettings.style.display = 'none';
-    if (ohmygptAuthDetails) ohmygptAuthDetails.style.display = 'none';
-    if (zerozeroSettings) zerozeroSettings.style.display = 'none';
+    if (customApiSettings) {customApiSettings.style.display = 'block';}
+    if (ohmygptSettings) {ohmygptSettings.style.display = 'none';}
+    if (ohmygptAuthDetails) {ohmygptAuthDetails.style.display = 'none';}
+    if (zerozeroSettings) {zerozeroSettings.style.display = 'none';}
   }
 }
 // 监听AI渠道切换
-document.querySelectorAll('input[name="aiChannel"]').forEach(radio => {
+document.querySelectorAll('input[name="aiChannel"]').forEach((radio) => {
   radio.addEventListener('change', function() {
     if (this.checked) {
       updateApiChannelUI(this.value);
@@ -5332,7 +5332,7 @@ chrome.storage.local.get('subscriptionConfig', function(result) {
   const ohmygptTokenInput = document.getElementById('ohmygptToken');
   if (ohmygptTokenInput) {
 
-    //同步设置aiconfig的ohmygptToken
+    // 同步设置aiconfig的ohmygptToken
     chrome.storage.local.get('aiConfig', function(result) {
       const aiConfig = result.aiConfig || {};
       aiConfig.ohmygptToken = config.ohmygptToken || '';
@@ -5415,7 +5415,7 @@ chrome.storage.local.get('subscriptionConfig', function(result) {
             config.ohmygptUserId = userId;
             config.ohmygptToken = token;
 
-            //同步设置aiconfig的ohmygptToken
+            // 同步设置aiconfig的ohmygptToken
             chrome.storage.local.get('aiConfig', function(result) {
               const aiConfig = result.aiConfig || {};
               aiConfig.ohmygptToken = config.ohmygptToken || '';
@@ -5487,7 +5487,7 @@ chrome.storage.local.get('subscriptionConfig', function(result) {
 
 
 
-//手机 侧栏 缩进 自动化优化。
+// 手机 侧栏 缩进 自动化优化。
   // Add event listener for the hamburger menu button
   const menuToggle = document.getElementById('menu-toggle');
   const sidebarOverlay = document.getElementById('sidebar-overlay');
@@ -5640,13 +5640,13 @@ chrome.storage.local.get('subscriptionConfig', function(result) {
     statusFilterAll.addEventListener('change', function() {
       if (this.checked) {
         // 选中"全部"时，取消其他所有选项
-        statusFilterCheckboxes.forEach(cb => cb.checked = false);
+        statusFilterCheckboxes.forEach((cb) => cb.checked = false);
       }
     });
   }
 
   // 其他状态复选框逻辑
-  statusFilterCheckboxes.forEach(checkbox => {
+  statusFilterCheckboxes.forEach((checkbox) => {
     checkbox.addEventListener('change', function() {
       if (this.checked && statusFilterAll) {
         // 选中任何具体状态时，取消"全部"
@@ -5654,7 +5654,7 @@ chrome.storage.local.get('subscriptionConfig', function(result) {
       }
 
       // 如果所有具体状态都未选中，自动选中"全部"
-      const anyChecked = Array.from(statusFilterCheckboxes).some(cb => cb.checked);
+      const anyChecked = Array.from(statusFilterCheckboxes).some((cb) => cb.checked);
       if (!anyChecked && statusFilterAll) {
         statusFilterAll.checked = true;
       }
@@ -5727,7 +5727,7 @@ chrome.storage.local.get('subscriptionConfig', function(result) {
     // 获取选中的状态（多选）
     const selectedStatuses = [];
     const statusCheckboxes = document.querySelectorAll('[id^="statusFilter_"]:checked');
-    statusCheckboxes.forEach(checkbox => {
+    statusCheckboxes.forEach((checkbox) => {
       if (checkbox.value !== 'all') {
         selectedStatuses.push(checkbox.value);
       }
@@ -5735,20 +5735,20 @@ chrome.storage.local.get('subscriptionConfig', function(result) {
 
     pageSize = parseInt(document.getElementById('pageSizeSelector').value);
 
-    getAllWordDetails().then(allDetailsMap => {
+    getAllWordDetails().then((allDetailsMap) => {
       let tempFilteredDetails = Object.values(allDetailsMap);
 
       if (currentLanguageFilter !== 'all') {
-        tempFilteredDetails = tempFilteredDetails.filter(item => item.language === currentLanguageFilter);
+        tempFilteredDetails = tempFilteredDetails.filter((item) => item.language === currentLanguageFilter);
       }
 
       // 状态筛选：如果有选中的状态，则筛选
       if (selectedStatuses.length > 0) {
-        tempFilteredDetails = tempFilteredDetails.filter(item => selectedStatuses.includes(String(item.status)));
+        tempFilteredDetails = tempFilteredDetails.filter((item) => selectedStatuses.includes(String(item.status)));
       }
 
       // 不应用任何日期筛选
-      filteredWordsArray = tempFilteredDetails.map(item => item.word);
+      filteredWordsArray = tempFilteredDetails.map((item) => item.word);
       totalPages = Math.ceil(filteredWordsArray.length / pageSize);
       currentPage = 1;
       displayPage(currentPage);
@@ -5817,7 +5817,7 @@ chrome.storage.local.get('subscriptionConfig', function(result) {
     const voiceName = document.getElementById('localTTSVoice').value;
     if (voiceName !== 'auto') {
       const voices = window.speechSynthesis.getVoices();
-      const selectedVoice = voices.find(voice => voice.name === voiceName);
+      const selectedVoice = voices.find((voice) => voice.name === voiceName);
       if (selectedVoice) {
         utterance.voice = selectedVoice;
       }
@@ -5875,7 +5875,7 @@ chrome.storage.local.get('subscriptionConfig', function(result) {
 
   // 处理二级菜单
   const menuItems = document.querySelectorAll('.menu-item');
-  menuItems.forEach(item => {
+  menuItems.forEach((item) => {
     item.addEventListener('click', () => {
       const submenuId = item.id.replace('menu-', 'submenu-');
       const submenu = document.getElementById(submenuId);
@@ -5889,10 +5889,10 @@ chrome.storage.local.get('subscriptionConfig', function(result) {
       if (item.id === 'menu-api') {
         // 移除所有按钮的active样式
         const tabButtons = document.querySelectorAll('.sidebar > button');
-        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabButtons.forEach((btn) => btn.classList.remove('active'));
 
         const apiSubmenuButtons = document.querySelectorAll('#submenu-api button');
-        apiSubmenuButtons.forEach(btn => btn.classList.remove('active'));
+        apiSubmenuButtons.forEach((btn) => btn.classList.remove('active'));
 
         // 为基础设置按钮添加active样式
         const basicSettingsBtn = document.getElementById('tab-api-basic');
@@ -5900,7 +5900,7 @@ chrome.storage.local.get('subscriptionConfig', function(result) {
 
         // 隐藏所有面板
         const panels = document.querySelectorAll('.main-content > div');
-        panels.forEach(panel => panel.classList.add('hidden'));
+        panels.forEach((panel) => panel.classList.add('hidden'));
 
         // 显示基础设置面板
         document.getElementById('panel-api-basic').classList.remove('hidden');
@@ -5910,17 +5910,17 @@ chrome.storage.local.get('subscriptionConfig', function(result) {
 
   // 处理API设置下的子菜单点击
   const apiSubmenuButtons = document.querySelectorAll('#submenu-api button');
-  apiSubmenuButtons.forEach(button => {
+  apiSubmenuButtons.forEach((button) => {
     button.addEventListener('click', () => {
       // 移除所有按钮的active样式
-      tabButtons.forEach(btn => btn.classList.remove('active'));
-      apiSubmenuButtons.forEach(btn => btn.classList.remove('active'));
+      tabButtons.forEach((btn) => btn.classList.remove('active'));
+      apiSubmenuButtons.forEach((btn) => btn.classList.remove('active'));
 
       // 添加active样式到当前按钮
       button.classList.add('active');
 
       // 隐藏所有面板
-      panels.forEach(panel => panel.classList.add('hidden'));
+      panels.forEach((panel) => panel.classList.add('hidden'));
 
       // 根据按钮ID显示对应面板
       const panelId = button.id.replace('tab-', 'panel-');
@@ -5946,7 +5946,7 @@ chrome.storage.local.get('subscriptionConfig', function(result) {
     }
 
        // 新增：点击TTS默认打开基础设置面板
-       //延迟100毫秒后执行
+       // 延迟100毫秒后执行
        switchTab('panel-tts-basic');
 
 
@@ -6296,7 +6296,7 @@ window.onload = function() {
 
     // 眼睛跟随鼠标效果
     function updateEyes(e) {
-      if (!eyesContainer) return;
+      if (!eyesContainer) {return;}
 
       // 获取眼睛容器的中心位置
       const eyesRect = eyesContainer.getBoundingClientRect();
@@ -6323,7 +6323,7 @@ window.onload = function() {
       const translateX = -50 + x * 50;
       const translateY = -50 + y * 50;
 
-      pupils.forEach(pupil => {
+      pupils.forEach((pupil) => {
         pupil.style.transform = `translate(${translateX}%, ${translateY}%)`;
       });
     }
@@ -6361,9 +6361,9 @@ document.getElementById('audioUrlNotebook').addEventListener('input', debounce(f
 
 function switchTab(panelId) {
   // 隐藏所有面板
-  panels.forEach(panel => panel.classList.add('hidden'));
+  panels.forEach((panel) => panel.classList.add('hidden'));
   // 移除所有主菜单和子菜单按钮的 active 状态 (简化处理，可以按需细化)
-  document.querySelectorAll('.sidebar button, .submenu button').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.sidebar button, .submenu button').forEach((btn) => btn.classList.remove('active'));
 
   // 控制webdavStatus的显示/隐藏
   const webdavStatusDiv = document.getElementById('webdavStatus');
@@ -6383,7 +6383,7 @@ function switchTab(panelId) {
     // 清除 OhMyGpt 面板的状态消息 (如果切换到的是这个面板)
     if (panelId === 'panel-subscription-ohmygpt') {
         const statusSpans = targetPanel.querySelectorAll('span[id$="Status"], span[id$="StatusSpan"]'); // 选择所有状态 span
-        statusSpans.forEach(span => { span.textContent = ''; }); // 清空文本内容
+        statusSpans.forEach((span) => { span.textContent = ''; }); // 清空文本内容
         // 尝试获取并显示到期时间
         const currentUserId = document.getElementById('ohmygptUserId').value;
         if (currentUserId) {
@@ -6392,8 +6392,8 @@ function switchTab(panelId) {
             // 如果没有 UserID，确保到期时间显示为 N/A
             const expiryDisplay = document.getElementById('ohmygptExpiryDateDisplay');
             const expiryStatus = document.getElementById('ohmygptExpiryStatus');
-            if(expiryDisplay) expiryDisplay.textContent = 'N/A';
-            if(expiryStatus) {
+            if (expiryDisplay) {expiryDisplay.textContent = 'N/A';}
+            if (expiryStatus) {
                 expiryStatus.textContent = chrome.i18n.getMessage('ohmygptExpiryStatusNoUserId') || '需要先获取 User ID';
                 expiryStatus.style.color = 'orange';
             }
@@ -6411,7 +6411,7 @@ function switchTab(panelId) {
           parentMenu.classList.add('active');
           // 确保父菜单的箭头是展开状态
           const arrow = parentMenu.querySelector('.arrow');
-          if (arrow) arrow.innerHTML = '▼';
+          if (arrow) {arrow.innerHTML = '▼';}
           // 确保子菜单是展开的
           const submenu = targetButton.closest('.submenu');
           if (submenu && submenu.style.maxHeight !== submenu.scrollHeight + 'px') {
@@ -6428,7 +6428,7 @@ function switchTab(panelId) {
             parentButton.classList.add('active');
              // 确保父菜单的箭头是展开状态
             const arrow = parentButton.querySelector('.arrow');
-            if (arrow) arrow.innerHTML = '▼';
+            if (arrow) {arrow.innerHTML = '▼';}
              // 确保子菜单是展开的
             const submenu = parentButton.nextElementSibling;
              if (submenu && submenu.classList.contains('submenu') && submenu.style.maxHeight !== submenu.scrollHeight + 'px') {
@@ -6443,10 +6443,10 @@ function switchTab(panelId) {
 
 // 辅助函数示例 (需要根据你的 HTML 结构调整)
 function findParentMenuButtonForPanel(panelId) {
-    if (panelId.startsWith('panel-api-')) return document.getElementById('menu-api');
-    if (panelId.startsWith('panel-tts-')) return document.getElementById('menu-tts');
-    if (panelId.startsWith('panel-subscription-')) return null;
-    if (panelId.startsWith('panel-word-') || panelId === 'panel-table' || panelId === 'panel-cloud-wordlist') return document.getElementById('menu-wordlist');
+    if (panelId.startsWith('panel-api-')) {return document.getElementById('menu-api');}
+    if (panelId.startsWith('panel-tts-')) {return document.getElementById('menu-tts');}
+    if (panelId.startsWith('panel-subscription-')) {return null;}
+    if (panelId.startsWith('panel-word-') || panelId === 'panel-table' || panelId === 'panel-cloud-wordlist') {return document.getElementById('menu-wordlist');}
     // 新增：数据库操作菜单的面板
     if (panelId === 'panel-cloud-db' || panelId === 'panel-webdav' || panelId === 'panel-word-operations' || panelId === 'panel-import' || panelId === 'panel-backup') {
         return document.getElementById('menu-database');
@@ -6465,16 +6465,16 @@ const tabButtons = document.querySelectorAll('#tab-about'); // 移除了 #tab-im
 const panels = document.querySelectorAll('.main-content > div');
 
 // 更新原因：重写针对无子菜单按钮的事件监听逻辑，使其更简洁且避免冲突
-tabButtons.forEach(button => {
+tabButtons.forEach((button) => {
   button.addEventListener('click', () => {
     // 1. 停用所有按钮（主菜单和子菜单）并折叠子菜单
-    document.querySelectorAll('.sidebar button, .submenu button').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.submenu').forEach(submenu => {
+    document.querySelectorAll('.sidebar button, .submenu button').forEach((btn) => btn.classList.remove('active'));
+    document.querySelectorAll('.submenu').forEach((submenu) => {
         // submenu.style.maxHeight = '0'; // 直接设为0可能导致动画效果丢失，如果需要动画效果，需要更复杂的处理
         // 暂时保留之前的逻辑，只在非激活时折叠
     });
      // 将带子菜单的主按钮箭头重置
-    document.querySelectorAll('#menu-database .arrow, #menu-api .arrow, #menu-tts .arrow, #menu-wordlist .arrow, #menu-epub .arrow').forEach(arrow => arrow.innerHTML = '▶');
+    document.querySelectorAll('#menu-database .arrow, #menu-api .arrow, #menu-tts .arrow, #menu-wordlist .arrow, #menu-epub .arrow').forEach((arrow) => arrow.innerHTML = '▶');
      // 折叠所有子菜单
     //  document.querySelectorAll('.submenu').forEach(submenu => submenu.style.maxHeight = '0');
 
@@ -6483,7 +6483,7 @@ tabButtons.forEach(button => {
     button.classList.add('active');
 
     // 3. 隐藏所有面板
-    panels.forEach(panel => panel.classList.add('hidden'));
+    panels.forEach((panel) => panel.classList.add('hidden'));
 
     // 4. 显示对应的面板 (ID 约定：tab-xxx -> panel-xxx)
     const panelId = button.id.replace('tab-', 'panel-');
@@ -6525,7 +6525,7 @@ function backupDatabase() {
   let originalBtnText = ''; // 存储按钮原始文本
   if (backupBtn) {
     originalBtnText = backupBtn.textContent; // 保存原始文本
-    backupBtn.disabled = true;      // 禁用按钮
+    backupBtn.disabled = true; // 禁用按钮
     backupBtn.textContent = "备份中... Loading... "; // 更改按钮文本 (后续可考虑 i18n)
   }
   if (statusEl) {
@@ -6540,7 +6540,7 @@ function backupDatabase() {
   chrome.runtime.sendMessage({ action: "backupDatabase" }, function(response) {
     // --- 恢复按钮状态 ---
     if (backupBtn) {
-      backupBtn.disabled = false;         // 恢复按钮可用
+      backupBtn.disabled = false; // 恢复按钮可用
       backupBtn.textContent = originalBtnText; // 恢复按钮原始文本
     }
     // --- 结束恢复按钮状态 ---
@@ -6672,8 +6672,8 @@ document.getElementById("backupConfigBtn").addEventListener("click", backupConfi
 function backupConfig() {
   // 同时获取 sync 和 local 存储的所有数据
   Promise.all([
-    new Promise(resolve => chrome.storage.sync.get(null, resolve)),
-    new Promise(resolve => chrome.storage.local.get(null, resolve))
+    new Promise((resolve) => chrome.storage.sync.get(null, resolve)),
+    new Promise((resolve) => chrome.storage.local.get(null, resolve))
   ]).then(([syncData, localData]) => {
     const configData = {
       timestamp: new Date().toISOString(), // 保留原始 ISO 格式的时间戳在数据内部
@@ -6740,7 +6740,7 @@ function backupConfig() {
     // 更新状态信息
     // document.getElementById("backupConfigStatus").textContent = "配置备份成功！已开始下载。 done! already download";
     */
-  }).catch(error => {
+  }).catch((error) => {
     // 新增：处理 Promise 可能出现的错误
     console.error("备份配置时出错:", error);
     document.getElementById("backupConfigStatus").textContent = "备份失败：" + (error.message || "未知错误");
@@ -6898,7 +6898,7 @@ function restoreDefaultPrompt(promptId) {
     element.style.height = element.scrollHeight + 'px';
   }
 
-  //同时将其对应的vaule值也恢复为默认值 aiconfig下的：
+  // 同时将其对应的vaule值也恢复为默认值 aiconfig下的：
 
   // 先获取当前的 aiConfig，然后只更新特定的提示词
   chrome.storage.local.get(['aiConfig'], function(result) {
@@ -6935,7 +6935,7 @@ function setupAutoSave() {
   // 获取所有标记为自动保存的输入元素
   const autoSaveElements = document.querySelectorAll('[data-auto-save="true"]');
 
-  autoSaveElements.forEach(element => {
+  autoSaveElements.forEach((element) => {
     // 根据元素类型选择适当的事件
     const eventType = element.tagName === 'TEXTAREA' ? 'input' : 'input';
 
@@ -7013,7 +7013,7 @@ function saveToStorage(storageArea, key, value, element) {
         if (window.dataAccessLayer) {
           window.dataAccessLayer.init().then(() => {
             console.log('[options.js] dataAccessLayer 已重新初始化，当前模式:', window.dataAccessLayer.mode);
-          }).catch(err => {
+          }).catch((err) => {
             console.error('[options.js] dataAccessLayer 重新初始化失败:', err);
           });
         }
@@ -7047,9 +7047,9 @@ function debounce(func, wait) {
 function updateLanguageFilter() {
   const languageFilter = document.getElementById('languageFilter');
   // 获取所有已存在的语言
-  getAllWords().then(words => {
+  getAllWords().then((words) => {
     const languages = new Set();
-    words.forEach(word => {
+    words.forEach((word) => {
       if (wordDetailsMap[word] && wordDetailsMap[word].language) {
         languages.add(wordDetailsMap[word].language);
       }
@@ -7064,7 +7064,7 @@ function updateLanguageFilter() {
     }
 
     // 添加所有发现的语言
-    languages.forEach(lang => {
+    languages.forEach((lang) => {
       const option = document.createElement('option');
       option.value = lang;
       // 获取语言的显示名称
@@ -7122,9 +7122,9 @@ enableSentenceTTS.addEventListener('change', function(e) {
 // 加载状态 初始化
 chrome.storage.local.get('ttsConfig', function(result) {
   const ttsConfig = result.ttsConfig || {}; // 如果 ttsConfig 不存在，使用空对象
-  //如果不存在，赋值local
+  // 如果不存在，赋值local
 
-  //这里设置好像没用，下面的倒是有用了。
+  // 这里设置好像没用，下面的倒是有用了。
   if (!ttsConfig) {
     ttsConfig = {
       wordTTSProvider: 'edge',
@@ -7137,7 +7137,7 @@ chrome.storage.local.get('ttsConfig', function(result) {
   // 设置默认值
 
 
-  //TTSTTS 选择器
+  // TTSTTS 选择器
   document.getElementById('wordTTSProvider').value = ttsConfig.wordTTSProvider || 'edge';
   // document.getElementById('sentenceTTSProvider').value = ttsConfig.sentenceTTSProvider || 'minimaxi';
   document.getElementById('sentenceTTSProvider').value = ttsConfig.sentenceTTSProvider || 'edge';
@@ -7184,11 +7184,11 @@ document.getElementById('wordAudioUrlTemplate2').addEventListener('change', func
 function switchTab(panelId) {
   // 隐藏所有面板
   const panels = document.querySelectorAll('.main-content > div');
-  panels.forEach(panel => panel.classList.add('hidden'));
+  panels.forEach((panel) => panel.classList.add('hidden'));
 
   // 移除所有按钮的active样式
   const tabButtons = document.querySelectorAll('.sidebar button');
-  tabButtons.forEach(btn => btn.classList.remove('active'));
+  tabButtons.forEach((btn) => btn.classList.remove('active'));
 
   // 控制webdavStatus的显示/隐藏
   const webdavStatusDiv = document.getElementById('webdavStatus');
@@ -7664,7 +7664,7 @@ function initTooltipBackgroundSettings() {
           chrome.tabs.query({}, function(tabs) {
             tabs.forEach(function(tab) {
               chrome.tabs.sendMessage(tab.id, { action: "clearBackgroundSettingsCache" })
-                .catch(err => console.log("无法发送消息到标签页:", tab.id, err));
+                .catch((err) => console.log("无法发送消息到标签页:", tab.id, err));
             });
           });
         }
@@ -7697,7 +7697,7 @@ function initTooltipBackgroundSettings() {
           chrome.tabs.query({}, function(tabs) {
             tabs.forEach(function(tab) {
               chrome.tabs.sendMessage(tab.id, { action: "clearBackgroundSettingsCache" })
-                .catch(err => console.log("无法发送消息到标签页:", tab.id, err));
+                .catch((err) => console.log("无法发送消息到标签页:", tab.id, err));
             });
           });
         }
@@ -7801,7 +7801,7 @@ function initTooltipBackgroundSettings() {
     ];
 
     // 创建预览项
-    builtInBackgrounds.forEach(bg => {
+    builtInBackgrounds.forEach((bg) => {
       const item = document.createElement('div');
       item.style.cssText = `
         display: flex;
@@ -7884,7 +7884,7 @@ function initTooltipBackgroundSettings() {
             chrome.tabs.query({}, function(tabs) {
               tabs.forEach(function(tab) {
                 chrome.tabs.sendMessage(tab.id, { action: "clearBackgroundSettingsCache" })
-                  .catch(err => console.log("无法发送消息到标签页:", tab.id));
+                  .catch((err) => console.log("无法发送消息到标签页:", tab.id));
               });
             });
           });
@@ -7927,7 +7927,7 @@ function initTooltipBackgroundSettings() {
         chrome.tabs.query({}, function(tabs) {
           tabs.forEach(function(tab) {
             chrome.tabs.sendMessage(tab.id, { action: "updateTooltipThemeMode", mode: mode })
-              .catch(err => console.log("无法发送消息到标签页:", tab.id, err));
+              .catch((err) => console.log("无法发送消息到标签页:", tab.id, err));
           });
         });
       }
@@ -8177,9 +8177,9 @@ function callOhMyGptGetToken(code) {
     }
 
     // 为 WebDAV 凭据设置自动保存
-    if (webdavUrlInput) setupAutoSave(webdavUrlInput);
-    if (webdavUsernameInput) setupAutoSave(webdavUsernameInput);
-    if (webdavPasswordInput) setupAutoSave(webdavPasswordInput);
+    if (webdavUrlInput) {setupAutoSave(webdavUrlInput);}
+    if (webdavUsernameInput) {setupAutoSave(webdavUsernameInput);}
+    if (webdavPasswordInput) {setupAutoSave(webdavPasswordInput);}
 
 
 
@@ -8288,7 +8288,7 @@ function callOhMyGptGetToken(code) {
               // 目录不存在，尝试创建
               try {
                   // 逐级创建目录
-                  const parts = directoryPath.split('/').filter(p => p.length > 0);
+                  const parts = directoryPath.split('/').filter((p) => p.length > 0);
                   let currentPath = '';
                   for (const part of parts) {
                       currentPath += '/' + part;
@@ -8321,7 +8321,7 @@ function callOhMyGptGetToken(code) {
   // 1. 上传同步文件 (覆盖云端 /Lingkuma/Sync/sync_word.json)
   async function webdavUploadSync() {
       const client = getWebDAVClient();
-      if (!client) return;
+      if (!client) {return;}
 
       webdavStatusDiv.textContent = translate('webdavFetchingLocalData');
       webdavStatusDiv.style.color = 'orange';
@@ -8362,7 +8362,7 @@ function callOhMyGptGetToken(code) {
   // 2. 下载合并文件 (合并到本地)
   async function webdavDownloadMerge() {
       const client = getWebDAVClient();
-      if (!client) return;
+      if (!client) {return;}
 
       const syncFilePath = "/Lingkuma/Sync/sync_word.json";
       webdavStatusDiv.textContent = translate('webdavDownloadingSyncFile');
@@ -8414,7 +8414,7 @@ function callOhMyGptGetToken(code) {
   // 2.5. 下载覆盖文件 (完全覆盖本地数据库)
   async function webdavDownloadReplace() {
       const client = getWebDAVClient();
-      if (!client) return;
+      if (!client) {return;}
 
       const syncFilePath = "/Lingkuma/Sync/sync_word.json";
       webdavStatusDiv.textContent = translate('webdavDownloadingSyncFile');
@@ -8464,7 +8464,7 @@ function callOhMyGptGetToken(code) {
   // 3. 上传日期备份文件 (到云端 /Backups/...)
   async function webdavUploadBackup() {
       const client = getWebDAVClient();
-      if (!client) return;
+      if (!client) {return;}
 
       webdavStatusDiv.textContent = translate('webdavFetchingLocalData');
       webdavStatusDiv.style.color = 'orange';
@@ -8520,7 +8520,7 @@ function callOhMyGptGetToken(code) {
 
   // 单词库操作：清空本地数据库
   function clearLocalDatabase() {
-    if (!clearLocalDbResult) return;
+    if (!clearLocalDbResult) {return;}
 
     clearLocalDbResult.textContent = translate('webdavClearingDb');
     clearLocalDbResult.style.backgroundColor = 'rgba(255, 165, 0, 0.1)';
@@ -8547,7 +8547,7 @@ function callOhMyGptGetToken(code) {
 
   // 单词库操作：重置词组数据库
   function resetPhrasesDatabase() {
-    if (!resetPhrasesResult) return;
+    if (!resetPhrasesResult) {return;}
 
     resetPhrasesResult.textContent = '正在重置词组数据库...';
     resetPhrasesResult.style.backgroundColor = 'rgba(255, 165, 0, 0.1)';
@@ -8574,7 +8574,7 @@ function callOhMyGptGetToken(code) {
 // 5. 上传配置到 WebDAV (覆盖云端 /Lingkuma/Settings/settings_sync.json)
 async function webdavSettingsSync() {
     const client = getWebDAVClient();
-    if (!client) return;
+    if (!client) {return;}
 
     webdavStatusDiv.textContent = translate('webdavFetchingLocalSettings'); // 需要添加翻译: 正在获取本地配置...
     webdavStatusDiv.style.color = 'orange';
@@ -8582,8 +8582,8 @@ async function webdavSettingsSync() {
     try {
         // 1. 获取本地 sync 和 local 存储数据
         const [syncData, localData] = await Promise.all([
-            new Promise(resolve => chrome.storage.sync.get(null, resolve)),
-            new Promise(resolve => chrome.storage.local.get(null, resolve))
+            new Promise((resolve) => chrome.storage.sync.get(null, resolve)),
+            new Promise((resolve) => chrome.storage.local.get(null, resolve))
         ]);
 
         const configData = {
@@ -8618,7 +8618,7 @@ async function webdavSettingsSync() {
 // 6. 从 WebDAV 下载配置并应用 (覆盖本地)
 async function webdavSettingsDownload() {
     const client = getWebDAVClient();
-    if (!client) return;
+    if (!client) {return;}
 
     const settingsFilePath = "/Lingkuma/Settings/settings_sync.json";
     webdavStatusDiv.textContent = translate('webdavDownloadingSettings'); // 需要添加翻译: 正在从 /Settings/settings_sync.json 下载配置...
@@ -8756,8 +8756,8 @@ async function webdavSettingsUpload() {
 
     // 1. 收集配置数据 (获取完整的 sync 和 local 存储数据)
     const [syncData, localData] = await Promise.all([
-      new Promise(resolve => chrome.storage.sync.get(null, resolve)),
-      new Promise(resolve => chrome.storage.local.get(null, resolve))
+      new Promise((resolve) => chrome.storage.sync.get(null, resolve)),
+      new Promise((resolve) => chrome.storage.local.get(null, resolve))
     ]);
 
     const configToBackup = {
@@ -8808,8 +8808,8 @@ const deviceConfigs = {
 async function getConfigData() {
   // 获取完整的 sync 和 local 存储数据
   const [syncData, localData] = await Promise.all([
-    new Promise(resolve => chrome.storage.sync.get(null, resolve)),
-    new Promise(resolve => chrome.storage.local.get(null, resolve))
+    new Promise((resolve) => chrome.storage.sync.get(null, resolve)),
+    new Promise((resolve) => chrome.storage.local.get(null, resolve))
   ]);
 
   return {
@@ -8907,11 +8907,11 @@ async function deviceSettingsMerge(deviceKey) {
 
     // 合并配置到本地存储
     if (configData.settings.sync) {
-      await new Promise(resolve => chrome.storage.sync.set(configData.settings.sync, resolve));
+      await new Promise((resolve) => chrome.storage.sync.set(configData.settings.sync, resolve));
     }
 
     if (configData.settings.local) {
-      await new Promise(resolve => chrome.storage.local.set(configData.settings.local, resolve));
+      await new Promise((resolve) => chrome.storage.local.set(configData.settings.local, resolve));
     }
 
     statusElement.textContent = `${deviceConfig.name} Settings Merged to Local Successfully! Suggest Restart Plugin to take effect.`;
@@ -9000,7 +9000,7 @@ function calculateDerivative(data, order = 1) {
   const firstDerivative = [];
   for (let i = 1; i < data.length; i++) {
     // 计算相邻两点的差值
-    firstDerivative.push(data[i] - data[i-1]);
+    firstDerivative.push(data[i] - data[i - 1]);
   }
 
   // 如果需要更高阶导数，递归计算
@@ -9134,7 +9134,7 @@ const fixedStatusColors = {
   '2': '#FFCE56', // 熟悉 - 黄色
   '3': '#4BC0C0', // 认识 - 青色
   '4': '#9966FF', // 几乎掌握 - 紫色
-  '5': '#36A2EB'  // 完全掌握 -  蓝色#36A2EB
+  '5': '#36A2EB' // 完全掌握 -  蓝色#36A2EB
 };
 
 // 新增：状态ID到i18n键的映射 (用于图例标签)
@@ -9191,12 +9191,12 @@ function createWordStatsChart(chartType, startDate, endDate, statusFilter, langu
       const dailyCountsForStatus = {};
 
       // 初始化每个日期的计数为0
-      allDatesForChartLabels.forEach(dateStr => {
+      allDatesForChartLabels.forEach((dateStr) => {
         dailyCountsForStatus[dateStr] = 0;
       });
 
       // 遍历所有单词，统计每个日期达到该状态的单词数量
-      wordDetailsArray.forEach(word => {
+      wordDetailsArray.forEach((word) => {
         // 语言筛选
         if (language !== 'all' && word.language !== language) {
           return;
@@ -9221,7 +9221,7 @@ function createWordStatsChart(chartType, startDate, endDate, statusFilter, langu
       });
 
       // 将每日计数转换为图表数据点格式
-      const dataPoints = allDatesForChartLabels.map(dateStr => ({
+      const dataPoints = allDatesForChartLabels.map((dateStr) => ({
         x: dateStr,
         y: dailyCountsForStatus[dateStr] || 0
       }));
@@ -9251,7 +9251,7 @@ function createWordStatsChart(chartType, startDate, endDate, statusFilter, langu
         pointHoverBackgroundColor: chartType === 'line' ? color : undefined,
         pointHoverBorderColor: chartType === 'line' ? '#fff' : undefined,
         pointHoverBorderWidth: chartType === 'line' ? 2 : undefined,
-        hitRadius: 10,
+        hitRadius: 10
       });
     });
 
@@ -9270,18 +9270,18 @@ function createWordStatsChart(chartType, startDate, endDate, statusFilter, langu
       const wordsByDate = {};
 
       // 初始化每个日期的计数为0
-      allDatesForChartLabels.forEach(dateStr => {
+      allDatesForChartLabels.forEach((dateStr) => {
         wordsByDate[dateStr] = 0;
       });
 
       // 模式A的筛选逻辑：基于单词的 createdAt 字段
-      const filteredWordsModeA = wordDetailsArray.filter(word => {
+      const filteredWordsModeA = wordDetailsArray.filter((word) => {
         // 只筛选当前状态的单词
-        if (parseInt(word.status) !== statusIdNumeric) return false;
+        if (parseInt(word.status) !== statusIdNumeric) {return false;}
         // 语言筛选
-        if (language !== 'all' && word.language !== language) return false;
+        if (language !== 'all' && word.language !== language) {return false;}
         // 必须有创建日期
-        if (!word.createdAt) return false;
+        if (!word.createdAt) {return false;}
 
         const createdDate = new Date(word.createdAt);
         // 日期范围筛选
@@ -9289,7 +9289,7 @@ function createWordStatsChart(chartType, startDate, endDate, statusFilter, langu
       });
 
       // 统计每个日期创建的单词数量
-      filteredWordsModeA.forEach(word => {
+      filteredWordsModeA.forEach((word) => {
         const dateStr = formatDate(new Date(word.createdAt));
         if (wordsByDate.hasOwnProperty(dateStr)) {
           wordsByDate[dateStr]++;
@@ -9297,7 +9297,7 @@ function createWordStatsChart(chartType, startDate, endDate, statusFilter, langu
       });
 
       // 将每日计数转换为图表数据点格式
-      const dataPointsModeA = allDatesForChartLabels.map(dateStr => ({
+      const dataPointsModeA = allDatesForChartLabels.map((dateStr) => ({
         x: dateStr,
         y: wordsByDate[dateStr] || 0
       }));
@@ -9327,7 +9327,7 @@ function createWordStatsChart(chartType, startDate, endDate, statusFilter, langu
         pointHoverBackgroundColor: chartType === 'line' ? color : undefined,
         pointHoverBorderColor: chartType === 'line' ? '#fff' : undefined,
         pointHoverBorderWidth: chartType === 'line' ? 2 : undefined,
-        hitRadius: 10,
+        hitRadius: 10
       });
     });
 
@@ -9383,9 +9383,9 @@ function createWordStatsChart(chartType, startDate, endDate, statusFilter, langu
 
   // 如果需要计算导数，处理每个数据集
   if (currentDerivativeOrder > 0) {
-    chartDatasets.forEach(dataset => {
+    chartDatasets.forEach((dataset) => {
       // 提取原始Y值数组
-      const originalYValues = dataset.data.map(point => point.y);
+      const originalYValues = dataset.data.map((point) => point.y);
 
       // 计算导数
       const derivativeValues = calculateDerivative(originalYValues, currentDerivativeOrder);
@@ -9424,7 +9424,7 @@ function createWordStatsChart(chartType, startDate, endDate, statusFilter, langu
   // 调整柱状图颜色 (如果图表类型是柱状图，并且是模式B，颜色已在循环中单独设置)
   // 模式A的柱状图颜色在数据集创建时已设置
   if (chartType === 'bar') {
-    finalChartData.datasets.forEach(dataset => {
+    finalChartData.datasets.forEach((dataset) => {
         // 对于模式B的柱状图，颜色已在上面循环中设置 backgroundColor
         // 对于模式A的柱状图，backgroundColor 也已设置
         dataset.borderWidth = 1; // 统一柱状图边框
@@ -9454,7 +9454,7 @@ function createWordStatsChart(chartType, startDate, endDate, statusFilter, langu
 function bindStatsFilterEvents() {
   // 清除所有按钮的active类
   function clearActiveButtons() {
-    document.querySelectorAll('.filter-buttons button').forEach(btn => {
+    document.querySelectorAll('.filter-buttons button').forEach((btn) => {
       btn.classList.remove('active');
     });
   }
@@ -9529,7 +9529,7 @@ function bindStatsFilterEvents() {
     // 找出最早的单词创建日期
     let earliestDate = new Date();
 
-    wordDetailsArray.forEach(word => {
+    wordDetailsArray.forEach((word) => {
       if (word.createdAt) {
         const createdDate = new Date(word.createdAt);
         if (createdDate < earliestDate) {
@@ -9598,7 +9598,7 @@ function bindStatsFilterEvents() {
   });
 
   // 状态筛选按钮
-  document.querySelectorAll('.filter-item .checkbox-item').forEach(button => {
+  document.querySelectorAll('.filter-item .checkbox-item').forEach((button) => {
     const checkbox = button.querySelector('input[type="checkbox"][id^="statsStatus"]');
     if (checkbox) {
       // 初始化时根据checkbox状态设置active类
@@ -9617,7 +9617,7 @@ function bindStatsFilterEvents() {
           // 检查如果取消这个，是否会导致没有状态被选中
           const allCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="statsStatus"]');
           let checkedCount = 0;
-          allCheckboxes.forEach(cb => {
+          allCheckboxes.forEach((cb) => {
             if (cb.checked) {
               checkedCount++;
             }
@@ -9652,7 +9652,7 @@ function bindStatsFilterEvents() {
   });
 
   // 图表类型单选按钮
-  document.querySelectorAll('input[name="chartType"]').forEach(radio => {
+  document.querySelectorAll('input[name="chartType"]').forEach((radio) => {
     radio.addEventListener('change', () => {
       applyStatsFilter();
     });
@@ -9686,7 +9686,7 @@ function applyStatsFilter() {
 
   // 获取状态筛选
   const statusFilter = [];
-  document.querySelectorAll('[id^="statsStatus"]:checked').forEach(checkbox => {
+  document.querySelectorAll('[id^="statsStatus"]:checked').forEach((checkbox) => {
     statusFilter.push(parseInt(checkbox.value));
   });
 
@@ -9718,13 +9718,13 @@ function applyStatsFilter() {
   console.log('[options.js] 应用统计筛选条件:', filters);
 
   // 先获取筛选后的数据，再创建图表
-  getFilteredWordDetails(filters).then(wordDetails => {
+  getFilteredWordDetails(filters).then((wordDetails) => {
     wordDetailsArray = Object.values(wordDetails);
     console.log(`[options.js] 统计图表获取到 ${wordDetailsArray.length} 个单词`);
 
     // 创建图表
     createWordStatsChart(chartType, startDate, new Date(endDate.getTime()), statusFilter, language, currentChartMode);
-  }).catch(err => {
+  }).catch((err) => {
     console.error("获取统计数据失败:", err);
     alert('获取统计数据失败，请重试');
   });
@@ -9733,7 +9733,7 @@ function applyStatsFilter() {
 // 多设备配置功能的事件监听器
 function bindDeviceConfigEvents() {
   // 为每个设备添加事件监听器
-  Object.keys(deviceConfigs).forEach(deviceKey => {
+  Object.keys(deviceConfigs).forEach((deviceKey) => {
     // 上传配置按钮
     const uploadBtn = document.getElementById(`device-${deviceKey}-upload`);
     if (uploadBtn) {
@@ -9797,7 +9797,7 @@ function initGlassEffectSettings() {
             chrome.tabs.sendMessage(tab.id, {
               action: "updateGlassEffect",
               effectType: selectedEffect
-            }).catch(err => console.log('无法发送消息到标签页:', tab.id, err));
+            }).catch((err) => console.log('无法发送消息到标签页:', tab.id, err));
           });
         });
       }
@@ -9829,7 +9829,7 @@ function loadCustomCapsules() {
 // 渲染胶囊容器列表
 function renderCapsulesContainerList(capsules) {
   const container = document.getElementById('capsulesContainerList');
-  if (!container) return;
+  if (!container) {return;}
 
   container.innerHTML = '';
 
@@ -9850,7 +9850,7 @@ function renderCapsulesContainerList(capsules) {
 
 // HTML转义函数 - 用于在HTML属性中安全显示文本
 function escapeHtml(text) {
-  if (!text) return '';
+  if (!text) {return '';}
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -9942,7 +9942,7 @@ function createCapsuleContainerItem(capsuleContainer, containerIndex) {
 
   // 绑定删除按钮事件
   const deleteButtonBtns = div.querySelectorAll('.delete-button-btn');
-  deleteButtonBtns.forEach(btn => {
+  deleteButtonBtns.forEach((btn) => {
     btn.addEventListener('click', (e) => {
       const btnIndex = parseInt(e.target.getAttribute('data-btn-index'));
       deleteButtonFromContainer(containerIndex, btnIndex);
@@ -9953,13 +9953,13 @@ function createCapsuleContainerItem(capsuleContainer, containerIndex) {
   const inputs = div.querySelectorAll('.button-name, .button-url, .button-icon');
   const selects = div.querySelectorAll('.button-open-method');
 
-  inputs.forEach(input => {
+  inputs.forEach((input) => {
     input.addEventListener('input', debounce(() => {
       autoSaveCapsuleContainer(containerIndex);
     }, 1000)); // 1秒防抖
   });
 
-  selects.forEach(select => {
+  selects.forEach((select) => {
     select.addEventListener('change', () => {
       autoSaveCapsuleContainer(containerIndex);
     });
@@ -10015,7 +10015,7 @@ function autoSaveCapsuleContainer(containerIndex) {
   const containerItems = container.querySelectorAll('.capsule-container-item');
   const containerItem = containerItems[containerIndex];
 
-  if (!containerItem) return;
+  if (!containerItem) {return;}
 
   const buttonItems = containerItem.querySelectorAll('.capsule-button-item');
   const buttons = [];
@@ -10173,14 +10173,14 @@ function generateAnimationCards() {
   const topGrid = document.getElementById('topAnimationGrid');
   const bottomGrid = document.getElementById('bottomAnimationGrid');
 
-  if (!topGrid || !bottomGrid) return;
+  if (!topGrid || !bottomGrid) {return;}
 
   // 为顶层和底层生成卡片
   [topGrid, bottomGrid].forEach((grid, index) => {
     const layer = index === 0 ? 'top' : 'bottom';
     grid.innerHTML = '';
 
-    PRESET_ANIMATIONS.forEach(filename => {
+    PRESET_ANIMATIONS.forEach((filename) => {
       const card = document.createElement('div');
       card.className = 'animation-card';
       card.dataset.filename = filename;
@@ -10237,10 +10237,10 @@ function generateAnimationCards() {
 // 选择动图卡片
 function selectAnimationCard(layer, filename) {
   const grid = document.getElementById(`${layer}AnimationGrid`);
-  if (!grid) return;
+  if (!grid) {return;}
 
   // 移除所有选中状态
-  grid.querySelectorAll('.animation-card').forEach(card => {
+  grid.querySelectorAll('.animation-card').forEach((card) => {
     card.classList.remove('selected');
   });
 
@@ -10319,8 +10319,8 @@ function loadAnimationSettings() {
     // 设置尺寸
     const widthInput = document.getElementById('animationWidth');
     const heightInput = document.getElementById('animationHeight');
-    if (widthInput) widthInput.value = config.width;
-    if (heightInput) heightInput.value = config.height;
+    if (widthInput) {widthInput.value = config.width;}
+    if (heightInput) {heightInput.value = config.height;}
   });
 }
 
@@ -10381,7 +10381,7 @@ function saveAnimationSettings() {
 // 处理文件上传
 function handleAnimationFileUpload(event, layer) {
   const file = event.target.files[0];
-  if (!file) return;
+  if (!file) {return;}
 
   if (!file.name.endsWith('.tgs')) {
     alert(translate('tgsFormatOnly'));
@@ -10421,10 +10421,10 @@ function handleAnimationFileUpload(event, layer) {
 // 添加自定义动图卡片
 function addCustomAnimationCard(layer, filename, base64Data) {
   const grid = document.getElementById(`${layer}AnimationGrid`);
-  if (!grid) return;
+  if (!grid) {return;}
 
   // 移除所有选中状态
-  grid.querySelectorAll('.animation-card').forEach(card => {
+  grid.querySelectorAll('.animation-card').forEach((card) => {
     card.classList.remove('selected');
   });
 
@@ -10508,7 +10508,7 @@ async function calculateDatabaseSize() {
 
     // 计算总例句数量
     let totalSentences = 0;
-    allRecords.forEach(record => {
+    allRecords.forEach((record) => {
       if (record.sentences && Array.isArray(record.sentences)) {
         totalSentences += record.sentences.length;
       }
@@ -10692,10 +10692,10 @@ function openCustomPhrasesDB() {
 }
 
 // 显示云端数据库状态消息
-let cloudDbStatusTimer = null;  // 保存定时器引用，避免闪烁
+let cloudDbStatusTimer = null; // 保存定时器引用，避免闪烁
 function showCloudDbStatus(message, type = 'info') {
   const statusDiv = document.getElementById('cloudDbStatus');
-  if (!statusDiv) return;
+  if (!statusDiv) {return;}
 
   // 清除之前的定时器，避免闪烁
   if (cloudDbStatusTimer) {
@@ -10739,7 +10739,7 @@ function updateCustomServerLink() {
     const config = result.cloudConfig || {};
     const customServerStatus = document.getElementById('customServerStatus');
     const customServerLink = document.getElementById('customServerLink');
-    
+
     if (config.selfHosted && config.serverURL) {
       const serverURL = config.serverURL.replace(/\/$/, '');
       const dashboardURL = `${serverURL}/dashboard/`;
@@ -10772,7 +10772,7 @@ async function updateCloudLoginStatus() {
 
     if (window.cloudAPI.token) {
       // 已登录，先从本地获取用户名
-      const result = await new Promise(resolve => {
+      const result = await new Promise((resolve) => {
         chrome.storage.local.get(['cloudConfig'], resolve);
       });
 
@@ -10828,7 +10828,7 @@ async function updateCloudLoginStatus() {
           loggedInActions.style.display = 'block';
 
           // 将云端用户信息同步到本地存储
-          const localResult = await new Promise(resolve => {
+          const localResult = await new Promise((resolve) => {
             chrome.storage.local.get(['cloudConfig'], resolve);
           });
           const cloudConfig = localResult.cloudConfig || {};
@@ -10871,13 +10871,13 @@ async function updateCloudLoginStatus() {
             if (afdianSection) {
               afdianSection.style.display = 'none';
             }
-            if (afdianIdRow) afdianIdRow.style.display = 'none';
-            if (planNameRow) planNameRow.style.display = 'none';
+            if (afdianIdRow) {afdianIdRow.style.display = 'none';}
+            if (planNameRow) {planNameRow.style.display = 'none';}
             // 显示订阅状态和到期时间（自建用户显示 localhost 和永久有效）
             const subscriptionRow = document.getElementById('cloudSubscriptionStatus')?.closest('p');
             const expiresRow = document.getElementById('cloudExpiresAt')?.closest('p');
-            if (subscriptionRow) subscriptionRow.style.display = 'block';
-            if (expiresRow) expiresRow.style.display = 'block';
+            if (subscriptionRow) {subscriptionRow.style.display = 'block';}
+            if (expiresRow) {expiresRow.style.display = 'block';}
           } else {
             // 官方服务器用户：显示爱发电功能和订阅信息
             console.log('[CloudDB] Showing Afdian section for official user');
@@ -10887,12 +10887,12 @@ async function updateCloudLoginStatus() {
             // 显示订阅状态和到期时间
             const subscriptionRow = document.getElementById('cloudSubscriptionStatus')?.closest('p');
             const expiresRow = document.getElementById('cloudExpiresAt')?.closest('p');
-            if (subscriptionRow) subscriptionRow.style.display = 'block';
-            if (expiresRow) expiresRow.style.display = 'block';
+            if (subscriptionRow) {subscriptionRow.style.display = 'block';}
+            if (expiresRow) {expiresRow.style.display = 'block';}
 
             // 显示Afdian ID和计划名称
-            if (afdianIdRow) afdianIdRow.style.display = 'block';
-            if (planNameRow) planNameRow.style.display = 'block';
+            if (afdianIdRow) {afdianIdRow.style.display = 'block';}
+            if (planNameRow) {planNameRow.style.display = 'block';}
             document.getElementById('cloudAfdianId').textContent = userData.externalSubscription?.afdianUserId || result.cloudConfig?.afdianUserId || '-';
             document.getElementById('cloudPlanName').textContent = userData.afdianPlanName || '-';
           }
@@ -10901,12 +10901,12 @@ async function updateCloudLoginStatus() {
           console.warn('[CloudDB] API call failed, showing local data');
           document.getElementById('cloudUsername').textContent = localUsername;
           document.getElementById('cloudSubscriptionStatus').textContent = result.cloudConfig?.subscriptionStatus || 'Unknown';
-          
+
           const expireTime = result.cloudConfig?.subscriptionExpireAt;
           document.getElementById('cloudExpiresAt').textContent = expireTime ? new Date(expireTime).toLocaleDateString() : 'Unknown';
-          
+
           document.getElementById('cloudDataServer').textContent = result.cloudConfig?.dataServer || '-';
-          
+
           const storageUsed = result.cloudConfig?.wordCount || 0;
           const storageLimit = result.cloudConfig?.wordLimit || 20000;
           const storagePercent = storageLimit > 0 ? ((storageUsed / storageLimit) * 100).toFixed(1) : 0;
@@ -10921,15 +10921,15 @@ async function updateCloudLoginStatus() {
           const afdianSection = document.getElementById('cloudAfdianSection');
           const afdianIdRow = document.getElementById('cloudAfdianIdRow');
           const planNameRow = document.getElementById('cloudPlanNameRow');
-          
+
           if (isSelfHosted) {
-            if (afdianSection) afdianSection.style.display = 'none';
-            if (afdianIdRow) afdianIdRow.style.display = 'none';
-            if (planNameRow) planNameRow.style.display = 'none';
+            if (afdianSection) {afdianSection.style.display = 'none';}
+            if (afdianIdRow) {afdianIdRow.style.display = 'none';}
+            if (planNameRow) {planNameRow.style.display = 'none';}
           } else {
-            if (afdianSection) afdianSection.style.display = 'block';
-            if (afdianIdRow) afdianIdRow.style.display = 'block';
-            if (planNameRow) planNameRow.style.display = 'block';
+            if (afdianSection) {afdianSection.style.display = 'block';}
+            if (afdianIdRow) {afdianIdRow.style.display = 'block';}
+            if (planNameRow) {planNameRow.style.display = 'block';}
             document.getElementById('cloudAfdianId').textContent = afdianUserId || '-';
             document.getElementById('cloudPlanName').textContent = result.cloudConfig?.afdianPlanName || '-';
           }
@@ -10939,12 +10939,12 @@ async function updateCloudLoginStatus() {
         console.warn('[CloudDB] Failed to fetch user info, showing local data:', apiError);
         document.getElementById('cloudUsername').textContent = localUsername;
         document.getElementById('cloudSubscriptionStatus').textContent = result.cloudConfig?.subscriptionStatus || 'Offline';
-        
+
         const expireTime = result.cloudConfig?.subscriptionExpireAt;
         document.getElementById('cloudExpiresAt').textContent = expireTime ? new Date(expireTime).toLocaleDateString() : 'Unknown';
-        
+
         document.getElementById('cloudDataServer').textContent = result.cloudConfig?.dataServer || '-';
-        
+
         const storageUsed = result.cloudConfig?.wordCount || 0;
         const storageLimit = result.cloudConfig?.wordLimit || 20000;
         const storagePercent = storageLimit > 0 ? ((storageUsed / storageLimit) * 100).toFixed(1) : 0;
@@ -10959,15 +10959,15 @@ async function updateCloudLoginStatus() {
         const afdianSection = document.getElementById('cloudAfdianSection');
         const afdianIdRow = document.getElementById('cloudAfdianIdRow');
         const planNameRow = document.getElementById('cloudPlanNameRow');
-        
+
         if (isSelfHosted) {
-          if (afdianSection) afdianSection.style.display = 'none';
-          if (afdianIdRow) afdianIdRow.style.display = 'none';
-          if (planNameRow) planNameRow.style.display = 'none';
+          if (afdianSection) {afdianSection.style.display = 'none';}
+          if (afdianIdRow) {afdianIdRow.style.display = 'none';}
+          if (planNameRow) {planNameRow.style.display = 'none';}
         } else {
-          if (afdianSection) afdianSection.style.display = 'block';
-          if (afdianIdRow) afdianIdRow.style.display = 'block';
-          if (planNameRow) planNameRow.style.display = 'block';
+          if (afdianSection) {afdianSection.style.display = 'block';}
+          if (afdianIdRow) {afdianIdRow.style.display = 'block';}
+          if (planNameRow) {planNameRow.style.display = 'block';}
           document.getElementById('cloudAfdianId').textContent = afdianUserId || '-';
           document.getElementById('cloudPlanName').textContent = result.cloudConfig?.afdianPlanName || '-';
         }
@@ -10978,7 +10978,7 @@ async function updateCloudLoginStatus() {
       loggedInActions.style.display = 'none';
 
       // 未登录时，根据 selfHosted 设置控制登录表单显示
-      const result = await new Promise(resolve => {
+      const result = await new Promise((resolve) => {
         chrome.storage.local.get(['cloudConfig'], resolve);
       });
       const isSelfHosted = result.cloudConfig?.selfHosted === true;
@@ -11029,7 +11029,7 @@ async function cloudLogin() {
     showCloudDbStatus('Logging in...', 'info');
 
     // 先从 storage 加载最新配置
-    const result = await new Promise(resolve => {
+    const result = await new Promise((resolve) => {
       chrome.storage.local.get(['cloudConfig'], resolve);
     });
 
@@ -11084,7 +11084,7 @@ async function cloudRegister() {
     showCloudDbStatus('Creating account...', 'info');
 
     // 先从 storage 加载最新配置
-    const result = await new Promise(resolve => {
+    const result = await new Promise((resolve) => {
       chrome.storage.local.get(['cloudConfig'], resolve);
     });
 
@@ -11184,7 +11184,7 @@ async function cloudRefreshAfdian() {
   try {
     showCloudDbStatus('Refreshing subscription status...', 'info');
 
-    const result = await new Promise(resolve => {
+    const result = await new Promise((resolve) => {
       chrome.storage.local.get(['cloudConfig'], resolve);
     });
 
@@ -11260,12 +11260,12 @@ async function cloudMigrateLocalToCloud() {
     const JAN_1_2023 = new Date('2023-01-01T00:00:00.000Z').getTime();
     const TODAY_JAN_2 = new Date(new Date().getFullYear(), 0, 2).getTime();
 
-    allWords.forEach(word => {
+    allWords.forEach((word) => {
       let hasValidCreateTimeInHistory = false;
       let latestCreateTime = 0;
 
       if (word.statusHistory && typeof word.statusHistory === 'object') {
-        ['1', '2', '3', '4', '5'].forEach(statusKey => {
+        ['1', '2', '3', '4', '5'].forEach((statusKey) => {
           const statusEntry = word.statusHistory[statusKey];
           if (statusEntry && typeof statusEntry.createTime === 'number' && statusEntry.createTime > 0) {
             hasValidCreateTimeInHistory = true;
@@ -11299,9 +11299,9 @@ async function cloudMigrateLocalToCloud() {
 
     console.log(`[CloudDB] Processed createdAt for ${allWords.length} words`);
 
-    allWords.forEach(word => {
+    allWords.forEach((word) => {
       if (word.statusHistory && typeof word.statusHistory === 'object') {
-        ['1', '2', '3', '4', '5'].forEach(statusKey => {
+        ['1', '2', '3', '4', '5'].forEach((statusKey) => {
           const statusEntry = word.statusHistory[statusKey];
           if (statusEntry) {
             if (typeof statusEntry.createTime === 'number' && statusEntry.createTime > 0) {
@@ -11317,7 +11317,7 @@ async function cloudMigrateLocalToCloud() {
 
     console.log(`[CloudDB] Converted statusHistory to top-level fields for ${allWords.length} words`);
 
-    const wordsToUpload = allWords.map(w => {
+    const wordsToUpload = allWords.map((w) => {
       const { _id, __v, ...wordData } = w;
       return wordData;
     });
@@ -11339,7 +11339,7 @@ async function cloudMigrateLocalToCloud() {
 
     console.log(`[CloudDB] Found ${allPhrases.length} custom phrases in local database`);
 
-    const phrasesToUpload = allPhrases.map(p => {
+    const phrasesToUpload = allPhrases.map((p) => {
       const { _id, __v, ...phraseData } = p;
       return phraseData;
     });
@@ -11390,12 +11390,12 @@ async function cloudMigrateLocalToCloudReplace() {
     const JAN_1_2023 = new Date('2023-01-01T00:00:00.000Z').getTime();
     const TODAY_JAN_2 = new Date(new Date().getFullYear(), 0, 2).getTime();
 
-    allWords.forEach(word => {
+    allWords.forEach((word) => {
       let hasValidCreateTimeInHistory = false;
       let latestCreateTime = 0;
 
       if (word.statusHistory && typeof word.statusHistory === 'object') {
-        ['1', '2', '3', '4', '5'].forEach(statusKey => {
+        ['1', '2', '3', '4', '5'].forEach((statusKey) => {
           const statusEntry = word.statusHistory[statusKey];
           if (statusEntry && typeof statusEntry.createTime === 'number' && statusEntry.createTime > 0) {
             hasValidCreateTimeInHistory = true;
@@ -11429,9 +11429,9 @@ async function cloudMigrateLocalToCloudReplace() {
 
     console.log(`[CloudDB] Processed createdAt for ${allWords.length} words`);
 
-    allWords.forEach(word => {
+    allWords.forEach((word) => {
       if (word.statusHistory && typeof word.statusHistory === 'object') {
-        ['1', '2', '3', '4', '5'].forEach(statusKey => {
+        ['1', '2', '3', '4', '5'].forEach((statusKey) => {
           const statusEntry = word.statusHistory[statusKey];
           if (statusEntry) {
             if (typeof statusEntry.createTime === 'number' && statusEntry.createTime > 0) {
@@ -11447,7 +11447,7 @@ async function cloudMigrateLocalToCloudReplace() {
 
     console.log(`[CloudDB] Converted statusHistory to top-level fields for ${allWords.length} words`);
 
-    const wordsToUpload = allWords.map(w => {
+    const wordsToUpload = allWords.map((w) => {
       const { _id, __v, ...wordData } = w;
       return wordData;
     });
@@ -11496,7 +11496,7 @@ async function cloudMigrateLocalToCloudReplace() {
       console.log(`[CloudDB] Found ${allPhrases.length} phrases to upload`);
       showCloudDbStatus('Uploading custom phrases...', 'info');
 
-      const phrasesToUpload = allPhrases.map(p => {
+      const phrasesToUpload = allPhrases.map((p) => {
         const { _id, __v, ...phraseData } = p;
         return phraseData;
       });
@@ -11854,7 +11854,7 @@ async function checkAndRefreshSubscription() {
   try {
     const now = new Date();
 
-    const storageResult = await new Promise(resolve => {
+    const storageResult = await new Promise((resolve) => {
       chrome.storage.local.get(['cloudConfig', 'subscriptionConfig'], resolve);
     });
 
@@ -11889,7 +11889,7 @@ async function checkAndRefreshSubscription() {
 
       if (response.data?.subscriptionExpireAt) {
         const newExpireDate = new Date(response.data.subscriptionExpireAt);
-        await new Promise(resolve => {
+        await new Promise((resolve) => {
           chrome.storage.local.get(['cloudConfig'], (result) => {
             const cloudConfig = result.cloudConfig || {};
             cloudConfig.subscriptionExpireAt = response.data.subscriptionExpireAt;

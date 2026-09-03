@@ -120,25 +120,25 @@ function cleanRubyContent(htmlContent, cleanMode) {
     if (cleanMode === 1) {
         // 模式1: 标准日文注音清理
         const rubyElements = doc.querySelectorAll('ruby');
-        
+
         if (rubyElements.length > 0) {
             console.log(`发现 ${rubyElements.length} 个 ruby 元素`);
             fileChanged = true;
 
-            rubyElements.forEach(ruby => {
+            rubyElements.forEach((ruby) => {
                 // 收集所有 rb 元素中的文本
                 const rbElements = ruby.querySelectorAll('rb');
                 let cleanText = '';
-                
+
                 if (rbElements.length > 0) {
                     // 如果有 rb 元素，提取其中的文本
-                    rbElements.forEach(rb => {
+                    rbElements.forEach((rb) => {
                         cleanText += rb.textContent || '';
                     });
                 } else {
                     // 如果没有 rb 元素，可能注音格式不标准，尝试提取除 rt 之外的文本
                     const rtElements = ruby.querySelectorAll('rt');
-                    rtElements.forEach(rt => rt.remove()); // 先移除所有 rt 元素
+                    rtElements.forEach((rt) => rt.remove()); // 先移除所有 rt 元素
                     cleanText = ruby.textContent || '';
                 }
 

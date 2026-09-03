@@ -2,12 +2,12 @@
 
 
 // ---配置项目
-//在options.js添加edgetts的渠道，以及配置页面。
-//配置页面添加一个按钮，取消就是自动程序进行选择声音，开启就是用户选择声音，强制覆盖。
+// 在options.js添加edgetts的渠道，以及配置页面。
+// 配置页面添加一个按钮，取消就是自动程序进行选择声音，开启就是用户选择声音，强制覆盖。
 
-//但是语速 音调 音量 这些参数是公用的， 也就是是说这个参数不管是程序自动选择还是用户自定义，都是可用的。 
-//用户只是强制选择了某个声音，但是语速 音调 音量 这些参数是公用的。
-//edge_list.js 是所有可用添加edge的列表。
+// 但是语速 音调 音量 这些参数是公用的， 也就是是说这个参数不管是程序自动选择还是用户自定义，都是可用的。
+// 用户只是强制选择了某个声音，但是语速 音调 音量 这些参数是公用的。
+// edge_list.js 是所有可用添加edge的列表。
 
 
 // ---TTS 播放
@@ -53,7 +53,7 @@
 //   var audioUrl = URL.createObjectURL(audioBlob);
 //   var audio = new Audio(audioUrl);
 //   audio.play();
-  
+
 //   // 播放完成后释放资源
 //   audio.onended = function() {
 //     URL.revokeObjectURL(audioUrl);
@@ -79,7 +79,7 @@
 //   var audioUrl = URL.createObjectURL(audioBlob);
 //   var audio = new Audio(audioUrl);
 //   audio.play();
-  
+
 //   audio.onended = function() {
 //     URL.revokeObjectURL(audioUrl);
 //     tts.close();
@@ -94,13 +94,13 @@
 // var tts = new EdgeTts();
 // tts.voices().then(function(voices) {
 //   console.log('可用语音列表:', voices);
-  
+
 //   // 筛选中文语音
 //   var chineseVoices = voices.filter(function(voice) {
 //     return voice.Locale.startsWith('zh-');
 //   });
 //   console.log('中文语音:', chineseVoices);
-  
+
 //   // 筛选英文语音
 //   var englishVoices = voices.filter(function(voice) {
 //     return voice.Locale.startsWith('en-');
@@ -124,7 +124,7 @@
 //     var audioUrl = URL.createObjectURL(audioBlob);
 //     var audio = new Audio(audioUrl);
 //     audio.play();
-    
+
 //     audio.onended = function() {
 //       URL.revokeObjectURL(audioUrl);
 //       tts.close();
@@ -170,7 +170,7 @@ function edgetts_toMs(duration) {
 
 // 生成UUID
 function edgetts_generateUUID() {
-  return 'xxxxxxxx-xxxx-xxxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+  return 'xxxxxxxx-xxxx-xxxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0;
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
@@ -189,10 +189,10 @@ function edgetts_generateSecMsGec(trustedClientToken) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
 
     const hash = Array.from(new Uint8Array(hashBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
+      .map((b) => b.toString(16).padStart(2, '0'))
       .join('')
       .toUpperCase();
-    
+
     resolve(hash);
   });
 }
@@ -202,9 +202,9 @@ function edgetts_getSynthUrl(token) {
   token = token || edgetts_token;
   return edgetts_generateSecMsGec(token).then(function(secMsGEC) {
     const reqId = edgetts_generateUUID();
-    return edgetts_wss_url + '?TrustedClientToken=' + token + 
-           '&Sec-MS-GEC=' + secMsGEC + 
-           '&Sec-MS-GEC-Version=1-130.0.2849.68' + 
+    return edgetts_wss_url + '?TrustedClientToken=' + token +
+           '&Sec-MS-GEC=' + secMsGEC +
+           '&Sec-MS-GEC-Version=1-130.0.2849.68' +
            '&ConnectionId=' + reqId;
   });
 }
@@ -212,7 +212,7 @@ function edgetts_getSynthUrl(token) {
 // 生成SSML字符串
 function edgetts_ssmlStr(options) {
   var voice = options.voice || 'en-US-AvaNeural';
-  var language =  'en-US'; //options.language ||
+  var language = 'en-US'; // options.language ||
   var rate = options.rate || 'default';
   var pitch = options.pitch || 'default';
   var volume = options.volume || 'default';
@@ -254,7 +254,7 @@ function edgetts_connWebsocket(token) {
   token = token || edgetts_token;
   return edgetts_getSynthUrl(token).then(function(url) {
     var ws = new WebSocket(url);
-    var initialMessage = 
+    var initialMessage =
       'X-Timestamp:' + new Date().toString() + '\r\n' +
       'Content-Type:application/json; charset=utf-8\r\n' +
       'Path:speech.config\r\n\r\n' +
@@ -285,7 +285,7 @@ function edgetts_speak(options, onAudioChunk, onComplete) {
     var textXml = edgetts_ssmlStr(options);
     ws.send(textXml);
     var result = new edgetts_TtsResult();
-    
+
     let pendingBlobProcessing = 0;
     let turnEnded = false;
 
@@ -309,7 +309,7 @@ function edgetts_speak(options, onAudioChunk, onComplete) {
           pendingBlobProcessing++;
           var blob = message.data;
           var separator = 'Path:audio\r\n';
-          
+
           blob.text().then(function(text) {
             var index = text.indexOf(separator);
             if (index === -1) {
@@ -322,14 +322,14 @@ function edgetts_speak(options, onAudioChunk, onComplete) {
             }
             pendingBlobProcessing--;
             checkAndFinalize();
-          }).catch(function(err){
+          }).catch(function(err) {
             console.error("Error processing blob.text():", err);
             pendingBlobProcessing--;
             checkAndFinalize(); // 即使出错，也需要检查是否可以结束
           });
-          return; 
+          return;
         }
-        
+
         // Metadata handling
         if (message.data.includes('Path:audio.metadata')) {
           var parts = message.data.split('Path:audio.metadata');

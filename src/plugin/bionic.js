@@ -13,7 +13,7 @@
 
     // 判断 URL 是否匹配某个单一模式
     function isUrlMatch(url, pattern) {
-        if (!pattern) return false;
+        if (!pattern) {return false;}
         let regex = wildcardToRegExp(pattern);
         return regex.test(url);
     }
@@ -22,10 +22,10 @@
     function patternListMatch(url, patternList) {
         // console.log("patternListMatch", url, patternList);
 
-        if (!patternList) return false;
-        const patterns = patternList.split(';').map(s => s.trim()).filter(Boolean);
+        if (!patternList) {return false;}
+        const patterns = patternList.split(';').map((s) => s.trim()).filter(Boolean);
         for (let pat of patterns) {
-            if (isUrlMatch(url, pat)) return true;
+            if (isUrlMatch(url, pat)) {return true;}
         }
         return false;
     }
@@ -43,7 +43,7 @@
     var bionicFontSize = 16;
 
     chrome.storage.local.get({
-        bionicEnabled: false,  // 默认在 popup 中设为 true
+        bionicEnabled: false, // 默认在 popup 中设为 true
         bionicBlacklistWebsites: '',
         bionicDefaultDayWebsites: 'https://day.test.com/*;',
         bionicDefaultNightWebsites: '*://github.com/*;*://*.github.com/*',
@@ -77,7 +77,7 @@
             bionicisDark = 2;
 
         } else {
-            bionicisDark = 3;  // 如果均未匹配，则走原逻辑
+            bionicisDark = 3; // 如果均未匹配，则走原逻辑
 
         }
 
@@ -88,7 +88,7 @@
         // 保存 Thanox Reading 设置
         thanoxReadingEnabled = result.thanoxReadingEnabled;
         thanoxProcessingOpacity = result.thanoxProcessingOpacity / 100; // 转换为 0-1 范围
-        thanoxCompletedOpacity = result.thanoxCompletedOpacity / 100;   // 转换为 0-1 范围
+        thanoxCompletedOpacity = result.thanoxCompletedOpacity / 100; // 转换为 0-1 范围
         thanoxWordSpeed = result.thanoxWordSpeed;
 
         // 保存碎片特效设置
@@ -119,7 +119,7 @@
     // 修改 setTheme 函数以支持字体和字号设置
 function setTheme(isDark) {
     const oldStyle = document.getElementById('bionic-style');
-    if (oldStyle) oldStyle.remove();
+    if (oldStyle) {oldStyle.remove();}
 
     // 根据字体设置生成 CSS
     let styleContent = isDark ? css : css_white;
@@ -131,13 +131,13 @@ function setTheme(isDark) {
 
     // 同时更新页面中所有 iframe 样式
     const iframes = document.querySelectorAll('iframe');
-    iframes.forEach(iframe => {
+    iframes.forEach((iframe) => {
         try {
             const iframeDoc = iframe.contentDocument;
-            if (!iframeDoc) return;
+            if (!iframeDoc) {return;}
 
             const oldIframeStyle = iframeDoc.getElementById('bionic-style');
-            if (oldIframeStyle) oldIframeStyle.remove();
+            if (oldIframeStyle) {oldIframeStyle.remove();}
 
             const iframeStyle = iframeDoc.createElement('style');
             iframeStyle.id = 'bionic-style';
@@ -376,8 +376,8 @@ function setTheme(isDark) {
         }
 
         createIntersectionObserver() {
-            return new IntersectionObserver(entries => {
-                entries.forEach(entry => {
+            return new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
                     const target = entry.target;
                     if (entry.isIntersecting) {
                         this.handleElementVisible(target);
@@ -389,9 +389,9 @@ function setTheme(isDark) {
         }
 
         createMutationObserver() {
-            return new MutationObserver(mutations => {
-                mutations.forEach(mutation => {
-                    mutation.addedNodes.forEach(node => {
+            return new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
                         if (node.nodeType === Node.ELEMENT_NODE) {
                             this.pendingMutations.addedElements.add(node);
                         } else if (
@@ -404,7 +404,7 @@ function setTheme(isDark) {
                         }
                     });
 
-                    mutation.removedNodes.forEach(node => {
+                    mutation.removedNodes.forEach((node) => {
                         if (node.nodeType === Node.ELEMENT_NODE) {
                             this.pendingMutations.removedElements.add(node);
                             this.cleanupRemovedElement(node);
@@ -427,18 +427,18 @@ function setTheme(isDark) {
         }
 
         processPendingMutations() {
-            this.pendingMutations.addedElements.forEach(element => {
+            this.pendingMutations.addedElements.forEach((element) => {
                 this.processElement(element);
             });
             this.pendingMutations.addedElements.clear();
-            this.pendingMutations.changedTextNodes.forEach(textNode => {
+            this.pendingMutations.changedTextNodes.forEach((textNode) => {
                 this.processTextNode(textNode);
             });
             this.pendingMutations.changedTextNodes.clear();
         }
 
         async initializeObserver() {
-            if (this.initialized) return;
+            if (this.initialized) {return;}
             this.mutationObserver.observe(this.scope, {
                 childList: true,
                 subtree: true,
@@ -453,7 +453,7 @@ function setTheme(isDark) {
                 this.scope,
                 NodeFilter.SHOW_TEXT,
                 {
-                    acceptNode: node => {
+                    acceptNode: (node) => {
                         if (!node.textContent.trim() ||
                             !this.isValidTextParent(node.parentNode)) {
                             return NodeFilter.FILTER_REJECT;
@@ -467,15 +467,15 @@ function setTheme(isDark) {
             while (currentNode = walker.nextNode()) {
                 textNodes.push(currentNode);
             }
-            textNodes.forEach(node => {
+            textNodes.forEach((node) => {
                 this.processTextNode(node);
             });
         }
 
         processTextNode(textNode) {
-            if (!textNode || !textNode.parentNode) return;
+            if (!textNode || !textNode.parentNode) {return;}
             const parent = textNode.parentNode;
-            if (!this.isValidTextParent(parent)) return;
+            if (!this.isValidTextParent(parent)) {return;}
             let textNodeMap = this.processedParents.get(parent);
             if (!textNodeMap) {
                 textNodeMap = new Map();
@@ -490,12 +490,12 @@ function setTheme(isDark) {
         }
 
         processElement(element) {
-            if (!element) return;
+            if (!element) {return;}
             const walker = document.createTreeWalker(
                 element,
                 NodeFilter.SHOW_TEXT,
                 {
-                    acceptNode: node => {
+                    acceptNode: (node) => {
                         if (!node.textContent.trim() ||
                             !this.isValidTextParent(node.parentNode)) {
                             return NodeFilter.FILTER_REJECT;
@@ -509,20 +509,20 @@ function setTheme(isDark) {
             while (currentNode = walker.nextNode()) {
                 textNodes.push(currentNode);
             }
-            textNodes.forEach(node => {
+            textNodes.forEach((node) => {
                 this.processTextNode(node);
             });
         }
 
         isValidTextParent(element) {
-            if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
+            if (!element || element.nodeType !== Node.ELEMENT_NODE) {return false;}
             const tagName = element.tagName.toUpperCase();
             if (tagName === 'SCRIPT' || tagName === 'STYLE' ||
                 tagName === 'INPUT' || tagName === 'TEXTAREA') {
                 return false;
             }
-            if (element.isContentEditable) return false;
-            if (element.classList.contains('highlight-wrapper')) return false;
+            if (element.isContentEditable) {return false;}
+            if (element.classList.contains('highlight-wrapper')) {return false;}
             let currentElement = element;
             while (currentElement) {
                 if (currentElement.isContentEditable ||
@@ -547,7 +547,7 @@ function setTheme(isDark) {
         createHighlightData(text) {
             const words = text.match(/\S+|\s+/g) || [];
             const highlightData = [];
-            words.forEach(word => {
+            words.forEach((word) => {
                 if (word.trim()) {
                     const boldLength = Math.ceil(word.length * 0.4);
                     const highlightText = word.slice(0, boldLength);
@@ -568,16 +568,16 @@ function setTheme(isDark) {
 
         handleElementVisible(parent) {
             const textNodeMap = this.processedParents.get(parent);
-            if (!textNodeMap) return;
+            if (!textNodeMap) {return;}
             let visibleMap = this.visibleHighlights.get(parent);
             if (!visibleMap) {
                 visibleMap = new Map();
                 this.visibleHighlights.set(parent, visibleMap);
             }
             for (const [textNode, highlightData] of textNodeMap.entries()) {
-                if (visibleMap.has(textNode)) continue;
+                if (visibleMap.has(textNode)) {continue;}
                 const fragment = document.createDocumentFragment();
-                highlightData.forEach(data => {
+                highlightData.forEach((data) => {
                     if (data.isSpace) {
                         fragment.appendChild(document.createTextNode(data.original));
                     } else {
@@ -617,7 +617,7 @@ function setTheme(isDark) {
 
         handleElementHidden(parent) {
             const visibleMap = this.visibleHighlights.get(parent);
-            if (!visibleMap) return;
+            if (!visibleMap) {return;}
             this.visibleHighlights.delete(parent);
         }
 
@@ -706,17 +706,17 @@ function setTheme(isDark) {
     // Thanox Read 设置变量
     let thanoxReadingEnabled = false;
     let thanoxProcessingOpacity = 0.5; // 处理中的透明值 (0-1)
-    let thanoxCompletedOpacity = 0.1;  // 处理完成后的透明值 (0-1)
-    let thanoxWordSpeed = 1000;        // 单词消失速度 (毫秒)
+    let thanoxCompletedOpacity = 0.1; // 处理完成后的透明值 (0-1)
+    let thanoxWordSpeed = 1000; // 单词消失速度 (毫秒)
 
     // 碎片特效设置变量
-    let thanoxFragmentEffect = true;   // 是否启用碎片特效
-    let thanoxFragmentCount = 8;       // 碎片数量
+    let thanoxFragmentEffect = true; // 是否启用碎片特效
+    let thanoxFragmentCount = 8; // 碎片数量
     let thanoxFragmentDuration = 2000; // 碎片动画持续时间 (毫秒)
 
     // 主函数：初始化 Bionic Reading 功能
     function initBionicReading() {
-        if (!isEnabled) return;
+        if (!isEnabled) {return;}
         console.log("初始化 Bionic Reading, 当前窗口:", window.location.href, window.top === window ? '主页面' : 'iframe');
         console.log("bionicisDark值:", bionicisDark);
 
@@ -736,9 +736,9 @@ function setTheme(isDark) {
         });
         document.dispatchEvent(bionicActivatedEvent);
 
-        //获取高亮功能是否启动
+        // 获取高亮功能是否启动
         chrome.storage.local.get('enablePlugin', function(result) {
-            result.enablePlugin
+            result.enablePlugin;
         });
 
 
@@ -790,7 +790,7 @@ function setTheme(isDark) {
 
 
         // 调用异步函数
-        setInitialStyle().catch(error => {
+        setInitialStyle().catch((error) => {
             console.error('设置样式时出错:', error);
             // 发生错误时使用默认样式
             sharedStyle.textContent = css_white;
@@ -979,7 +979,7 @@ function collectWords() {
     });
 
     // 恢复已处理单词的透明状态
-    sortedWords.forEach(word => {
+    sortedWords.forEach((word) => {
         if (processedWords.has(word) || word.getAttribute('data-thanox-processed') === 'true') {
             word.style.opacity = thanoxCompletedOpacity.toString(); // 使用设置中的处理完成后透明值
             word.style.transition = 'opacity 0.3s ease';
@@ -1047,7 +1047,7 @@ function stopThanoxRead() {
 
 function resetWordOpacity() {
     // 重置所有已处理的单词
-    processedWords.forEach(word => {
+    processedWords.forEach((word) => {
         if (word && word.parentNode) {
             word.style.opacity = '1';
             word.removeAttribute('data-thanox-processed');
@@ -1055,7 +1055,7 @@ function resetWordOpacity() {
     });
 
     // 也重置当前收集的单词列表中的单词
-    thanoxReadWords.forEach(word => {
+    thanoxReadWords.forEach((word) => {
         if (word && word.parentNode) {
             word.style.opacity = '1';
             word.removeAttribute('data-thanox-processed');
@@ -1064,7 +1064,7 @@ function resetWordOpacity() {
 
     // 清理所有碎片特效容器
     const fragmentContainers = document.querySelectorAll('.thanox-fragmenting');
-    fragmentContainers.forEach(container => {
+    fragmentContainers.forEach((container) => {
         if (container && container.parentNode) {
             container.parentNode.removeChild(container);
         }
@@ -1088,7 +1088,7 @@ function cleanupBionicReading() {
     if (currentScopeObserver) {
         // 清理所有高亮元素
         const highlights = document.querySelectorAll('.highlight-wrapper');
-        highlights.forEach(highlight => {
+        highlights.forEach((highlight) => {
             const originalText = highlight.getAttribute('data-original');
             const textNode = document.createTextNode(originalText);
             highlight.parentNode.replaceChild(textNode, highlight);

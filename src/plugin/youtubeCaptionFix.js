@@ -30,7 +30,7 @@
         youtubeCommaSentencing: false,
         youtubeBionicReading: true,
         youtubeFontSize: 24,
-        youtubeFontFamily: 'system',
+        youtubeFontFamily: 'system'
     }, function(result) {
         console.log("result: ", result);
 
@@ -102,7 +102,7 @@
     function setupUrlMonitoring() {
         const handleNavigation = () => {
             const newUrl = window.location.href;
-            if (newUrl === currentUrl) return;
+            if (newUrl === currentUrl) {return;}
 
             console.log("检测到URL变化:", currentUrl, "->", newUrl);
             currentUrl = newUrl;
@@ -177,7 +177,7 @@
                 callback();
                 return;
             } else {
-                setTimeout(function () {
+                setTimeout(function() {
                     if (timeoutInMs && Date.now() - startTimeInMs > timeoutInMs) {
                         return;
                     }
@@ -272,7 +272,7 @@
                     const playPromise = video.play();
 
                     if (playPromise !== undefined) {
-                        playPromise.catch(error => {
+                        playPromise.catch((error) => {
                             console.warn('播放视频时出错:', error);
                         });
                     }
@@ -302,7 +302,7 @@
             const videoURL = window.location.href;
 
             var splited = videoURL.split("v=");
-            if (splited.length < 2) return null;
+            if (splited.length < 2) {return null;}
 
             var splitedAgain = splited[1].split("&");
             var videoId = splitedAgain[0];
@@ -361,15 +361,15 @@
             const events = subtitleData.events || [];
 
             // 遍历所有段落
-            events.forEach(paragraph => {
+            events.forEach((paragraph) => {
                 // 获取段落的开始时间
                 const paragraphStartTime = paragraph.tStartMs;
 
                 // 遍历段落中的所有片段
                 if (paragraph.segs) {
-                    paragraph.segs.forEach(segment => {
+                    paragraph.segs.forEach((segment) => {
                         // 跳过只包含换行符的片段
-                        if (segment.utf8 === "\n") return;
+                        if (segment.utf8 === "\n") {return;}
 
                         // 计算单词的开始和结束时间
                         let wordStartTime = paragraphStartTime;
@@ -378,7 +378,7 @@
                         }
 
                         let wordText = segment.utf8.trim();
-                        if (wordText === "") return;
+                        if (wordText === "") {return;}
 
                         // 检查单词是否包含标点符号
                         const hasPunctuation = punctuationRegex.test(wordText);
@@ -396,7 +396,7 @@
                         }
 
                         // 如果处理后的单词为空，跳过
-                        if (wordText === "") return;
+                        if (wordText === "") {return;}
 
                         // 计算单词的结束时间（如果有下一个单词，则为下一个单词的开始时间；否则为段落结束时间）
                         let wordEndTime = paragraphStartTime + paragraph.dDurationMs;
@@ -442,7 +442,7 @@
                 const element = subtitles[i];
 
                 // 跳过空数组或undefined
-                if (!element || Array.isArray(element) || !element.utf8) continue;
+                if (!element || Array.isArray(element) || !element.utf8) {continue;}
 
                 // 检查单词是否在时间戳范围内
                 if (timestamp >= element.tStartMs && timestamp <= element.tEndMs) {
@@ -509,7 +509,7 @@
                 const item = words[i];
 
                 // 确保item有data属性
-                if (!item || !item.data) continue;
+                if (!item || !item.data) {continue;}
 
                 // 如果data是对象且有utf8属性，说明是单词
                 if (item.data && typeof item.data === 'object' && item.data.utf8) {
@@ -545,7 +545,7 @@
                 const gaps = [];
 
                 for (let i = 1; i < words.length; i++) {
-                    const prevWord = words[i-1];
+                    const prevWord = words[i - 1];
                     const currentWord = words[i];
 
                     // 跳过标点符号数组
@@ -587,7 +587,7 @@
 
                 // 如果窗口内没有有效的短间隔，使用全局短间隔的平均值
                 if (count === 0) {
-                    const shortGaps = gaps.filter(g => g.gap <= outlierThreshold);
+                    const shortGaps = gaps.filter((g) => g.gap <= outlierThreshold);
                     if (shortGaps.length > 0) {
                         return shortGaps.reduce((acc, g) => acc + g.gap, 0) / shortGaps.length;
                     } else {
@@ -610,7 +610,7 @@
                 for (let i = 0; i < gaps.length; i++) {
                     const currentGap = gaps[i].gap;
 
-                    if (currentGap < this.minGap) continue;
+                    if (currentGap < this.minGap) {continue;}
 
                     // 超长间隔直接分割（可能是对话切换）
                     if (currentGap > this.maxGap) {
@@ -647,7 +647,7 @@
             // 处理日语句子，添加标点符号
             processJapaneseSentence(words) {
                 // 检查是否为日语文本
-                const hasJapanese = words.some(word =>
+                const hasJapanese = words.some((word) =>
                     word.data && word.data.utf8 && this.isJapaneseText(word.data.utf8)
                 );
 
@@ -688,7 +688,7 @@
 
             // 1. 获取 AI 配置 (特别是 youtube 字幕的提示词)
             //    我们从 chrome.storage.local 获取 aiConfig 对象
-            const result = await new Promise(resolve => chrome.storage.local.get('aiConfig', resolve));
+            const result = await new Promise((resolve) => chrome.storage.local.get('aiConfig', resolve));
             const aiConfig = result?.aiConfig || {};
             //    获取在选项页设置的 YouTube 字幕提示词 (aiYoutubeCaptionPrompt)
             const customPrompt = aiConfig.aiYoutubeCaptionPrompt;
@@ -706,12 +706,12 @@
                         4.开始和结果的句子可能是其他句子的截断，可以酌情不添加标点符号。
                         5.不要添加任何解释或者备注,直接返回带标点的文本。
                         6.如果文本是日文，请保留原文中的空格，且不要换行。
-                        `
+                        `;
 
 
             const promptText = customPrompt
                 ? customPrompt // 假设自定义提示词使用 {text} 占位符
-                : defaultPrompt
+                : defaultPrompt;
 
 
 
@@ -858,7 +858,7 @@
 
                 // 在words数组中查找匹配的单词
                 for (let i = 0; i < words.length; i++) {
-                    if (processedWordIndices.has(i)) continue; // 跳过已处理的单词
+                    if (processedWordIndices.has(i)) {continue;} // 跳过已处理的单词
 
                     const wordItem = words[i];
                     if (wordItem && wordItem.data && wordItem.data.utf8 === word) {
@@ -1041,7 +1041,7 @@
 
 
 
-            const currentTime =  getYoutubeCurrentTime()
+            const currentTime = getYoutubeCurrentTime();
             // console.log("当前时间：", currentTime);
             // 获取当前时间戳对应的完整句子而不是所有单词
             const currentSentence = getCurrentSentence(currentTime, rebuiltSubtitles);
@@ -1074,12 +1074,12 @@
                 // 只有当没有现有标点符号时才处理
                 if (!hasExistingPunctuation) {
                     // 创建缓存键（使用显示文本的范围作为键）
-                    const cacheKey = `${currentSentence.words[0].originalIndex}-${currentSentence.words[currentSentence.words.length-1].originalIndex}`;
+                    const cacheKey = `${currentSentence.words[0].originalIndex}-${currentSentence.words[currentSentence.words.length - 1].originalIndex}`;
 
                     // 检查是否已缓存
                     if (!cachedSegments[cacheKey]) {
                         // 检查是否为日语文本
-                        const hasJapanese = currentSentence.words.some(word =>
+                        const hasJapanese = currentSentence.words.some((word) =>
                             word.data && word.data.utf8 && /[\u3040-\u309F\u30A0-\u30FF]/.test(word.data.utf8)
                         );
 
@@ -1129,7 +1129,7 @@
                             const mergedText = mergeWordsIntoSentences(currentSentence.words);
 
                             // 异步处理AI请求
-                            sendToAIForPunctuation(mergedText).then(punctuatedText => {
+                            sendToAIForPunctuation(mergedText).then((punctuatedText) => {
                                 // 格式化AI结果
                                 const formattedText = formatAIResult(punctuatedText, currentSentence.words);
 
@@ -1158,7 +1158,7 @@
                                 }
 
                                 isAIRequesting = false;
-                            }).catch(error => {
+                            }).catch((error) => {
                                 console.error("AI请求失败:", error);
                                 isAIRequesting = false;
                                 // 延迟后允许重试
@@ -1216,12 +1216,12 @@
                     console.log("预加载开始：需要请求AI添加标点", currentTime);
 
                     // 创建缓存键（使用显示文本的范围作为键）
-                    const cacheKey = `${currentSentence.words[0].originalIndex}-${currentSentence.words[currentSentence.words.length-1].originalIndex}`;
+                    const cacheKey = `${currentSentence.words[0].originalIndex}-${currentSentence.words[currentSentence.words.length - 1].originalIndex}`;
 
                     // 检查是否已缓存
                     if (!cachedSegments[cacheKey]) {
                         // 检查是否为日语文本
-                        const hasJapanese = currentSentence.words.some(word =>
+                        const hasJapanese = currentSentence.words.some((word) =>
                             word.data && word.data.utf8 && /[\u3040-\u309F\u30A0-\u30FF]/.test(word.data.utf8)
                         );
 
@@ -1268,7 +1268,7 @@
                             const mergedText = mergeWordsIntoSentences(currentSentence.words);
 
                             // 异步处理AI请求
-                            sendToAIForPunctuation(mergedText).then(punctuatedText => {
+                            sendToAIForPunctuation(mergedText).then((punctuatedText) => {
                                 // 格式化AI结果
                                 const formattedText = formatAIResult(punctuatedText, currentSentence.words);
 
@@ -1297,7 +1297,7 @@
                                 }
 
                                 isAIRequesting = false;
-                            }).catch(error => {
+                            }).catch((error) => {
                                 console.error("预加载：AI请求失败:", error);
                                 isAIRequesting = false;
                                 // 延迟后允许重试
@@ -1319,7 +1319,7 @@
         // 负责找到上一句和下一句的时间戳。然后跳过去。而字幕的刷新时靠定时器来刷新的。
         // 导航到上一句/当前句/下一句字幕
         function navigateSubtitles(direction) {
-            if (!rebuiltSubtitles || rebuiltSubtitles.length === 0) return;
+            if (!rebuiltSubtitles || rebuiltSubtitles.length === 0) {return;}
 
             // 获取当前时间戳
             const currentTime = getYoutubeCurrentTime();
@@ -1346,7 +1346,7 @@
                 const firstWordItem = currentSentence.words[0];
                 const lastWordItem = currentSentence.words[currentSentence.words.length - 1];
 
-                if (!firstWordItem || !lastWordItem) return null;
+                if (!firstWordItem || !lastWordItem) {return null;}
 
                 const currentStartIndex = firstWordItem.originalIndex;
                 const currentEndIndex = lastWordItem.originalIndex;
@@ -1404,9 +1404,9 @@
                     for (let i = currentEndIndex + 1; i < rebuiltSubtitles.length; i++) {
                         // 更新：使用新的标点符号正则判断
                         // 之前的判断: /[,.!?;:。，！？]/.test(rebuiltSubtitles[i-1][0])
-                        if (Array.isArray(rebuiltSubtitles[i-1]) &&
-                            rebuiltSubtitles[i-1][0] &&
-                            punctuationRegex.test(rebuiltSubtitles[i-1][0]) &&
+                        if (Array.isArray(rebuiltSubtitles[i - 1]) &&
+                            rebuiltSubtitles[i - 1][0] &&
+                            punctuationRegex.test(rebuiltSubtitles[i - 1][0]) &&
                             !Array.isArray(rebuiltSubtitles[i])) {
                             nextSentenceStartIndex = i;
                             break;
@@ -1464,7 +1464,7 @@
                 const wordItem = targetSentence.words[i];
                 if (wordItem && wordItem.data && !Array.isArray(wordItem.data) &&
                     wordItem.data.tStartMs !== undefined && wordItem.data.tEndMs !== undefined) {
-                    if (!firstValidWord) firstValidWord = wordItem.data;
+                    if (!firstValidWord) {firstValidWord = wordItem.data;}
                     lastValidWord = wordItem.data;
                 }
             }
@@ -1524,7 +1524,7 @@
                         // 增加检查 lastValidWord 是否存在的判断
                         if (lastValidWord && now >= lastValidWord.tEndMs - 100) {
                             clearInterval(checkInterval);
-                            pauseVideo();  // 使用新的暂停函数
+                            pauseVideo(); // 使用新的暂停函数
                             console.log("重播句子结束");
                         }
                     } else {
@@ -1691,7 +1691,7 @@
                 borderArea.style.cursor = 'default';
                 borderArea.style.zIndex = '1000001';
 
-                switch(position) {
+                switch (position) {
                     case 'top':
                         borderArea.style.top = '0';
                         borderArea.style.left = '0';
@@ -1776,7 +1776,7 @@
 
             // 为所有边框区域添加鼠标事件
             const borderAreas = [topBorder, bottomBorder, leftBorder, rightBorder];
-            borderAreas.forEach(borderArea => {
+            borderAreas.forEach((borderArea) => {
                 borderArea.addEventListener('mouseenter', function() {
                     borderArea.style.cursor = 'move';
                 });
@@ -1794,7 +1794,7 @@
             let initialY = 0;
 
             // 为所有边框区域添加拖动事件
-            borderAreas.forEach(borderArea => {
+            borderAreas.forEach((borderArea) => {
                 borderArea.addEventListener('mousedown', dragStart);
             });
             document.addEventListener('mousemove', drag);
@@ -1806,7 +1806,7 @@
 
                 // 获取视频容器的边界
                 const videoContainer = document.querySelector('.ytp-caption-window-container') || document.querySelector('#movie_player');
-                if (!videoContainer) return;
+                if (!videoContainer) {return;}
 
                 const containerRect = videoContainer.getBoundingClientRect();
                 const dragRect = dragContainer.getBoundingClientRect();
@@ -1816,7 +1816,7 @@
                 initialY = e.clientY - dragRect.top;
                 isDragging = true;
                 // 为所有边框区域设置移动光标
-                borderAreas.forEach(borderArea => {
+                borderAreas.forEach((borderArea) => {
                     borderArea.style.cursor = 'move';
                 });
             }
@@ -1827,7 +1827,7 @@
 
                     // 获取视频容器的边界
                     const videoContainer = document.querySelector('.ytp-caption-window-container') || document.querySelector('#movie_player');
-                    if (!videoContainer) return;
+                    if (!videoContainer) {return;}
 
                     const containerRect = videoContainer.getBoundingClientRect();
                     const dragRect = dragContainer.getBoundingClientRect();
@@ -1860,7 +1860,7 @@
                 isDragging = false;
                 // 恢复默认光标
                 setTimeout(() => {
-                    borderAreas.forEach(borderArea => {
+                    borderAreas.forEach((borderArea) => {
                         if (!borderArea.matches(':hover')) {
                             borderArea.style.cursor = 'default';
                         }
@@ -1947,7 +1947,7 @@
 
             // 从新的字幕结构中构建显示文本
             function buildDisplayTextFromWords(words) {
-                if (!words || words.length === 0) return '';
+                if (!words || words.length === 0) {return '';}
 
                 let text = '';
 
@@ -1973,7 +1973,7 @@
                         const item = words[i];
 
                         // 跳过无效项
-                        if (!item || !item.data) continue;
+                        if (!item || !item.data) {continue;}
 
                         // 如果是数组，可能是标点符号
                         if (Array.isArray(item.data) && item.data.length > 0) {
@@ -1996,7 +1996,7 @@
                     const item = words[i];
 
                     // 跳过无效项
-                    if (!item || !item.data) continue;
+                    if (!item || !item.data) {continue;}
 
                     // 如果是数组，可能是标点符号
                     if (Array.isArray(item.data) && item.data.length > 0) {
@@ -2044,7 +2044,7 @@
                             // 获取当前字幕内容
                             const currentSubtitlesData = getCurrentSubtitles();
 
-                            if(currentTime > 20000){
+                            if (currentTime > 20000) {
                                 // console.log("20秒之后才触发预加载", currentTime);
                                 // 预加载未来的字幕，但不需要使用返回值
                                 getTimeSubtitles(currentTime + 20000);
@@ -2098,7 +2098,7 @@
                     return;
                 }
 
-                switch(event.code) {
+                switch (event.code) {
                     case 'KeyA':
                         event.preventDefault();
                         navigateSubtitles('prev');
@@ -2190,7 +2190,7 @@
         // 初始化
         getYoutubeSubtitles().then(() => {
             initYoutubeSubtitles(); // 字幕加载完成后再初始化UI和事件监听
-        }).catch(error => {
+        }).catch((error) => {
             console.error("初始化过程中加载字幕失败:", error);
         });
     }

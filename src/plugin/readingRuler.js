@@ -1,6 +1,6 @@
 (function() {
   // 防止重复初始化
-  if (window.readingRulerInitialized) return;
+  if (window.readingRulerInitialized) {return;}
   window.readingRulerInitialized = true;
 
   // 添加黑名单处理函数，参照 bionic.js 的实现
@@ -11,15 +11,15 @@
     return new RegExp('^' + pattern.split('*').map(escapeRegExp).join('.*') + '$', 'i');
   }
   function isUrlMatch(url, pattern) {
-    if (!pattern) return false;
+    if (!pattern) {return false;}
     const regex = wildcardToRegExp(pattern);
     return regex.test(url);
   }
   function patternListMatch(url, patternList) {
-    if (!patternList) return false;
-    const patterns = patternList.split(';').map(s => s.trim()).filter(Boolean);
+    if (!patternList) {return false;}
+    const patterns = patternList.split(';').map((s) => s.trim()).filter(Boolean);
     for (let pat of patterns) {
-      if (isUrlMatch(url, pat)) return true;
+      if (isUrlMatch(url, pat)) {return true;}
     }
     return false;
   }
@@ -35,8 +35,8 @@
     color: '#6f6f6f',
     opacity: 0.3,
     isInverted: false,
-    widthMode: 'auto',    // 默认自动宽度模式
-    customWidth: 200      // 默认自定义宽度值
+    widthMode: 'auto', // 默认自动宽度模式
+    customWidth: 200 // 默认自定义宽度值
   };
 
   let settings = { ...defaultSettings };
@@ -54,10 +54,10 @@
   function rafThrottle(callback) {
     let requestId = null;
     let lastArgs = null;
-    
+
     return function(...args) {
       lastArgs = args;
-      
+
       if (requestId === null) {
         requestId = requestAnimationFrame(() => {
           requestId = null;
@@ -161,21 +161,21 @@
 
   // 更新标尺位置函数优化 - 使用 RAF 节流
   const updateRulerPosition = rafThrottle(function(e) {
-    if (!isRulerEnabled || !ruler) return;
-    // 
+    if (!isRulerEnabled || !ruler) {return;}
+    //
     // 如果 Bionic 模式激活，使用更严格的节流
     if (window.bionicActive) {
       // 在 Bionic 模式下，每 3 帧更新一次
       if (!updateRulerPosition.frameCount) {
         updateRulerPosition.frameCount = 0;
       }
-      
+
       updateRulerPosition.frameCount++;
       if (updateRulerPosition.frameCount % 3 !== 0) {
         return;
       }
     }
-    
+
     // 简化位置计算，减少样式查询
     updateRulerPositionCore(e);
   });
@@ -231,7 +231,7 @@
 
   // 更新标尺样式
   function updateRulerStyle() {
-    if (!ruler) return;
+    if (!ruler) {return;}
 
     // 这里直接写 boxShadow/display，会绕过 updateRulerPositionCore 的写入缓存，
     // 所以必须作废缓存，否则下一帧会以为值没变而不重写。
@@ -253,13 +253,13 @@
   function monitorBionicStatus() {
     // 初始检测
     window.bionicActive = !!document.querySelector('.highlight-wrapper');
-    
+
     // 使用 MutationObserver 监听 Bionic 的启用状态
     const observer = new MutationObserver(debounce((mutations) => {
       const bionicActive = !!document.querySelector('.highlight-wrapper');
       if (window.bionicActive !== bionicActive) {
         window.bionicActive = bionicActive;
-        
+
         // 根据 Bionic 状态调整 Ruler 样式
         if (ruler) {
           if (bionicActive) {
@@ -270,7 +270,7 @@
         }
       }
     }, 100));
-    
+
     observer.observe(document.body, {
       childList: true,
       subtree: true,
@@ -282,21 +282,21 @@
   // 优化 toggleRuler 函数
   function toggleRuler(enabled) {
     isRulerEnabled = enabled;
-    
+
     if (isRulerEnabled) {
-      if (!ruler) createRuler();
+      if (!ruler) {createRuler();}
       ruler.style.display = 'block';
       lastRulerDisplay = 'block';
-      
+
       // 检测 Bionic 状态并应用相应的类
       window.bionicActive = !!document.querySelector('.highlight-wrapper');
       if (window.bionicActive && ruler) {
         ruler.classList.add('bionic-active');
       }
-      
+
       // 使用被动事件监听器减少主线程阻塞
       document.addEventListener('mousemove', updateRulerPosition, { passive: true });
-      
+
       // 启动 Bionic 状态监控
       monitorBionicStatus();
     } else {
@@ -306,7 +306,7 @@
         document.removeEventListener('mousemove', updateRulerPosition);
       }
     }
-    
+
     // 保存状态
     chrome.storage.local.set({ readingRuler: isRulerEnabled });
   }
@@ -324,12 +324,12 @@
   // 初始化 iframe 支持（修改此函数）
   function initIframeSupport() {
     const isIframe = window !== window.top;
-    
+
     if (isIframe) {
       // 在iframe内部添加标记以防止重复初始化
-      if (window.readingRulerIframeInitialized) return;
+      if (window.readingRulerIframeInitialized) {return;}
       window.readingRulerIframeInitialized = true;
-      
+
       // 仍然发送鼠标位置到父页面，用于协调
       const sendMousePosition = rafThrottle(function(e) {
         try {
@@ -344,14 +344,14 @@
           // 忽略跨域错误
         }
       });
-      
+
       document.addEventListener('mousemove', sendMousePosition);
-      
+
       // 在iframe内部也加载设置并初始化标尺
       loadSettings();
       return;
     }
-    
+
     // 以下是主页面的处理逻辑
     window.addEventListener('message', function(event) {
       if (event.data && event.data.type === 'reading-ruler-mouse-position') {
@@ -360,7 +360,7 @@
           ruler.style.display = 'none';
           lastRulerDisplay = 'none';
         }
-        
+
         // 不再模拟鼠标事件，因为我们希望iframe内部有自己的标尺
         // const simulatedEvent = {
         //   clientX: event.data.clientX + event.data.iframeOffsetLeft,
@@ -369,7 +369,7 @@
         // updateRulerPosition(simulatedEvent);
       }
     });
-    
+
     function addFrameHighlight(iframe) {
       try {
         if (iframe.contentDocument) {
@@ -387,18 +387,18 @@
             transition: border-color 0.2s ease;
             z-index: 2147483647;
           `;
-          
+
           iframe.parentNode.insertBefore(highlight, iframe);
           highlight.style.width = iframe.offsetWidth + 'px';
           highlight.style.height = iframe.offsetHeight + 'px';
-          
+
           iframe.dataset.rulerHighlightId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
           highlight.dataset.forFrame = iframe.dataset.rulerHighlightId;
-          
+
           iframe.addEventListener('mouseenter', () => {
             highlight.style.borderColor = settings.color;
           });
-          
+
           iframe.addEventListener('mouseleave', () => {
             highlight.style.borderColor = 'transparent';
           });
@@ -407,15 +407,15 @@
         // 忽略跨域错误
       }
     }
-    
-    document.querySelectorAll('iframe').forEach(iframe => {
+
+    document.querySelectorAll('iframe').forEach((iframe) => {
       addFrameHighlight(iframe);
     });
-    
-    const observer = new MutationObserver(mutations => {
-      mutations.forEach(mutation => {
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
         if (mutation.addedNodes) {
-          mutation.addedNodes.forEach(node => {
+          mutation.addedNodes.forEach((node) => {
             if (node.tagName === 'IFRAME') {
               addFrameHighlight(node);
             }
@@ -423,7 +423,7 @@
         }
       });
     });
-    
+
     observer.observe(document.body, {
       childList: true,
       subtree: true
@@ -434,10 +434,10 @@
   function loadSettings() {
     // 防止重复加载设置
     console.log("reading ruler loadSettings");
-    if (window.readingRulerSettingsLoaded) return;
+    if (window.readingRulerSettingsLoaded) {return;}
     window.readingRulerSettingsLoaded = true;
-    
-    chrome.storage.local.get(['readingRuler', 'rulerSettings', 'readingRulerBlacklistWebsites'], result => {
+
+    chrome.storage.local.get(['readingRuler', 'rulerSettings', 'readingRulerBlacklistWebsites'], (result) => {
       const blacklist = result.readingRulerBlacklistWebsites || '';
       // 如果当前页面 URL 匹配黑名单中的任一模式，则不启用 Reading Ruler
       if (patternListMatch(window.location.href, blacklist)) {
@@ -445,11 +445,11 @@
           // toggleRuler(false);
           return;
       }
-      
+
       if (result.rulerSettings) {
         settings = { ...settings, ...result.rulerSettings };
       }
-      
+
       if (result.readingRuler) {
         toggleRuler(true);
       }

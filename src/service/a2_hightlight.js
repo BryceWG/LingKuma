@@ -97,14 +97,14 @@ function sendMessageWithRetry(message, options = {}) {
 
       // 竞速：哪个先完成就用哪个
       Promise.race([sendPromise, timeoutPromise])
-        .then(response => {
+        .then((response) => {
           // 成功获取响应
           if (attemptCount > 1) {
             console.log(`[Retry Success] Message sent successfully on attempt ${attemptCount}:`, message.action);
           }
           resolve(response);
         })
-        .catch(error => {
+        .catch((error) => {
           console.warn(`[Retry ${attemptCount}/${maxRetries}] Failed:`, message.action, error.message);
 
           // 判断是否需要重试
@@ -242,7 +242,7 @@ function getWordSegmenter(locale) {
 //   再在该 textNode 自己的 raw range 数组里按 offset 二分查找。
 //   布局读取从 O(页面词数) 降到 1~2 次。
 (function initLingKumaHitTest() {
-  if (window.LingKumaHitTest) return; // 防重复注入
+  if (window.LingKumaHitTest) {return;} // 防重复注入
 
   const subscribers = new Map(); // name -> callback
   let rafId = null;
@@ -258,7 +258,7 @@ function getWordSegmenter(locale) {
   let cacheResult = null;
 
   function invalidateLocateCacheSoon() {
-    if (cacheScheduled) return;
+    if (cacheScheduled) {return;}
     cacheScheduled = true;
     Promise.resolve().then(() => {
       cacheValid = false;
@@ -302,7 +302,7 @@ function getWordSegmenter(locale) {
   // 在按 start 升序排列的 raw range 数组里二分查找覆盖 offset 的项
   // raws 元素形如 { start, end, word, wordLower }
   function findRawAtOffset(raws, offset) {
-    if (!raws || raws.length === 0) return null;
+    if (!raws || raws.length === 0) {return null;}
 
     let lo = 0;
     let hi = raws.length - 1;
@@ -321,7 +321,7 @@ function getWordSegmenter(locale) {
     // caret 落在词的右边界（offset === end）时向左回退一个词，
     // 这是鼠标停在词尾时最符合直觉的行为
     const prev = raws[hi];
-    if (prev && offset === prev.end) return prev;
+    if (prev && offset === prev.end) {return prev;}
     return null;
   }
 
@@ -347,7 +347,7 @@ function getWordSegmenter(locale) {
     rafId = null;
     const event = pendingEvent;
     pendingEvent = null;
-    if (!event) return;
+    if (!event) {return;}
 
     const payload = {
       x: event.clientX,
@@ -367,7 +367,7 @@ function getWordSegmenter(locale) {
 
   // 唯一的指针监听器：passive + 每帧最多派发一次
   document.addEventListener('pointermove', (e) => {
-    if (subscribers.size === 0) return;
+    if (subscribers.size === 0) {return;}
     pendingEvent = e;
     if (rafId === null) {
       rafId = requestAnimationFrame(flush);
@@ -435,7 +435,7 @@ class ScopeObserver {
 
     // 初始化暗色模式检测
     this.initDarkModeDetection().then(() => {
-      if (this.destroyed) return;
+      if (this.destroyed) {return;}
       // 在暗色模式检测完成后初始化其他组件
       this.handleIntersectingBound = this.handleIntersecting();
       this.mutOb = this.newMutOb();
@@ -492,7 +492,7 @@ class ScopeObserver {
           this.initializeJapaneseTokenizer().then(() => {
             console.log("kuromoji初始化完成，重新应用高亮");
             this.reapplyHighlights();
-          }).catch(err => {
+          }).catch((err) => {
             console.error("kuromoji初始化失败，将使用Intl.Segmenter:", err);
             this.reapplyHighlights();
           });
@@ -600,7 +600,7 @@ class ScopeObserver {
     this.reapplyHighlights({ forceEnabled: true });
 
     if (this.pendingTextNodesWhilePaused.size > 0) {
-      const pendingTextNodes = Array.from(this.pendingTextNodesWhilePaused).filter(textNode => document.contains(textNode));
+      const pendingTextNodes = Array.from(this.pendingTextNodesWhilePaused).filter((textNode) => document.contains(textNode));
       this.pendingTextNodesWhilePaused.clear();
       if (pendingTextNodes.length > 0) {
         this.processNewTextNodes(pendingTextNodes);
@@ -636,7 +636,7 @@ class ScopeObserver {
         const parentEntries = Array.from(this.parent2Text2RawsAllUnknow.entries());
         for (let i = 0; i < parentEntries.length; i++) {
           const [parent, textMap] = parentEntries[i];
-          
+
           // 检查 parent 是否仍在文档中
           if (!document.contains(parent)) {
             this.parent2Text2RawsAllUnknow.delete(parent);
@@ -650,7 +650,7 @@ class ScopeObserver {
             const textEntries = Array.from(textMap.entries());
             for (let j = 0; j < textEntries.length; j++) {
               const [textNode, rawRanges] = textEntries[j];
-              
+
               // 检查 textNode 是否仍在文档中
               if (!document.contains(textNode)) {
                 textMap.delete(textNode);
@@ -660,7 +660,7 @@ class ScopeObserver {
               const ranges = [];
               for (let k = 0; k < rawRanges.length; k++) {
                 const raw = rawRanges[k];
-                if (this.isWordKnown(raw.wordLower)) continue;
+                if (this.isWordKnown(raw.wordLower)) {continue;}
 
                 try {
                   const range = new Range();
@@ -672,7 +672,7 @@ class ScopeObserver {
 
                   if (this.wordDetailsFromDB[raw.wordLower]) {
                     const status = this.wordDetailsFromDB[raw.wordLower].status;
-                    if (status === "5") continue; // 只有状态5才跳过高亮
+                    if (status === "5") {continue;} // 只有状态5才跳过高亮
                     if (["1", "2", "3", "4"].includes(status)) {
                       group = darkModePrefix + "state" + status;
                     }
@@ -770,7 +770,7 @@ class ScopeObserver {
           console.log("[initWalk] 页面加载完成，开始初始化kuromoji...");
 
           // kuromoji模式下添加200ms延迟，避免阻塞页面交互
-          ////没必要了，靠waitForPageLoad即可实现慢加载，由于kuromoji.js又380kb，若不慢加载会把网站干死。
+          /// /没必要了，靠waitForPageLoad即可实现慢加载，由于kuromoji.js又380kb，若不慢加载会把网站干死。
           const startScanWithDelay = () => {
             // console.log("[initWalk] kuromoji模式，延迟200ms后开始扫描");
             setTimeout(() => {
@@ -788,7 +788,7 @@ class ScopeObserver {
             this.kuromojiInitPromise.then(() => {
               console.log("[initWalk] kuromoji初始化完成");
               startScanWithDelay();
-            }).catch(err => {
+            }).catch((err) => {
               console.error("[initWalk] kuromoji初始化失败，将使用Intl.Segmenter:", err);
               startScanWithDelay();
             });
@@ -798,7 +798,7 @@ class ScopeObserver {
             this.initializeJapaneseTokenizer().then(() => {
               console.log("[initWalk] kuromoji初始化完成");
               startScanWithDelay();
-            }).catch(err => {
+            }).catch((err) => {
               console.error("[initWalk] kuromoji初始化失败，将使用Intl.Segmenter:", err);
               startScanWithDelay();
             });
@@ -818,7 +818,7 @@ class ScopeObserver {
 
   // 提取扫描文档的逻辑为独立方法
   startDocumentScan() {
-    if (this.destroyed || !this.highlightEnabled) return;
+    if (this.destroyed || !this.highlightEnabled) {return;}
     // 确保在获取设置之后再执行扫描和观察
     this.scanDocument();
     this.mutObserve(); // 开始观察DOM变化
@@ -831,7 +831,7 @@ class ScopeObserver {
 
   // 扫描文档
   scanDocument() {
-    if (this.destroyed || !this.highlightEnabled) return;
+    if (this.destroyed || !this.highlightEnabled) {return;}
     console.log("扫描文档中的文本节点...");
 
     const scope = this.tree.scope;
@@ -853,16 +853,16 @@ class ScopeObserver {
       acceptNode: (node) => {
         const text = node.textContent;
         // 纯空白文本直接丢弃，长网页里这类节点占比很高
-        if (!text || !text.trim()) return NodeFilter.FILTER_REJECT;
+        if (!text || !text.trim()) {return NodeFilter.FILTER_REJECT;}
 
         const parent = node.parentNode;
-        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (!parent) {return NodeFilter.FILTER_REJECT;}
 
         // 标签黑名单：script/style/textarea 等，无需查样式即可判定
-        if (NON_RENDERED_TAGS.has(parent.nodeName)) return NodeFilter.FILTER_REJECT;
+        if (NON_RENDERED_TAGS.has(parent.nodeName)) {return NodeFilter.FILTER_REJECT;}
 
-        if (this.isBase64ImageData(text)) return NodeFilter.FILTER_REJECT;
-        if (this.isElementHidden(parent)) return NodeFilter.FILTER_REJECT;
+        if (this.isBase64ImageData(text)) {return NodeFilter.FILTER_REJECT;}
+        if (this.isElementHidden(parent)) {return NodeFilter.FILTER_REJECT;}
 
         return NodeFilter.FILTER_ACCEPT;
       }
@@ -909,7 +909,7 @@ class ScopeObserver {
   // 判断节点是否在可视区域内
   isNodeInViewport(node) {
     const parent = node.parentNode;
-    if (!parent) return false;
+    if (!parent) {return false;}
 
     const rect = parent.getBoundingClientRect();
 
@@ -928,16 +928,16 @@ class ScopeObserver {
 
   // 分块处理文本节点
   async processTextNodesInChunks(nodes, callback) {
-    if (this.destroyed) return;
+    if (this.destroyed) {return;}
     if (!nodes || nodes.length === 0) {
-      if (callback) callback();
+      if (callback) {callback();}
       return;
     }
     if (!this.highlightEnabled) {
       for (const textNode of nodes) {
         this.pendingTextNodesWhilePaused.add(textNode);
       }
-      if (callback) callback();
+      if (callback) {callback();}
       return;
     }
 
@@ -947,12 +947,12 @@ class ScopeObserver {
 
     for (let i = 0; i < nodes.length; i++) {
       const textNode = nodes[i];
-      if (!textNode || !textNode.textContent) continue;
+      if (!textNode || !textNode.textContent) {continue;}
 
       const text = textNode.textContent.replace(/\u00AD/g, '');
 
       // 跳过 Base64 图片数据
-      if (this.isBase64ImageData(text)) continue;
+      if (this.isBase64ImageData(text)) {continue;}
 
       // 判断文本类型并使用对应的分词方式
       if (this.isJapaneseText(text)) {
@@ -1082,7 +1082,7 @@ class ScopeObserver {
       for (const textNode of nodes) {
         this.pendingTextNodesWhilePaused.add(textNode);
       }
-      if (callback) callback();
+      if (callback) {callback();}
       return;
     }
 
@@ -1094,12 +1094,12 @@ class ScopeObserver {
 
     // 使用RAF代替setTimeout
     const processChunk = () => {
-      if (this.destroyed) return;
+      if (this.destroyed) {return;}
       if (!this.highlightEnabled) {
         for (let i = index; i < nodes.length; i++) {
           this.pendingTextNodesWhilePaused.add(nodes[i]);
         }
-        if (callback) callback();
+        if (callback) {callback();}
         return;
       }
       const start = index;
@@ -1135,7 +1135,7 @@ class ScopeObserver {
 
   shouldHighlightText(text) {
     // 日语直接返回true
-    if (this.isJapaneseText(text)) return true;
+    if (this.isJapaneseText(text)) {return true;}
 
     // 原有中文/韩文检测逻辑
     return !/[\u4E00-\u9FFF\u3130-\u318F\uAC00-\uD7AF]/.test(text);
@@ -1174,7 +1174,7 @@ class ScopeObserver {
 
     // 检查父元素是否在忽略列表中
 // 检查父元素是否在忽略列表中
-//注意isAllowedYouTubeElement函数！也要同步添加
+// 注意isAllowedYouTubeElement函数！也要同步添加
 if (window.location.hostname.includes('youtube.com')) {
   // 定义YouTube上允许处理的元素类名和ID
   const allowedYoutubeIdentifiers = [
@@ -1222,13 +1222,13 @@ if (window.location.hostname.includes('youtube.com')) {
 
     while (currentElement && !isAllowedElement) {
       const tagName = (currentElement.tagName || '').toLowerCase();
-      if (allowedYoutubeIdentifiers.some(identifier => tagName === identifier)) {
+      if (allowedYoutubeIdentifiers.some((identifier) => tagName === identifier)) {
         isAllowedElement = true;
         break;
       }
 
       // 检查当前元素的ID
-      if (currentElement.id && allowedYoutubeIdentifiers.some(id => currentElement.id.includes(id))) {
+      if (currentElement.id && allowedYoutubeIdentifiers.some((id) => currentElement.id.includes(id))) {
         isAllowedElement = true;
         break;
       }
@@ -1236,7 +1236,7 @@ if (window.location.hostname.includes('youtube.com')) {
       // 检查当前元素的classList
       if (currentElement.classList && currentElement.classList.length > 0) {
         const classList = Array.from(currentElement.classList);
-        if (classList.some(cls => allowedYoutubeIdentifiers.some(allowed => cls.includes(allowed)))) {
+        if (classList.some((cls) => allowedYoutubeIdentifiers.some((allowed) => cls.includes(allowed)))) {
           isAllowedElement = true;
           break;
         }
@@ -1245,7 +1245,7 @@ if (window.location.hostname.includes('youtube.com')) {
       // 检查当前元素的className字符串（兼容性处理）
       if (typeof currentElement.className === 'string' && currentElement.className) {
         const classNames = currentElement.className.split(' ');
-        if (classNames.some(cls => allowedYoutubeIdentifiers.some(allowed => cls.includes(allowed)))) {
+        if (classNames.some((cls) => allowedYoutubeIdentifiers.some((allowed) => cls.includes(allowed)))) {
           isAllowedElement = true;
           break;
         }
@@ -1321,7 +1321,7 @@ if (window.location.hostname.includes('youtube.com')) {
         }
         // 根据iOS设备判断使用不同的分词方法
         else if (isOrionIOSRuntime()) {
-          console.log(isOrionIOSRuntime()," 这是iOS设备,使用Intl.Segmenter进行日语分词" );
+          console.log(isOrionIOSRuntime(), " 这是iOS设备,使用Intl.Segmenter进行日语分词" );
           // iOS设备使用Intl.Segmenter进行日语分词
           this.processIntlSegmenterText(textNode, parent, text);
         } else if (this.useKuromojiTokenizer) {
@@ -1381,7 +1381,7 @@ if (window.location.hostname.includes('youtube.com')) {
       const ranges = [];
       const darkModePrefix = this.isDarkMode ? "dark-" : "";
       // console.log("tokens",tokens);
-      tokens.forEach(token => {
+      tokens.forEach((token) => {
         // 忽略助词、符号等非实义词
         // if (['助詞', '助動詞', '記号'].includes(token.pos)) {
         //     return;
@@ -1628,7 +1628,7 @@ if (window.location.hostname.includes('youtube.com')) {
 
     while ((node = walker.nextNode()) && sampleCount < maxSamples) {
       const text = node.textContent.trim();
-      if (text.length < 2) continue; // 跳过太短的文本
+      if (text.length < 2) {continue;} // 跳过太短的文本
 
       // 检查是否包含片假名或平假名（日文特征）
       if (/[\u3040-\u309F\u30A0-\u30FF]/.test(text)) {
@@ -1718,7 +1718,7 @@ if (window.location.hostname.includes('youtube.com')) {
 
   WesternTextFix(text, index, length) {
     // 如果输入的文本为空或无效，直接返回null
-    if(!text){
+    if (!text) {
       return null;
     }
 
@@ -1763,21 +1763,21 @@ if (window.location.hostname.includes('youtube.com')) {
       "asap.", "ASAP.", "etc.", "Etc.", "diy.", "DIY.",
       "hr.", "Hr.", "HR.", "min.", "Min.", "sec.", "Sec."
     ]);
-//第一步，处理缩写
+// 第一步，处理缩写
     // 检查输入的文本是否是常见缩写之一
-    if(commonAbbreviations.has(text)){
+    if (commonAbbreviations.has(text)) {
       // 如果是缩写，通常不需要进一步处理，直接返回原始的文本、索引和长度
 
-      return {text, index, length};
-    }else{
-  //第二步， 不是字母开头的，就不用处理了。
+      return { text, index, length };
+    } else {
+  // 第二步， 不是字母开头的，就不用处理了。
       // 如果不是缩写，则进行处理以去除首尾的非字母数字字符
 
-      //获取第一个\w 字母和她的位置;
-      //获取最后一个字母或者数字和位置
-      //捕获中间的部分
-      //更新index和length
-      //返回处理后的text,index,length
+      // 获取第一个\w 字母和她的位置;
+      // 获取最后一个字母或者数字和位置
+      // 捕获中间的部分
+      // 更新index和length
+      // 返回处理后的text,index,length
 
       // 获取第一个字母和它的位置
       // 查找第一个Unicode字母字符 (\p{L}) 及其在文本中的索引
@@ -1788,14 +1788,14 @@ if (window.location.hostname.includes('youtube.com')) {
 
       // 如果找不到第一个字母或最后一个字母/数字（例如，文本只包含符号），则无法处理，返回原始值
       if (!firstLetterMatch || !lastLetterMatch) {
-        return {text, index, length}; // 如果没有找到字母，返回原始值
+        return { text, index, length }; // 如果没有找到字母，返回原始值
       }
 
 
 
-  //第三步 会有下面这些bug。应该在第三步里做一下细节处理。
-  //不太行，处理不了。因为最开始的匹配是作为单个结果出来的，这里只能做矫正，不能再拆分了。
-  //nicht.,,Wenn
+  // 第三步 会有下面这些bug。应该在第三步里做一下细节处理。
+  // 不太行，处理不了。因为最开始的匹配是作为单个结果出来的，这里只能做矫正，不能再拆分了。
+  // nicht.,,Wenn
   // Hecke.,,Ich
   // hatte.,,Irgendetwas
   // geraten.",,Warum?",„Ich
@@ -1810,7 +1810,7 @@ if (window.location.hostname.includes('youtube.com')) {
       // 如果第一个字母就在开头 (firstIndex === 0) 并且最后一个核心字符就在末尾 (lastLetterEndIndex === length)
       // 说明文本首尾没有需要去除的非字母数字字符，无需处理，返回原始值
       if (firstIndex === 0 && lastLetterEndIndex === length) {
-        return {text, index, length};
+        return { text, index, length };
       }
 
       // 提取从第一个字母到最后一个核心字符之间的子字符串作为新的文本
@@ -1824,7 +1824,7 @@ if (window.location.hostname.includes('youtube.com')) {
       // console.log(`文本修正: "${text}" → "${newText}" (位置: ${index} → ${newIndex}, 长度: ${length} → ${newLength})`);
 
       // 返回修正后的文本、新的起始索引和新的长度
-      return {text: newText, index: newIndex, length: newLength};
+      return { text: newText, index: newIndex, length: newLength };
 
       }
     }
@@ -1897,7 +1897,7 @@ if (window.location.hostname.includes('youtube.com')) {
           if (this.isChinseText(word)) {
             continue; // 跳过中文字符
           }
-   
+
           const wordLower = word.toLowerCase(); // 将单词转换为小写
 
           // 检查这个 "单词" 是否包含中日韩字符，如果是则跳过 (虽然 segmenter 按 "de" 分割，以防万一)
@@ -2085,7 +2085,7 @@ if (window.location.hostname.includes('youtube.com')) {
 
           // 获取原始文本范围
           const rawTextMap = this.parent2Text2RawsAllUnknow.get(parent);
-          if (!rawTextMap) return;
+          if (!rawTextMap) {return;}
 
           // console.log("当前视口中的元素:", parent);
           // rawTextMap.forEach((rawRanges, textNode) => {
@@ -2107,7 +2107,7 @@ if (window.location.hostname.includes('youtube.com')) {
           const rawTextEntries = Array.from(rawTextMap.entries());
           for (let j = 0; j < rawTextEntries.length; j++) {
             const [textNode, rawRanges] = rawTextEntries[j];
-            
+
             // 检查 textNode 是否仍在文档中
             if (!document.contains(textNode)) {
               rawTextMap.delete(textNode);
@@ -2171,7 +2171,7 @@ if (window.location.hostname.includes('youtube.com')) {
 
   // 创建文本父元素交叉观察器
   newTextParentSecOb() {
-    return new IntersectionObserver(entries => {
+    return new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (entry.isIntersecting) {
           this.handleIntersectingBound(null, entry.target);
@@ -2195,7 +2195,7 @@ if (window.location.hostname.includes('youtube.com')) {
 
     const flushPendingMutations = () => {
       throttleTimer = null;
-      if (this.destroyed || pendingMutations.size === 0) return;
+      if (this.destroyed || pendingMutations.size === 0) {return;}
 
       if (!this.highlightEnabled) {
         for (const textNode of pendingMutations.keys()) {
@@ -2208,7 +2208,7 @@ if (window.location.hostname.includes('youtube.com')) {
       const nodesToProcess = Array.from(pendingMutations.keys());
       pendingMutations.clear();
       processingPromise = Promise.resolve(self.processNewTextNodes(nodesToProcess))
-        .catch(error => console.error('增量处理文本节点失败:', error))
+        .catch((error) => console.error('增量处理文本节点失败:', error))
         .finally(() => {
           processingPromise = null;
           if (pendingMutations.size > 0 && !throttleTimer) {
@@ -2218,8 +2218,8 @@ if (window.location.hostname.includes('youtube.com')) {
         });
     };
 
-    return new MutationObserver(mutations => {
-      if (this.destroyed) return;
+    return new MutationObserver((mutations) => {
+      if (this.destroyed) {return;}
       // 收集新增的文本节点，避免重复处理
       const newTextNodes = new Set();
       const removedNodes = new Set();
@@ -2283,7 +2283,7 @@ if (window.location.hostname.includes('youtube.com')) {
       }
 
       // 如果没有新文本节点，直接返回
-      if (newTextNodes.size === 0) return;
+      if (newTextNodes.size === 0) {return;}
 
       if (!this.highlightEnabled) {
         for (const textNode of newTextNodes) {
@@ -2298,7 +2298,7 @@ if (window.location.hostname.includes('youtube.com')) {
         pendingMutations.set(textNode, textNode.textContent);
       }
 
-      if (throttleTimer || processingPromise) return;
+      if (throttleTimer || processingPromise) {return;}
 
       throttleTimer = setTimeout(flushPendingMutations,
         this.isYouTubePage ? YOUTUBE_MUTATION_FLUSH_DELAY : 100);
@@ -2340,16 +2340,16 @@ if (window.location.hostname.includes('youtube.com')) {
       {
         acceptNode: (node) => {
           // 过滤掉空白文本节点和在忽略元素中的节点
-          if (!node.textContent.trim()) return NodeFilter.FILTER_REJECT;
+          if (!node.textContent.trim()) {return NodeFilter.FILTER_REJECT;}
           const parent = node.parentNode;
-          if (!parent) return NodeFilter.FILTER_REJECT;
+          if (!parent) {return NodeFilter.FILTER_REJECT;}
           // 标签黑名单：无需查样式即可判定，放在最前面减少后续开销
-          if (NON_RENDERED_TAGS.has(parent.nodeName)) return NodeFilter.FILTER_REJECT;
-          if (this.isElementIgnored(parent)) return NodeFilter.FILTER_REJECT;
+          if (NON_RENDERED_TAGS.has(parent.nodeName)) {return NodeFilter.FILTER_REJECT;}
+          if (this.isElementIgnored(parent)) {return NodeFilter.FILTER_REJECT;}
           // 过滤掉 Base64 图片数据
-          if (this.isBase64ImageData(node.textContent)) return NodeFilter.FILTER_REJECT;
+          if (this.isBase64ImageData(node.textContent)) {return NodeFilter.FILTER_REJECT;}
           // 过滤掉隐藏元素（内部有样式查询，放最后）
-          if (this.isElementHidden(parent)) return NodeFilter.FILTER_REJECT;
+          if (this.isElementHidden(parent)) {return NodeFilter.FILTER_REJECT;}
           return NodeFilter.FILTER_ACCEPT;
         }
       }
@@ -2416,7 +2416,7 @@ if (window.location.hostname.includes('youtube.com')) {
       const wordEntries = Array.from(wordRangesMap.entries());
       for (let i = 0; i < wordEntries.length; i++) {
         const [word, details] = wordEntries[i];
-        const remaining = details.filter(detail => {
+        const remaining = details.filter((detail) => {
           return !detail || !detail.range || detail.range.startContainer !== textNode;
         });
         if (remaining.length > 0) {
@@ -2466,14 +2466,14 @@ if (window.location.hostname.includes('youtube.com')) {
 
   // 新增：增量处理新文本节点（支持按需加载）
   isAllowedYouTubeTextNode(textNode) {
-    if (!this.isYouTubePage) return true;
+    if (!this.isYouTubePage) {return true;}
     let element = textNode?.parentElement;
     while (element && element !== document.body && element !== document.documentElement) {
       const id = element.id || '';
       const className = typeof element.className === 'string' ? element.className : '';
       const tagName = (element.tagName || '').toLowerCase();
-      if (YOUTUBE_HIGHLIGHT_IDENTIFIERS.some(identifier =>
-        tagName === identifier || id.includes(identifier) || className.split(/\s+/).some(name => name.includes(identifier)))) {
+      if (YOUTUBE_HIGHLIGHT_IDENTIFIERS.some((identifier) =>
+        tagName === identifier || id.includes(identifier) || className.split(/\s+/).some((name) => name.includes(identifier)))) {
         return true;
       }
       element = element.parentElement;
@@ -2482,7 +2482,7 @@ if (window.location.hostname.includes('youtube.com')) {
   }
 
   async processNewTextNodes(textNodes) {
-    if (this.destroyed) return;
+    if (this.destroyed) {return;}
     if (!this.highlightEnabled) {
       for (const textNode of textNodes) {
         this.pendingTextNodesWhilePaused.add(textNode);
@@ -2496,18 +2496,18 @@ if (window.location.hostname.includes('youtube.com')) {
     const wordsToQuery = new Set();
 
     for (const textNode of textNodes) {
-      if (!textNode || !textNode.textContent) continue;
-      if (!document.contains(textNode)) continue;
+      if (!textNode || !textNode.textContent) {continue;}
+      if (!document.contains(textNode)) {continue;}
 
       // 跳过隐藏元素
       const parent = textNode.parentNode;
-      if (parent && this.isElementHidden(parent)) continue;
-      if (!this.isAllowedYouTubeTextNode(textNode)) continue;
+      if (parent && this.isElementHidden(parent)) {continue;}
+      if (!this.isAllowedYouTubeTextNode(textNode)) {continue;}
 
       const text = textNode.textContent.replace(/\u00AD/g, '');
 
       // 跳过 Base64 图片数据
-      if (this.isBase64ImageData(text)) continue;
+      if (this.isBase64ImageData(text)) {continue;}
 
       // 判断文本类型并使用对应的分词方式
       if (this.isJapaneseText(text)) {
@@ -2633,11 +2633,11 @@ if (window.location.hostname.includes('youtube.com')) {
     // 第三步：处理文本节点
     for (const textNode of textNodes) {
       // 检查文本节点是否仍在DOM中
-      if (!document.contains(textNode)) continue;
+      if (!document.contains(textNode)) {continue;}
 
       const parent = textNode.parentNode;
-      if (!parent) continue;
-      if (!this.isAllowedYouTubeTextNode(textNode)) continue;
+      if (!parent) {continue;}
+      if (!this.isAllowedYouTubeTextNode(textNode)) {continue;}
 
       // 直接处理单个文本节点，无需重新扫描整个文档
       this.processTextNode(textNode, parent);
@@ -2799,7 +2799,7 @@ if (window.location.hostname.includes('youtube.com')) {
     const cacheEntries = Array.from(this.textCache.entries());
     for (let i = 0; i < cacheEntries.length; i++) {
       const [cacheKey, cachedResult] = cacheEntries[i];
-      
+
       // 检查缓存结果中是否包含该单词
       let containsWord = false;
       for (let j = 0; j < cachedResult.length; j++) {
@@ -2828,11 +2828,11 @@ if (window.location.hostname.includes('youtube.com')) {
 
 
   // 新增方法：更新指定单词的高亮状态，并在必要时补充创建 Range（第二种方案）//parent可用
-  updateWordHighlight(word, status,parent,shouldReGroup = false) {
+  updateWordHighlight(word, status, parent, shouldReGroup = false) {
     console.log(`更新单词 ${word} 的高亮状态为 ${status}`);
 
     const wordLower = word.toLowerCase();
-    
+
     // 更新 wordDetailsFromDB 缓存
     if (this.wordDetailsFromDB[wordLower]) {
       this.wordDetailsFromDB[wordLower].status = status;
@@ -2862,7 +2862,7 @@ if (window.location.hostname.includes('youtube.com')) {
 
 
 
-    //这里占据性能嘛也不知道。哎。。。
+    // 这里占据性能嘛也不知道。哎。。。
     // 新增：彻底清除所有CSS.highlights中包含该单词的Range，防止孤儿Range残留
     console.log(`开始彻底清除单词 "${word}" 的所有高亮Range`);
     const allGroups = [
@@ -2965,14 +2965,14 @@ if (window.location.hostname.includes('youtube.com')) {
         }
       }
     }
-    }else{
+    } else {
       console.log(`已知单词更新: 重新应用当前视图中所有元素的高亮`);
 
       // Firefox兼容性：遍历parent2Text2RangesView中的所有parent
       const parentViewEntries = Array.from(this.parent2Text2RangesView.entries());
       for (let i = 0; i < parentViewEntries.length; i++) {
         const [parentElement, viewTextMap] = parentViewEntries[i];
-        
+
         // 先清除此parent下的所有高亮
         const viewTextEntries = Array.from(viewTextMap.entries());
         for (let j = 0; j < viewTextEntries.length; j++) {
@@ -3003,7 +3003,7 @@ if (window.location.hostname.includes('youtube.com')) {
         const rawTextEntries = Array.from(rawTextMap.entries());
         for (let j = 0; j < rawTextEntries.length; j++) {
           const [textNode, rawRanges] = rawTextEntries[j];
-          
+
           // 检查textNode是否仍在文档中
           if (!document.contains(textNode)) {
             rawTextMap.delete(textNode);
@@ -3016,7 +3016,7 @@ if (window.location.hostname.includes('youtube.com')) {
           for (let k = 0; k < rawRanges.length; k++) {
             const raw = rawRanges[k];
             // 检查该单词是否需要高亮
-            if (this.isWordKnown(raw.wordLower)) continue;
+            if (this.isWordKnown(raw.wordLower)) {continue;}
 
             // 确定高亮组
             let group = darkModePrefix + "default";
@@ -3058,7 +3058,7 @@ if (window.location.hostname.includes('youtube.com')) {
 
   // 检查单词是否已知（只有状态5才算已知）
   isWordKnown(word) {
-    if (!word) return false;
+    if (!word) {return false;}
     const lower = word.toLowerCase();
     const details = this.wordDetailsFromDB[lower];
     if (details) {
@@ -3119,7 +3119,7 @@ if (window.location.hostname.includes('youtube.com')) {
       }
 
       setTimeout(() => {
-        if (this.destroyed) return;
+        if (this.destroyed) {return;}
         console.log("调用单词爆炸初始化函数");
         window.initWordExplosionSystem({ manualActivation: true });
       }, 1);
@@ -3165,7 +3165,7 @@ if (window.location.hostname.includes('youtube.com')) {
       }
 
       setTimeout(() => {
-        if (this.destroyed) return;
+        if (this.destroyed) {return;}
         console.log("调用词组高亮初始化函数");
         window.initCustomHighlight();
       }, 1);
@@ -3387,13 +3387,13 @@ if (window.location.hostname.includes('youtube.com')) {
   // 在长网页上是首屏扫描的主要开销（Firefox 的样式重算是主线程同步的）。
   // 改为优先使用原生 checkVisibility()，一次调用即覆盖整条祖先链。
   isElementHidden(element) {
-    if (!element) return true;
-    if (element.nodeType !== 1) return false; // 非元素节点（如 DocumentFragment）不做判断
+    if (!element) {return true;}
+    if (element.nodeType !== 1) {return false;} // 非元素节点（如 DocumentFragment）不做判断
 
     // 廉价判断优先
-    if (element.hidden) return true;
-    if (element.tagName === 'INPUT' && element.type === 'hidden') return true;
-    if (NON_RENDERED_TAGS.has(element.nodeName)) return true;
+    if (element.hidden) {return true;}
+    if (element.tagName === 'INPUT' && element.type === 'hidden') {return true;}
+    if (NON_RENDERED_TAGS.has(element.nodeName)) {return true;}
 
     // 原生可见性检测：Chrome 105+ / Firefox 125+
     // 注意不启用 contentVisibilityAuto，否则 content-visibility:auto 容器里的文本
@@ -3401,8 +3401,8 @@ if (window.location.hostname.includes('youtube.com')) {
     if (typeof element.checkVisibility === 'function') {
       try {
         return !element.checkVisibility({
-          checkVisibilityCSS: true,  // 旧字段名，兼容早期实现
-          visibilityProperty: true   // 标准字段名
+          checkVisibilityCSS: true, // 旧字段名，兼容早期实现
+          visibilityProperty: true // 标准字段名
         });
       } catch (e) {
         // 参数不被识别时退回无参调用（仅检测 display:none）
@@ -3415,17 +3415,17 @@ if (window.location.hostname.includes('youtube.com')) {
     // 兜底：老浏览器仍走逐层检查
     try {
       const style = getComputedStyle(element);
-      if (style.display === 'none') return true;
-      if (style.visibility === 'hidden') return true;
+      if (style.display === 'none') {return true;}
+      if (style.visibility === 'hidden') {return true;}
     } catch (e) {
       // 某些情况下 getComputedStyle 可能失败，忽略错误
     }
 
     let parent = element.parentElement;
     while (parent && parent !== document.documentElement) {
-      if (parent.hidden) return true;
+      if (parent.hidden) {return true;}
       try {
-        if (getComputedStyle(parent).display === 'none') return true;
+        if (getComputedStyle(parent).display === 'none') {return true;}
       } catch (e) {
         // 忽略错误
       }
@@ -3437,7 +3437,7 @@ if (window.location.hostname.includes('youtube.com')) {
 
   // 新增：检查文本是否为 Base64 图片数据
   isBase64ImageData(text) {
-    if (!text || typeof text !== 'string') return false;
+    if (!text || typeof text !== 'string') {return false;}
     // 检查是否以 "data:image" 开头（Base64 图片数据的特征）
     // 使用 trim() 去除可能的空白字符
     const trimmedText = text.trim();
@@ -3449,7 +3449,7 @@ if (window.location.hostname.includes('youtube.com')) {
 
 
   // 新增日语分词器初始化方法
-  //JapaneseTokenizer.tokenize("ある雨の降る日、心優しい青年ヒロシは、道端でずぶ濡れになって震えている一匹の白い猫を見つけました");
+  // JapaneseTokenizer.tokenize("ある雨の降る日、心優しい青年ヒロシは、道端でずぶ濡れになって震えている一匹の白い猫を見つけました");
 
   async initializeJapaneseTokenizer() {
     // 如果已经在初始化中，返回现有的Promise
@@ -3651,7 +3651,7 @@ function detectPageDarkModeForHighlight() {
     }
 
     if (textElements.length > 0) {
-      const darkCount = textElements.filter(element => element.isDark).length;
+      const darkCount = textElements.filter((element) => element.isDark).length;
       const lightCount = textElements.length - darkCount;
 
       console.log("lightCount:", lightCount, "darkCount:", darkCount);
@@ -3674,8 +3674,8 @@ function detectPageDarkModeForHighlight() {
 
 // 检查当前网站是否在高亮黑白名单中
 function checkSiteInThemeLists() {
-  return new Promise(resolve => { // 返回 Promise
-    chrome.storage.local.get(['highlightDefaultDayWebsites', 'highlightDefaultNightWebsites', 'highlightPageThemeOverrides'], function (result) {
+  return new Promise((resolve) => { // 返回 Promise
+    chrome.storage.local.get(['highlightDefaultDayWebsites', 'highlightDefaultNightWebsites', 'highlightPageThemeOverrides'], function(result) {
       const currentUrl = window.location.href;
       const pageThemeOverrides = result.highlightPageThemeOverrides || {};
       const pageThemeOverride = pageThemeOverrides[getHighlightPageThemeKey()];
@@ -3816,7 +3816,7 @@ function urlMatchesPattern(url, pattern) {
 }
 
 // 添加消息监听器处理主题切换
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === "updateHighlightTheme") {
     chrome.storage.local.get({ highlightPageThemeOverrides: {} }, function(result) {
       const pageThemeOverride = (result.highlightPageThemeOverrides || {})[getHighlightPageThemeKey()];

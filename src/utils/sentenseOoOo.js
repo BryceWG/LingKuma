@@ -61,7 +61,7 @@ function isAllowedYouTubeElement(parent) {
 
     while (currentElement && !isAllowedElement) {
       // 检查当前元素的ID
-      if (currentElement.id && allowedYoutubeIdentifiers.some(id => currentElement.id.includes(id))) {
+      if (currentElement.id && allowedYoutubeIdentifiers.some((id) => currentElement.id.includes(id))) {
         isAllowedElement = true;
         break;
       }
@@ -69,7 +69,7 @@ function isAllowedYouTubeElement(parent) {
       // 检查当前元素的classList
       if (currentElement.classList && currentElement.classList.length > 0) {
         const classList = Array.from(currentElement.classList);
-        if (classList.some(cls => allowedYoutubeIdentifiers.some(allowed => cls.includes(allowed)))) {
+        if (classList.some((cls) => allowedYoutubeIdentifiers.some((allowed) => cls.includes(allowed)))) {
           isAllowedElement = true;
           break;
         }
@@ -78,7 +78,7 @@ function isAllowedYouTubeElement(parent) {
       // 检查当前元素的className字符串（兼容性处理）
       if (typeof currentElement.className === 'string' && currentElement.className) {
         const classNames = currentElement.className.split(' ');
-        if (classNames.some(cls => allowedYoutubeIdentifiers.some(allowed => cls.includes(allowed)))) {
+        if (classNames.some((cls) => allowedYoutubeIdentifiers.some((allowed) => cls.includes(allowed)))) {
           isAllowedElement = true;
           break;
         }
@@ -133,7 +133,7 @@ function highlightSpecificWords(wordsToHighlight, msPerChar = 100, msPerCharZh =
 
     // 获取文本颜色亮度的函数
     function getTextColorBrightness(element) {
-        if (!element) return null;
+        if (!element) {return null;}
 
         // 获取元素的计算样式
         const style = window.getComputedStyle(element);
@@ -243,7 +243,7 @@ function highlightSpecificWords(wordsToHighlight, msPerChar = 100, msPerCharZh =
     `;
 
     const getRangeRect = (range) => {
-        const rects = Array.from(range.getClientRects()).filter(rect => rect.width > 0 && rect.height > 0);
+        const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0);
         if (rects.length === 0) {
             const rect = range.getBoundingClientRect();
             return rect && rect.width > 0 && rect.height > 0 ? rect : null;
@@ -350,7 +350,7 @@ function highlightSpecificWords(wordsToHighlight, msPerChar = 100, msPerCharZh =
     // The core highlighting logic, now moved into a separate function
     const startHighlightingSequence = () => {
         // If cancelled before starting, do nothing
-        if (isCancelled) return;
+        if (isCancelled) {return;}
 
         // If there are no words to highlight, stop here.
         if (!wordsToHighlight || wordsToHighlight.length === 0) {
@@ -589,7 +589,7 @@ function getSentenceWordDetails(detail) {
     console.log("[DEBUG] getSentenceWordDetails called with detail:", JSON.stringify(detail, (key, value) => key === 'range' ? 'RangeObject' : value)); // 添加日志，避免循环引用
 
     // 1. 获取句子文本
-    const {sentence: targetSentenceText, range: sentenceRange} = getSentenceForWord(detail);
+    const { sentence: targetSentenceText, range: sentenceRange } = getSentenceForWord(detail);
     console.log("[DEBUG] getSentenceForWord returned:", targetSentenceText); // 添加日志
     if (!targetSentenceText) {
       console.warn("getSentenceWordDetails: Could not get sentence text.");
@@ -601,7 +601,7 @@ function getSentenceWordDetails(detail) {
     // 2. 分词
     const sentenceSegmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
     const targetSegments = Array.from(sentenceSegmenter.segment(targetSentenceText));
-    const targetWords = targetSegments.filter(seg => seg.isWordLike).map(seg => seg.segment);
+    const targetWords = targetSegments.filter((seg) => seg.isWordLike).map((seg) => seg.segment);
     console.log("[DEBUG] Segmented targetWords:", targetWords); // 添加日志
 
     if (targetWords.length === 0) {
@@ -779,7 +779,7 @@ function handleBionicSentence(targetSentenceText, targetWords, bionicParent) {
 
     console.log(`[DEBUG] Initial allWrappers length: ${allWrappers.length}`);
     if (allWrappers.length > 0) {
-      console.log("[DEBUG] allWrappers data-original values:", Array.from(allWrappers).map(w => w.getAttribute('data-original')));
+      console.log("[DEBUG] allWrappers data-original values:", Array.from(allWrappers).map((w) => w.getAttribute('data-original')));
     }
     if (bionicParent) {
         console.log("[DEBUG] bionicParent data-original:", bionicParent.getAttribute('data-original'));
@@ -834,11 +834,11 @@ function handleBionicSentence(targetSentenceText, targetWords, bionicParent) {
                         console.log(`[DEBUG] Exact textual match found at i=${i}, j=${j}: "${currentTrimmedText}"`);
                         if (sequenceContainsBionicParent) {
                             finalSentenceWrappers = currentSequence;
-                            console.log("[DEBUG] Assigning finalSentenceWrappers (exact, with bionicParent):", finalSentenceWrappers.map(sw => sw.getAttribute('data-original')).join(' ')); // Log with spaces
+                            console.log("[DEBUG] Assigning finalSentenceWrappers (exact, with bionicParent):", finalSentenceWrappers.map((sw) => sw.getAttribute('data-original')).join(' ')); // Log with spaces
                         } else if (finalSentenceWrappers.length === 0) {
                             // If no match with bionicParent found yet, store this one as a candidate
                             finalSentenceWrappers = currentSequence;
-                            console.log("[DEBUG] Assigning candidate finalSentenceWrappers (exact, bionicParent NOT in this one yet):", finalSentenceWrappers.map(sw => sw.getAttribute('data-original')).join(' ')); // Log with spaces
+                            console.log("[DEBUG] Assigning candidate finalSentenceWrappers (exact, bionicParent NOT in this one yet):", finalSentenceWrappers.map((sw) => sw.getAttribute('data-original')).join(' ')); // Log with spaces
                         }
                         break; // Inner loop (j) - found an exact match for this starting point i
                     }
@@ -998,36 +998,36 @@ function findSentenceAcrossElements(detail, targetSentenceText, targetWords) {
 
     // 找到当前单词所在的文本节点
     let textNodeParent = initialContainer.nodeType === Node.TEXT_NODE ? initialParent : initialContainer;
-    
-    // 向上查找合适的父元素 
-    const MIN_TEXT_LENGTH = 10; 
-    while (textNodeParent && textNodeParent !== document.body) { 
-        // 如果当前节点是文本节点，继续向上查找 
-        if (textNodeParent.nodeType === Node.TEXT_NODE) { 
-            textNodeParent = textNodeParent.parentElement; 
-            continue; 
-        } 
-        
-        // 检查当前元素是否是absolute/fixed定位 
-        const style = window.getComputedStyle(textNodeParent); 
-        if (style.position === 'absolute' || style.position === 'fixed') { 
-            // 如果是absolute/fixed定位，停止向上查找，使用当前元素 
-            break; 
-        } 
-        
-        // 如果不是absolute/fixed定位，检查文本长度 
-        if (textNodeParent.innerText && textNodeParent.innerText.trim().length >= MIN_TEXT_LENGTH) { 
-            // 文本长度足够，停止查找 
-            break; 
-        } 
-        
-        // 文本长度不够，继续向上查找 
-        textNodeParent = textNodeParent.parentElement; 
+
+    // 向上查找合适的父元素
+    const MIN_TEXT_LENGTH = 10;
+    while (textNodeParent && textNodeParent !== document.body) {
+        // 如果当前节点是文本节点，继续向上查找
+        if (textNodeParent.nodeType === Node.TEXT_NODE) {
+            textNodeParent = textNodeParent.parentElement;
+            continue;
+        }
+
+        // 检查当前元素是否是absolute/fixed定位
+        const style = window.getComputedStyle(textNodeParent);
+        if (style.position === 'absolute' || style.position === 'fixed') {
+            // 如果是absolute/fixed定位，停止向上查找，使用当前元素
+            break;
+        }
+
+        // 如果不是absolute/fixed定位，检查文本长度
+        if (textNodeParent.innerText && textNodeParent.innerText.trim().length >= MIN_TEXT_LENGTH) {
+            // 文本长度足够，停止查找
+            break;
+        }
+
+        // 文本长度不够，继续向上查找
+        textNodeParent = textNodeParent.parentElement;
     }
-    
+
     // 使用找到的父元素作为遍历起点
     let commonParent = textNodeParent || initialParent;
-    
+
     // 向上查找更大的父元素，直到找到包含足够文本的元素
     const COMMON_PARENT_MIN_TEXT_LENGTH = 100; // 最小文本长度阈值
     while (commonParent && commonParent.textContent.length < COMMON_PARENT_MIN_TEXT_LENGTH && commonParent.parentElement) {

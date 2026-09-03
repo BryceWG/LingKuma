@@ -86,7 +86,7 @@ class DataAccessLayer {
         // 转换为 {word: data} 格式
         const details = {};
         if (response.data && Array.isArray(response.data)) {
-          response.data.forEach(item => {
+          response.data.forEach((item) => {
             details[item.word] = item;
           });
         }
@@ -148,7 +148,7 @@ class DataAccessLayer {
         // 转换为 {word: data} 格式
         const details = {};
         if (response.data && Array.isArray(response.data)) {
-          response.data.forEach(item => {
+          response.data.forEach((item) => {
             // 如果需要筛选没有日期的单词（前端额外筛选）
             if (filters.noDate) {
               if (!item.statusHistory || !item.statusHistory['1'] || !item.statusHistory['1'].createTime) {
@@ -194,7 +194,7 @@ class DataAccessLayer {
       if (this.mode === 'cloud' && this.dualWrite) {
         // 异步写本地，不等待
         this._sendToBackground('updateWordStatus', { word, status, language, isCustom })
-          .catch(err => console.error('[DataAccessLayer] Local write failed:', err));
+          .catch((err) => console.error('[DataAccessLayer] Local write failed:', err));
       }
 
       // 主要写入
@@ -207,7 +207,7 @@ class DataAccessLayer {
       // 如果是本地模式但启用了双写，同步到云端
       if (this.mode === 'local' && this.dualWrite && window.cloudAPI.isEnabled) {
         window.cloudAPI.saveWord(wordData)
-          .catch(err => console.error('[DataAccessLayer] Cloud sync failed:', err));
+          .catch((err) => console.error('[DataAccessLayer] Cloud sync failed:', err));
       }
 
       return { success: true };
@@ -224,7 +224,7 @@ class DataAccessLayer {
     try {
       if (this.mode === 'cloud' && this.dualWrite) {
         this._sendToBackground('addTranslation', { word, translation })
-          .catch(err => console.error('[DataAccessLayer] Local write failed:', err));
+          .catch((err) => console.error('[DataAccessLayer] Local write failed:', err));
       }
 
       if (this.mode === 'cloud') {
@@ -246,7 +246,7 @@ class DataAccessLayer {
           translations.push(translation.trim());
         }
         window.cloudAPI.saveWord({ word, translations })
-          .catch(err => console.error('[DataAccessLayer] Cloud sync failed:', err));
+          .catch((err) => console.error('[DataAccessLayer] Cloud sync failed:', err));
       }
 
       return { success: true };
@@ -263,7 +263,7 @@ class DataAccessLayer {
     try {
       if (this.mode === 'cloud' && this.dualWrite) {
         this._sendToBackground('deleteWord', { word })
-          .catch(err => console.error('[DataAccessLayer] Local delete failed:', err));
+          .catch((err) => console.error('[DataAccessLayer] Local delete failed:', err));
       }
 
       if (this.mode === 'cloud') {
@@ -274,7 +274,7 @@ class DataAccessLayer {
 
       if (this.mode === 'local' && this.dualWrite && window.cloudAPI.isEnabled) {
         window.cloudAPI.deleteWord(word)
-          .catch(err => console.error('[DataAccessLayer] Cloud sync failed:', err));
+          .catch((err) => console.error('[DataAccessLayer] Cloud sync failed:', err));
       }
 
       return { success: true };
@@ -323,7 +323,7 @@ class DataAccessLayer {
 const dataAccessLayer = new DataAccessLayer();
 
 // 初始化
-dataAccessLayer.init().catch(err => {
+dataAccessLayer.init().catch((err) => {
   console.error('[DataAccessLayer] Initialization failed:', err);
 });
 

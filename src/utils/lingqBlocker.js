@@ -7,7 +7,7 @@
 
   function isLingqSite() {
     const hostname = window.location.hostname;
-    return LINGQ_DOMAINS.some(domain => hostname === domain || hostname.endsWith('.' + domain));
+    return LINGQ_DOMAINS.some((domain) => hostname === domain || hostname.endsWith('.' + domain));
   }
 
   function hideLingqHighlights() {
@@ -53,7 +53,7 @@
   }
 
   function removeModalContainer() {
-    if (!isEnabled) return;
+    if (!isEnabled) {return;}
     const modalContainer = document.querySelector('.modal-container');
     if (modalContainer) {
       modalContainer.remove();
@@ -63,7 +63,7 @@
 
   function startModalObserver() {
     stopModalObserver();
-    if (!isEnabled) return;
+    if (!isEnabled) {return;}
 
     removeModalContainer();
 
@@ -89,7 +89,7 @@
   }
 
   function enableLingqBlocker() {
-    if (isEnabled) return;
+    if (isEnabled) {return;}
     isEnabled = true;
     console.log('[LingqBlocker] 功能已启用');
     hideLingqHighlights();
@@ -97,7 +97,7 @@
   }
 
   function disableLingqBlocker() {
-    if (!isEnabled) return;
+    if (!isEnabled) {return;}
     isEnabled = false;
     console.log('[LingqBlocker] 功能已禁用');
     showLingqHighlights();

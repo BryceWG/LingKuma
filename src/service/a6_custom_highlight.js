@@ -58,14 +58,14 @@ function sendMessageWithRetry(message, options = {}) {
 
       // 竞速：哪个先完成就用哪个
       Promise.race([sendPromise, timeoutPromise])
-        .then(response => {
+        .then((response) => {
           // 成功获取响应
           if (attemptCount > 1) {
             console.log(`[Retry Success] Message sent successfully on attempt ${attemptCount}:`, message.action);
           }
           resolve(response);
         })
-        .catch(error => {
+        .catch((error) => {
           console.warn(`[Retry ${attemptCount}/${maxRetries}] Failed:`, message.action, error.message);
 
           // 判断是否需要重试
@@ -107,18 +107,18 @@ class AhoCorasick {
 
   // 添加模式串
   addPattern(pattern) {
-    if (!pattern || pattern.length === 0) return;
-    
+    if (!pattern || pattern.length === 0) {return;}
+
     this.patterns.push(pattern);
     let node = this.root;
-    
+
     for (let char of pattern.toLowerCase()) {
       if (!node.children[char]) {
         node.children[char] = { children: {}, isEnd: false, word: null, fail: null };
       }
       node = node.children[char];
     }
-    
+
     node.isEnd = true;
     node.word = pattern;
   }
@@ -126,29 +126,29 @@ class AhoCorasick {
   // 构建失败函数
   buildFailureFunction() {
     const queue = [];
-    
+
     // 初始化第一层节点的失败函数
     for (let char in this.root.children) {
       const child = this.root.children[char];
       child.fail = this.root;
       queue.push(child);
     }
-    
+
     // BFS 构建失败函数
     while (queue.length > 0) {
       const current = queue.shift();
-      
+
       for (let char in current.children) {
         const child = current.children[char];
         queue.push(child);
-        
+
         let fail = current.fail;
         while (fail && !fail.children[char]) {
           fail = fail.fail;
         }
-        
+
         child.fail = fail ? fail.children[char] : this.root;
-        
+
         // 如果失败节点是结束节点，当前节点也应该标记为结束
         if (child.fail.isEnd && !child.isEnd) {
           child.isEnd = true;
@@ -160,26 +160,26 @@ class AhoCorasick {
 
   // 搜索所有匹配
   search(text) {
-    if (!text) return [];
-    
+    if (!text) {return [];}
+
     const matches = [];
     let node = this.root;
-    
+
     for (let i = 0; i < text.length; i++) {
       const char = text[i].toLowerCase();
-      
+
       // 根据失败函数跳转
       while (node && !node.children[char]) {
         node = node.fail;
       }
-      
+
       if (!node) {
         node = this.root;
         continue;
       }
-      
+
       node = node.children[char];
-      
+
       // 检查当前节点及其失败链上的所有匹配
       let temp = node;
       while (temp) {
@@ -196,7 +196,7 @@ class AhoCorasick {
         temp = temp.fail;
       }
     }
-    
+
     return matches;
   }
 }
@@ -322,7 +322,7 @@ function handleCustomWordUpdate(message) {
 
 // 增量添加单个自定义词组
 function addSingleCustomWord(word, status, isCustom, language) {
-  if (!word) return;
+  if (!word) {return;}
 
   console.log('增量添加自定义词组:', word);
   const wordKey = word.toLowerCase();
@@ -436,7 +436,7 @@ async function performLoadCustomWords() {
       customWordTrie = new AhoCorasick();
 
       // 添加所有自定义词组到 Trie 和缓存
-      response.words.forEach(wordData => {
+      response.words.forEach((wordData) => {
         if (wordData.word && wordData.isCustom) {
           const wordKey = wordData.word.toLowerCase();
           customWordTrie.addPattern(wordData.word);
@@ -542,7 +542,7 @@ function initializeEmptyTrie() {
 
 // 在页面中高亮自定义词组（同步版本）
 function highlightCustomWordsInPage() {
-  if (!customWordTrie || !customHighlightEnabled) return;
+  if (!customWordTrie || !customHighlightEnabled) {return;}
 
   console.log('开始同步高亮自定义词组');
   performHighlighting();
@@ -550,7 +550,7 @@ function highlightCustomWordsInPage() {
 
 // 异步高亮自定义词组
 function highlightCustomWordsInPageAsync() {
-  if (!customWordTrie || !customHighlightEnabled) return;
+  if (!customWordTrie || !customHighlightEnabled) {return;}
 
   console.log('开始异步高亮自定义词组');
 
@@ -569,7 +569,7 @@ function highlightCustomWordsInPageAsync() {
 
 // 执行高亮的核心逻辑（优化异步版本）
 function performHighlighting() {
-  if (!customWordTrie || !customHighlightEnabled) return;
+  if (!customWordTrie || !customHighlightEnabled) {return;}
 
   console.log('开始执行异步高亮，词组数量:', customWordTrie.patterns.length);
 
@@ -654,7 +654,7 @@ function performAsyncHighlighting() {
 
 // 应用高亮组
 function applyHighlightGroups(customHighlightGroups) {
-  Object.keys(customHighlightGroups).forEach(groupName => {
+  Object.keys(customHighlightGroups).forEach((groupName) => {
     if (customHighlightGroups[groupName].size > 0) {
       CSS.highlights.set(groupName, new Highlight(...customHighlightGroups[groupName]));
     }
@@ -665,7 +665,7 @@ function applyHighlightGroups(customHighlightGroups) {
 
 // 应用高亮组（增量版本 - 与现有高亮合并）
 function applyHighlightGroupsIncremental(newHighlightGroups) {
-  Object.keys(newHighlightGroups).forEach(groupName => {
+  Object.keys(newHighlightGroups).forEach((groupName) => {
     if (newHighlightGroups[groupName].size > 0) {
       // 获取现有的高亮组
       const existingHighlight = CSS.highlights.get(groupName);
@@ -686,20 +686,20 @@ function applyHighlightGroupsIncremental(newHighlightGroups) {
 
 // 在单个文本节点中高亮自定义词组
 function highlightCustomWordsInNode(textNode, customHighlightGroups) {
-  if (!textNode || !textNode.textContent) return;
+  if (!textNode || !textNode.textContent) {return;}
 
   const text = textNode.textContent;
   const matches = customWordTrie.search(text);
 
-  if (matches.length === 0) return;
+  if (matches.length === 0) {return;}
 
   // 按位置排序，但允许重叠高亮
   matches.sort((a, b) => a.start - b.start);
 
-  if (matches.length === 0) return;
+  if (matches.length === 0) {return;}
 
   // 为每个匹配创建 Range 并添加到对应的高亮组（允许重叠）
-  matches.forEach(match => {
+  matches.forEach((match) => {
     const range = document.createRange();
     range.setStart(textNode, match.start);
     range.setEnd(textNode, match.end);
@@ -721,7 +721,7 @@ function highlightCustomWordsInNode(textNode, customHighlightGroups) {
 
 // 添加自定义高亮的 CSS 样式
 function addCustomHighlightStyles() {
-  if (document.getElementById('custom-highlight-styles')) return;
+  if (document.getElementById('custom-highlight-styles')) {return;}
 
   const style = document.createElement('style');
   style.id = 'custom-highlight-styles';
@@ -800,7 +800,7 @@ function addDOMObserver() {
   domObserver.observe(document.body, {
     childList: true,
     subtree: true,
-    characterData: true, // 添加文本内容变化监听，处理字幕刷新场景
+    characterData: true // 添加文本内容变化监听，处理字幕刷新场景
   });
 
   console.log('轻量级DOM变化监听器已启动（延迟处理，避免冲突）');
@@ -812,7 +812,7 @@ let explosionHighlightTimer = null;
 // 异步处理DOM变化
 function processDOMChanges(mutations) {
   // 检查是否有爆炸窗口的变化
-  const hasExplosionChange = mutations.some(mutation =>
+  const hasExplosionChange = mutations.some((mutation) =>
     mutation.target?.classList?.contains('word-explosion-content') ||
     mutation.target?.closest?.('.word-explosion-content')
   );
@@ -872,12 +872,12 @@ function checkDOMChangesForHighlight(mutations) {
                 if (isAllowedYouTubeElement(node)) {
                   // 获取元素内的所有文本节点
                   const textNodes = getTextNodesFromElement(node);
-                  textNodes.forEach(textNode => newTextNodes.add(textNode));
+                  textNodes.forEach((textNode) => newTextNodes.add(textNode));
                 }
               } else {
                 // 获取元素内的所有文本节点
                 const textNodes = getTextNodesFromElement(node);
-                textNodes.forEach(textNode => newTextNodes.add(textNode));
+                textNodes.forEach((textNode) => newTextNodes.add(textNode));
               }
             }
           }
@@ -890,7 +890,7 @@ function checkDOMChangesForHighlight(mutations) {
           mutation.target.classList?.contains('word-explosion-content') &&
           mutation.addedNodes.length > 0) {
         const allTextNodesInContainer = getTextNodesFromElement(mutation.target);
-        allTextNodesInContainer.forEach(textNode => newTextNodes.add(textNode));
+        allTextNodesInContainer.forEach((textNode) => newTextNodes.add(textNode));
       }
     } else if (mutation.type === 'characterData') {
       // 处理文本内容变化（字幕刷新场景）
@@ -926,20 +926,20 @@ function checkDOMChangesForHighlight(mutations) {
 
 // 清理指定文本节点的高亮
 function clearHighlightForTextNodes(textNodes) {
-  if (!textNodes || textNodes.length === 0) return;
+  if (!textNodes || textNodes.length === 0) {return;}
 
   console.log(`清理 ${textNodes.length} 个文本节点的旧高亮`);
 
   // 获取所有自定义高亮组
   const customGroups = ['custom-state0', 'custom-state1', 'custom-state2', 'custom-state3', 'custom-state4', 'custom-state5'];
 
-  textNodes.forEach(textNode => {
+  textNodes.forEach((textNode) => {
     // 同步清理 textNode 反向索引
     customRangeIndexByTextNode.delete(textNode);
 
     // 从 customWordRangesMap 中清理相关的 Range
     for (const [word, ranges] of customWordRangesMap) {
-      const filteredRanges = ranges.filter(rangeData => rangeData.textNode !== textNode);
+      const filteredRanges = ranges.filter((rangeData) => rangeData.textNode !== textNode);
       if (filteredRanges.length !== ranges.length) {
         if (filteredRanges.length > 0) {
           customWordRangesMap.set(word, filteredRanges);
@@ -950,7 +950,7 @@ function clearHighlightForTextNodes(textNodes) {
     }
 
     // 从 CSS.highlights 中移除包含该文本节点的 Range
-    customGroups.forEach(groupName => {
+    customGroups.forEach((groupName) => {
       const existingHighlight = CSS.highlights.get(groupName);
       if (existingHighlight) {
         const rangesToRemove = [];
@@ -966,7 +966,7 @@ function clearHighlightForTextNodes(textNodes) {
           }
         }
 
-        rangesToRemove.forEach(range => existingHighlight.delete(range));
+        rangesToRemove.forEach((range) => existingHighlight.delete(range));
 
         // 如果高亮组为空，删除整个组
         if (existingHighlight.size === 0) {
@@ -1000,7 +1000,7 @@ function getTextNodesFromElement(element) {
 
 // 增量高亮新增的文本节点
 function highlightCustomWordsInNewNodes(newTextNodes) {
-  if (!customWordTrie || !customHighlightEnabled || newTextNodes.length === 0) return;
+  if (!customWordTrie || !customHighlightEnabled || newTextNodes.length === 0) {return;}
 
   console.log(`开始增量高亮 ${newTextNodes.length} 个文本节点`);
 
@@ -1015,7 +1015,7 @@ function highlightCustomWordsInNewNodes(newTextNodes) {
   };
 
   // 处理每个文本节点
-  newTextNodes.forEach(textNode => {
+  newTextNodes.forEach((textNode) => {
     // 确保文本节点仍在DOM中
     if (document.contains(textNode)) {
       highlightCustomWordsInNode(textNode, customHighlightGroups);
@@ -1030,7 +1030,7 @@ function highlightCustomWordsInNewNodes(newTextNodes) {
 
 // 更新单个单词的高亮状态
 function updateSingleWordHighlight(word, newStatus) {
-  if (!customWordTrie || !customHighlightEnabled) return;
+  if (!customWordTrie || !customHighlightEnabled) {return;}
 
   console.log(`更新单词 "${word}" 的高亮状态为 ${newStatus}`);
 
@@ -1039,7 +1039,7 @@ function updateSingleWordHighlight(word, newStatus) {
   const newGroupName = `custom-state${newStatus}`;
 
   // 从所有高亮组中移除这个单词的高亮范围
-  allGroupNames.forEach(groupName => {
+  allGroupNames.forEach((groupName) => {
     const existingHighlight = CSS.highlights.get(groupName);
     if (existingHighlight) {
       const filteredRanges = [];
@@ -1069,13 +1069,13 @@ function updateSingleWordHighlight(word, newStatus) {
   const textNodes = getTextNodesOptimized(document.body);
   const newHighlightGroup = new Set();
 
-  textNodes.forEach(textNode => {
-    if (!textNode || !textNode.textContent) return;
+  textNodes.forEach((textNode) => {
+    if (!textNode || !textNode.textContent) {return;}
 
     const text = textNode.textContent;
     const matches = customWordTrie.search(text);
 
-    matches.forEach(match => {
+    matches.forEach((match) => {
       if (match.word && match.word.toLowerCase() === word.toLowerCase()) {
         const range = document.createRange();
         range.setStart(textNode, match.start);
@@ -1104,7 +1104,7 @@ function updateSingleWordHighlight(word, newStatus) {
 
 // 高亮单个新添加的词组
 function highlightSingleNewWord(word, status) {
-  if (!customWordTrie || !customHighlightEnabled) return;
+  if (!customWordTrie || !customHighlightEnabled) {return;}
 
   console.log(`高亮新添加的词组 "${word}"，状态: ${status}`);
 
@@ -1114,13 +1114,13 @@ function highlightSingleNewWord(word, status) {
   // 获取所有文本节点并查找匹配
   const textNodes = getTextNodesOptimized(document.body);
 
-  textNodes.forEach(textNode => {
-    if (!textNode || !textNode.textContent) return;
+  textNodes.forEach((textNode) => {
+    if (!textNode || !textNode.textContent) {return;}
 
     const text = textNode.textContent;
     const matches = customWordTrie.search(text);
 
-    matches.forEach(match => {
+    matches.forEach((match) => {
       if (match.word && match.word.toLowerCase() === word.toLowerCase()) {
         const range = document.createRange();
         range.setStart(textNode, match.start);
@@ -1166,7 +1166,7 @@ function removeSingleWordHighlight(word) {
   let totalRemoved = 0;
 
   // 从所有高亮组中移除这个单词的高亮范围
-  allGroupNames.forEach(groupName => {
+  allGroupNames.forEach((groupName) => {
     const existingHighlight = CSS.highlights.get(groupName);
     if (existingHighlight) {
       const filteredRanges = [];
@@ -1224,10 +1224,10 @@ function indexCustomRangeData(rangeData) {
 
 // 统一的指针移动处理（替代原 handleMouseOver + handleMouseMove）
 function handleCustomHighlightPointerMove(payload) {
-  if (!customHighlightEnabled) return;
+  if (!customHighlightEnabled) {return;}
   // 没有任何词组数据时直接退出，省掉每帧一次 caret 查询
   if (customWordRangesMap.size === 0) {
-    if (customQueryButtons.length > 0) scheduleHideAllCustomWordQueryButtons();
+    if (customQueryButtons.length > 0) {scheduleHideAllCustomWordQueryButtons();}
     return;
   }
 
@@ -1237,9 +1237,9 @@ function handleCustomHighlightPointerMove(payload) {
 
   // 检查鼠标是否在任何查询按钮上或按钮内部
   for (const button of customQueryButtons) {
-    if (!button) continue;
+    if (!button) {continue;}
     // 命中按钮子树时直接返回，不做隐藏逻辑
-    if (button === target || button.contains(target)) return;
+    if (button === target || button.contains(target)) {return;}
 
     // 坐标容错：鼠标刚移出按钮边缘时也算在按钮上
     const buttonRect = button.getBoundingClientRect();
@@ -1251,7 +1251,7 @@ function handleCustomHighlightPointerMove(payload) {
   }
 
   const hitTest = window.LingKumaHitTest;
-  if (!hitTest) return;
+  if (!hitTest) {return;}
 
   // 一次 caret 定位 -> 文本节点 + 偏移
   const located = hitTest.locate(mouseX, mouseY);
@@ -1273,9 +1273,9 @@ function handleCustomHighlightPointerMove(payload) {
   for (const rangeData of candidates) {
     const wordKey = rangeData.word.toLowerCase();
     // 跳过已删除的词组
-    if (!customWordDetails.has(wordKey)) continue;
-    if (seen.has(wordKey)) continue;
-    if (located.offset < rangeData.start || located.offset >= rangeData.end) continue;
+    if (!customWordDetails.has(wordKey)) {continue;}
+    if (seen.has(wordKey)) {continue;}
+    if (located.offset < rangeData.start || located.offset >= rangeData.end) {continue;}
 
     seen.add(wordKey);
     matchedWords.push(rangeData.word);
@@ -1291,7 +1291,7 @@ function handleCustomHighlightPointerMove(payload) {
 // 处理鼠标离开事件
 function handleMouseOut(event) {
   // 检查鼠标是否在任何查询按钮上
-  const isOnAnyButton = customQueryButtons.some(button =>
+  const isOnAnyButton = customQueryButtons.some((button) =>
     button && (button.contains(event.target) || event.target === button));
 
   if (isOnAnyButton) {
@@ -1396,7 +1396,7 @@ function showCustomWordQueryButton(word, mouseX, mouseY) {
 
   customQueryButton.style.left = left + 'px';
   customQueryButton.style.top = top + 'px';
-  
+
   // 设置初始词组数据和鼠标位置
   customQueryButton.setAttribute('data-current-word', word);
   customQueryButton.setAttribute('data-mouse-x', mouseX.toString());
@@ -1433,22 +1433,22 @@ function showCustomWordQueryButton(word, mouseX, mouseY) {
     scheduleHideCustomWordQueryButton();
     // console.log('鼠标离开查询按钮，开始延迟隐藏');
   });
-  
+
   document.body.appendChild(customQueryButton);
 }
 
 // 比较两个数组是否相等
 function arraysEqual(arr1, arr2) {
-  if (arr1.length !== arr2.length) return false;
+  if (arr1.length !== arr2.length) {return false;}
   for (let i = 0; i < arr1.length; i++) {
-    if (arr1[i] !== arr2[i]) return false;
+    if (arr1[i] !== arr2[i]) {return false;}
   }
   return true;
 }
 
 // 获取按钮实际宽度（使用auto宽度后测量）
 function getButtonActualWidth(button) {
-  if (!button) return 60;
+  if (!button) {return 60;}
 
   // 获取按钮的实际宽度
   const rect = button.getBoundingClientRect();
@@ -1458,7 +1458,7 @@ function getButtonActualWidth(button) {
 // 调整按钮位置（处理边界检查）
 function adjustButtonPositions(mouseX, mouseY) {
   customQueryButtons.forEach((button, index) => {
-    if (!button || !button.parentNode) return;
+    if (!button || !button.parentNode) {return;}
 
     const buttonWidth = getButtonActualWidth(button);
     const buttonHeight = 26;
@@ -1580,7 +1580,7 @@ function createCustomWordQueryButton(word, mouseX, mouseY, index) {
   let left = mouseX + scrollX - 15;
   let top = mouseY + scrollY - buttonHeight - gap - 10 - (index * verticalSpacing); // 额外向上10px
 
- 
+
 
   let multiButtonStyles = `
     position: absolute;
@@ -1624,7 +1624,7 @@ function createCustomWordQueryButton(word, mouseX, mouseY, index) {
 
   // HTML转义函数，防止特殊字符导致innerHTML出错
   const escapeHtml = (text) => {
-    if (!text) return '';
+    if (!text) {return '';}
     return text.toString()
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -1681,7 +1681,7 @@ function createCustomWordQueryButton(word, mouseX, mouseY, index) {
 
 // 更新查询按钮位置和词组信息
 function updateQueryButtonPosition(word, mouseX, mouseY) {
-  if (!customQueryButton) return;
+  if (!customQueryButton) {return;}
 
   // 更新按钮位置（使用页面坐标）
   const buttonWidth = 60;
@@ -1754,7 +1754,7 @@ function hideAllCustomWordQueryButtons() {
   }
 
   // 移除所有查询按钮
-  customQueryButtons.forEach(button => {
+  customQueryButtons.forEach((button) => {
     if (button && button.parentNode) {
       button.remove();
     }
@@ -1937,7 +1937,7 @@ function storeCustomWordRange(word, range, textNode, start, end) {
 
   // 检查是否已经存在相同文本节点和位置的Range，避免重复存储
   const existingRanges = customWordRangesMap.get(key);
-  const isDuplicate = existingRanges.some(rangeData =>
+  const isDuplicate = existingRanges.some((rangeData) =>
     rangeData.textNode === textNode &&
     rangeData.start === start &&
     rangeData.end === end
@@ -1961,7 +1961,7 @@ function storeCustomWordRange(word, range, textNode, start, end) {
 function clearCustomHighlights() {
   // 清除所有自定义高亮组
   const customGroups = ['custom-state0', 'custom-state1', 'custom-state2', 'custom-state3', 'custom-state4', 'custom-state5'];
-  customGroups.forEach(groupName => {
+  customGroups.forEach((groupName) => {
     CSS.highlights.delete(groupName);
   });
 
@@ -1986,7 +1986,7 @@ function clearTextNodeCache() {
 
     // 清除其他可能的缓存
     const elementsWithCache = document.querySelectorAll('[data-text-cache]');
-    elementsWithCache.forEach(element => {
+    elementsWithCache.forEach((element) => {
       delete element._textNodesCache;
       delete element._textNodesCacheTime;
       element.removeAttribute('data-text-cache');
@@ -2006,7 +2006,7 @@ function getTextNodes(element) {
       acceptNode: function(node) {
         // 跳过脚本、样式和扩展元素
         const parent = node.parentElement;
-        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (!parent) {return NodeFilter.FILTER_REJECT;}
 
         const tagName = parent.tagName.toLowerCase();
         if (['script', 'style', 'noscript'].includes(tagName)) {
@@ -2129,7 +2129,7 @@ function isAllowedYouTubeElement(parent) {
 
     while (currentElement && !isAllowedElement) {
       // 检查当前元素的ID
-      if (currentElement.id && allowedYoutubeIdentifiers.some(id => currentElement.id.includes(id))) {
+      if (currentElement.id && allowedYoutubeIdentifiers.some((id) => currentElement.id.includes(id))) {
         isAllowedElement = true;
         break;
       }
@@ -2137,7 +2137,7 @@ function isAllowedYouTubeElement(parent) {
       // 检查当前元素的classList
       if (currentElement.classList && currentElement.classList.length > 0) {
         const classList = Array.from(currentElement.classList);
-        if (classList.some(cls => allowedYoutubeIdentifiers.some(allowed => cls.includes(allowed)))) {
+        if (classList.some((cls) => allowedYoutubeIdentifiers.some((allowed) => cls.includes(allowed)))) {
           isAllowedElement = true;
           break;
         }
@@ -2146,7 +2146,7 @@ function isAllowedYouTubeElement(parent) {
       // 检查当前元素的className字符串（兼容性处理）
       if (typeof currentElement.className === 'string' && currentElement.className) {
         const classNames = currentElement.className.split(' ');
-        if (classNames.some(cls => allowedYoutubeIdentifiers.some(allowed => cls.includes(allowed)))) {
+        if (classNames.some((cls) => allowedYoutubeIdentifiers.some((allowed) => cls.includes(allowed)))) {
           isAllowedElement = true;
           break;
         }

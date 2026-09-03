@@ -6,15 +6,15 @@
 class CloudAPI {
   constructor() {
     // 官方认证服务器地址（硬编码）
-    //https://dashboard.lingkuma.org
-    //https://auth-lingkuma.chikai.de
+    // https://dashboard.lingkuma.org
+    // https://auth-lingkuma.chikai.de
     this.OFFICIAL_AUTH_SERVER = 'https://dashboard.lingkuma.org';
 
-    this.authServerURL = '';  // 认证服务器地址
-    this.dataServerURL = '';  // 数据服务器地址
+    this.authServerURL = ''; // 认证服务器地址
+    this.dataServerURL = ''; // 数据服务器地址
     this.token = '';
     this.isEnabled = false;
-    this.selfHosted = false;  // 是否自建服务器
+    this.selfHosted = false; // 是否自建服务器
   }
 
   /**
@@ -67,7 +67,7 @@ class CloudAPI {
           ...currentConfig,
           ...(config.authServerURL !== undefined && { authServerURL: config.authServerURL }),
           ...(config.dataServerURL !== undefined && { dataServerURL: config.dataServerURL }),
-          ...(config.serverURL !== undefined && { serverURL: config.serverURL }),  // 兼容旧版
+          ...(config.serverURL !== undefined && { serverURL: config.serverURL }), // 兼容旧版
           ...(config.token !== undefined && { token: config.token }),
           ...(config.username !== undefined && { username: config.username })
         };
@@ -150,7 +150,7 @@ class CloudAPI {
 
       if (data.success && data.data.token) {
         this.token = data.data.token;
-        this.dataServerURL = data.data.dataServer;  // 保存分配的数据服务器地址
+        this.dataServerURL = data.data.dataServer; // 保存分配的数据服务器地址
 
         await this.saveConfig({
           token: this.token,
@@ -192,7 +192,7 @@ class CloudAPI {
 
       if (data.success && data.data.token) {
         this.token = data.data.token;
-        this.dataServerURL = data.data.dataServer;  // 保存用户的数据服务器地址
+        this.dataServerURL = data.data.dataServer; // 保存用户的数据服务器地址
 
         await this.saveConfig({
           token: this.token,
@@ -401,7 +401,7 @@ class CloudAPI {
   async getAfdianAuthUrl(redirectUri, state) {
     const authServerUrl = this.OFFICIAL_AUTH_SERVER || 'https://lingkuma.org';
     const url = `${authServerUrl}/api/auth/afdian/authorize`;
-    
+
     const params = new URLSearchParams();
     if (redirectUri) {
       params.append('redirect_uri', redirectUri);
@@ -409,16 +409,16 @@ class CloudAPI {
     if (state) {
       params.append('state', state);
     }
-    
+
     const fullUrl = params.toString() ? `${url}?${params.toString()}` : url;
-    
+
     const response = await fetch(fullUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
       }
     });
-    
+
     return await response.json();
   }
 
@@ -432,15 +432,15 @@ class CloudAPI {
   async handleAfdianCallback(code, state, redirectUri) {
     const authServerUrl = this.OFFICIAL_AUTH_SERVER || 'https://lingkuma.org';
     const url = `${authServerUrl}/api/auth/afdian/callback`;
-    
+
     const params = new URLSearchParams({
       code,
       state,
       redirect_uri: redirectUri
     });
-    
+
     const fullUrl = `${url}?${params.toString()}`;
-    
+
     const response = await fetch(fullUrl, {
       method: 'GET',
       headers: {
@@ -448,13 +448,13 @@ class CloudAPI {
       },
       redirect: 'manual'
     });
-    
+
     // 对于Chrome扩展，回调会重定向到扩展URL，我们需要解析重定向
     if (response.type === 'opaqueredirect' || response.status === 302 || response.status === 301) {
       // 获取重定向URL
       const redirectUrl = response.headers.get('Location') || response.url;
       const urlObj = new URL(redirectUrl);
-      
+
       return {
         success: true,
         data: {
@@ -465,7 +465,7 @@ class CloudAPI {
         }
       };
     }
-    
+
     return await response.json();
   }
 }
@@ -474,7 +474,7 @@ class CloudAPI {
 const cloudAPI = new CloudAPI();
 
 // 初始化
-cloudAPI.init().catch(err => {
+cloudAPI.init().catch((err) => {
   console.error('[CloudAPI] Initialization failed:', err);
 });
 

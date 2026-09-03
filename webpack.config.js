@@ -35,7 +35,7 @@ module.exports = {
     highlight_floating_button: "./src/utils/highlight_floating_button.js",
     tts: "./src/plugin/tts.js",
     orion_tts: "./src/plugin/orion_tts.js",
-    edge_tts: "./src/plugin/edge_tts.js", 
+    edge_tts: "./src/plugin/edge_tts.js",
     content: "./src/content.js",
     // 其他入口保持不变
     background: './background.js',
@@ -50,7 +50,7 @@ module.exports = {
     // ],
     epubSplitter: './src/options/epubSplitter/epubSplitter.js',
     epubFormatter: './src/options/epubSplitter/epubFormatter.js',
-    epubToTelegraph: './src/options/epubToTelegraph/epubToTelegraph.js',  
+    epubToTelegraph: './src/options/epubToTelegraph/epubToTelegraph.js',
     offscreen: './src/player/offscreen.js',
     sidebar: './src/sidebar/sidebar.js'
   },
@@ -106,7 +106,7 @@ module.exports = {
       }
       if (pathData.chunk.name === 'a6_custom_highlight') {
         return 'src/service/a6_custom_highlight.js';
-      } 
+      }
       if (pathData.chunk.name === 'a7_words_boom') {
         return 'src/service/a7_words_boom.js';
       }
@@ -129,7 +129,7 @@ module.exports = {
       if (pathData.chunk.name === 'edge_tts') {
         return 'src/plugin/edge_tts.js';
       }
-      
+
 
       // 以下是原有的条件判断
       if (pathData.chunk.name === 'epubSplitter') {
@@ -140,62 +140,62 @@ module.exports = {
       }
       if (pathData.chunk.name === 'epubToTelegraph') {
         return 'src/options/epubToTelegraph/[name].js';
-      } 
+      }
 
 
-      if(pathData.chunk.name === 'popup'){
+      if (pathData.chunk.name === 'popup') {
         return 'src/popup/[name].js';
       }
-      if(pathData.chunk.name === 'options'){
+      if (pathData.chunk.name === 'options') {
         return 'src/options/[name].js';
       }
-      if(pathData.chunk.name === 'sidebar'){
+      if (pathData.chunk.name === 'sidebar') {
         return 'src/sidebar/[name].js';
       }
-      if(pathData.chunk.name === 'offscreen'){
+      if (pathData.chunk.name === 'offscreen') {
         return 'src/player/offscreen.js';
       }
-      if(pathData.chunk.name === 'content'){
+      if (pathData.chunk.name === 'content') {
         return 'src/content.js';
       }
-      if(pathData.chunk.name === 'background'){
+      if (pathData.chunk.name === 'background') {
         return 'background.js';
       }
-      if(pathData.chunk.name === 'cloudAPI'){
+      if (pathData.chunk.name === 'cloudAPI') {
         return 'src/utils/cloudAPI.js';
       }
-      if(pathData.chunk.name === 'dataAccessLayer'){
+      if (pathData.chunk.name === 'dataAccessLayer') {
         return 'src/utils/dataAccessLayer.js';
       }
 
       // 其他文件保持原位置
       return '[name].js';
     },
-    iife: false,        // 禁用立即执行函数表达式包装
-    module: false,      // 禁用模块模式
+    iife: false, // 禁用立即执行函数表达式包装
+    module: false // 禁用模块模式
   },
   optimization: {
     concatenateModules: false, // 禁用模块连接
-    minimize: true,           // 改为true启用混淆
+    minimize: true, // 改为true启用混淆
     minimizer: [
       new TerserPlugin({
         terserOptions: {
           format: {
-            comments: false,   // 删除所有注释
-            ascii_only: true,  // 将非ASCII字符(如中文、日文)转换为Unicode编码
+            comments: false, // 删除所有注释
+            ascii_only: true // 将非ASCII字符(如中文、日文)转换为Unicode编码
           },
           compress: {
-            drop_console: true, // 修改为true以删除所有console语句
-          },
+            drop_console: true // 修改为true以删除所有console语句
+          }
         },
-        extractComments: false, // 不提取注释到单独文件
-      }),
+        extractComments: false // 不提取注释到单独文件
+      })
     ],
-    runtimeChunk: false,      // 禁用运行时chunk
-    moduleIds: 'named',       // 使用命名模块ID
-    splitChunks: false,       // 禁用代码分割
-    usedExports: false,       // 禁用未使用导出分析
-    providedExports: false,   // 禁用提供导出分析
+    runtimeChunk: false, // 禁用运行时chunk
+    moduleIds: 'named', // 使用命名模块ID
+    splitChunks: false, // 禁用代码分割
+    usedExports: false, // 禁用未使用导出分析
+    providedExports: false // 禁用提供导出分析
   },
   plugins: [
     new CleanWebpackPlugin(),
@@ -204,77 +204,77 @@ module.exports = {
     new CopyPlugin({
       patterns: [
 
-        //{ from: 'manifest-firefox.json', to: 'manifest.json' },
-        //{ from: 'manifest-firefox-local.json', to: 'manifest.json' },
+        // { from: 'manifest-firefox.json', to: 'manifest.json' },
+        // { from: 'manifest-firefox-local.json', to: 'manifest.json' },
         { from: 'manifest.json', to: 'manifest.json' },
         { from: 'content.css', to: '' },
-        { from: 'src/options/epubSplitter/jszip.min.js', to: 'src/options/epubSplitter/jszip.min.js',info: { minimized: true }}, // 告诉webpack这已经是压缩文件，不要处理
-        { from: 'src/options/epubSplitter/FileSaver.min.js', to: 'src/options/epubSplitter/FileSaver.min.js',info: { minimized: true } },// 告诉webpack这已经是压缩文件，不要处理
-        { from: 'src/icons/**/*', to: 'src/icons/[name][ext]' ,info: { minimized: true }},
-        { from: 'src/popup/img/**/*', to: 'src/popup/img/[name][ext]' ,info: { minimized: true }},
-        { from: 'src/options/images/**/*', to: 'src/options/images/[name][ext]' ,info: { minimized: true }},
-        { from: 'src/options/webdav/webdav.js', to: 'src/options/webdav/webdav.js' ,info: { minimized: true }},
-        { from: 'src/options/chars/chart.js', to: 'src/options/chars/chart.js' ,info: { minimized: true }},
-        { from: 'src/options/chars/chartjs-adapter-date-fns.js', to: 'src/options/chars/chartjs-adapter-date-fns.js' ,info: { minimized: true }},
-        { from: 'src/plugin/youtubeCaptionInjected.js', to: 'src/plugin/youtubeCaptionInjected.js' ,info: { minimized: true }},
-        { from: 'src/options/liquid-group/**/*', to: 'src/options/liquid-group/[name][ext]' ,info: { minimized: true }},
-        { from: 'src/service/image/lottie/*.tgs', to: 'src/service/image/lottie/[name][ext]',info: { minimized: true }},
-        { from: 'src/service/image/lottie/tgs-balloon.html', to: 'src/service/image/lottie/tgs-balloon.html',info: { minimized: true }},
-        { from: 'src/service/image/lottie/tgs-balloon.js', to: 'src/service/image/lottie/tgs-balloon.js',info: { minimized: true }},
-        { from: 'src/utils/tgs-player.min.js', to: 'src/utils/tgs-player.min.js',info: { minimized: true }},
+        { from: 'src/options/epubSplitter/jszip.min.js', to: 'src/options/epubSplitter/jszip.min.js', info: { minimized: true } }, // 告诉webpack这已经是压缩文件，不要处理
+        { from: 'src/options/epubSplitter/FileSaver.min.js', to: 'src/options/epubSplitter/FileSaver.min.js', info: { minimized: true } }, // 告诉webpack这已经是压缩文件，不要处理
+        { from: 'src/icons/**/*', to: 'src/icons/[name][ext]', info: { minimized: true } },
+        { from: 'src/popup/img/**/*', to: 'src/popup/img/[name][ext]', info: { minimized: true } },
+        { from: 'src/options/images/**/*', to: 'src/options/images/[name][ext]', info: { minimized: true } },
+        { from: 'src/options/webdav/webdav.js', to: 'src/options/webdav/webdav.js', info: { minimized: true } },
+        { from: 'src/options/chars/chart.js', to: 'src/options/chars/chart.js', info: { minimized: true } },
+        { from: 'src/options/chars/chartjs-adapter-date-fns.js', to: 'src/options/chars/chartjs-adapter-date-fns.js', info: { minimized: true } },
+        { from: 'src/plugin/youtubeCaptionInjected.js', to: 'src/plugin/youtubeCaptionInjected.js', info: { minimized: true } },
+        { from: 'src/options/liquid-group/**/*', to: 'src/options/liquid-group/[name][ext]', info: { minimized: true } },
+        { from: 'src/service/image/lottie/*.tgs', to: 'src/service/image/lottie/[name][ext]', info: { minimized: true } },
+        { from: 'src/service/image/lottie/tgs-balloon.html', to: 'src/service/image/lottie/tgs-balloon.html', info: { minimized: true } },
+        { from: 'src/service/image/lottie/tgs-balloon.js', to: 'src/service/image/lottie/tgs-balloon.js', info: { minimized: true } },
+        { from: 'src/utils/tgs-player.min.js', to: 'src/utils/tgs-player.min.js', info: { minimized: true } },
         { from: '_locales', to: '_locales', noErrorOnMissing: true },
-        { from: 'src/utils/lingqBlocker.js', to: 'src/utils/lingqBlocker.js' ,info: { minimized: true }},
-        { from: 'src/plugin/youtubeVideoOverlay.js', to: 'src/plugin/youtubeVideoOverlay.js' ,info: { minimized: true }},
-        { from: 'src/plugin/min/*.js', to: 'src/plugin/min/[name][ext]' ,info: { minimized: true }},
-        { from: 'src/utils/language-detector/eld.extrasmall.global.js', to: 'src/utils/language-detector/eld.extrasmall.global.js' ,info: { minimized: true }},
-        { from: 'src/plugin/pos-highlight.js', to: 'src/plugin/pos-highlight.js' ,info: { minimized: true }},
-        
+        { from: 'src/utils/lingqBlocker.js', to: 'src/utils/lingqBlocker.js', info: { minimized: true } },
+        { from: 'src/plugin/youtubeVideoOverlay.js', to: 'src/plugin/youtubeVideoOverlay.js', info: { minimized: true } },
+        { from: 'src/plugin/min/*.js', to: 'src/plugin/min/[name][ext]', info: { minimized: true } },
+        { from: 'src/utils/language-detector/eld.extrasmall.global.js', to: 'src/utils/language-detector/eld.extrasmall.global.js', info: { minimized: true } },
+        { from: 'src/plugin/pos-highlight.js', to: 'src/plugin/pos-highlight.js', info: { minimized: true } }
+
         // { from: 'src/options/options.js', to: 'src/options/options.js' ,info: { minimized: true }},
         // 添加其他需要复制的资源
-      ],
+      ]
     }),
 
     // 生成HTML文件
     new HtmlWebpackPlugin({
       template: './src/popup/popup.html',
       filename: 'src/popup/popup.html',
-      chunks: ['popup'],
+      chunks: ['popup']
     }),
     new HtmlWebpackPlugin({
       template: './src/options/options.html',
       filename: 'src/options/options.html',
-      chunks: ['options'],
+      chunks: ['options']
     }),
     new HtmlWebpackPlugin({
       template: './src/options/epubSplitter/epubSplitter.html',
       filename: 'src/options/epubSplitter/epubSplitter.html',
       chunks: ['epubSplitter'],
-      inject: false,
+      inject: false
     }),
     new HtmlWebpackPlugin({
       template: './src/options/epubToTelegraph/epubToTelegraph.html',
       filename: 'src/options/epubToTelegraph/epubToTelegraph.html',
       chunks: ['epubToTelegraph'],
-      inject: false,
+      inject: false
     }),
     new HtmlWebpackPlugin({
       template: './src/player/offscreen.html',
       filename: 'src/player/offscreen.html',
       chunks: ['offscreen'],
-      inject: false,
+      inject: false
     }),
     new HtmlWebpackPlugin({
       template: './src/sidebar/sidebar.html',
       filename: 'src/sidebar/sidebar.html',
       chunks: ['sidebar'],
-      inject: false,
-    }),
+      inject: false
+    })
   ],
   resolve: {
     extensions: ['.js'],
     modules: [path.resolve(__dirname, 'src'), 'node_modules']
   },
   module: {
-    rules: []  // 移除所有规则
+    rules: [] // 移除所有规则
   }
 };

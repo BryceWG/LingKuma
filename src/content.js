@@ -48,7 +48,7 @@ window.addEventListener('unhandledrejection', function(event) {
 // 新增辅助函数：标准化文本，替换所有空白符和软连字符为单个空格，并 trim
 // =======================
 function normalizeText(text) {
-  if (!text) return "";
+  if (!text) {return "";}
   // 替换软连字符为空字符串（因为它们通常不占空间）
   let normalized = text.replace(/\u00AD/g, '');
   // 替换所有空白字符（包括 \s 和 \u00A0 非断行空格）为单个普通空格
@@ -60,7 +60,7 @@ function normalizeText(text) {
 // 新增辅助函数：标准化文本并移除引用标记（用于句子提取和 Range 创建）
 // 这个函数的规范化逻辑必须与遍历时的规范化逻辑保持一致
 function normalizeTextForSentence(text) {
-  if (!text) return "";
+  if (!text) {return "";}
   // 移除引用标记 [\d+]
   let normalized = text.replace(/\[\d+\]/g, '');
   // 替换软连字符为空字符串
@@ -180,13 +180,13 @@ function isAllowedYouTubeElement(parent) {
 
     while (currentElement && !isAllowedElement) {
       const tagName = (currentElement.tagName || '').toLowerCase();
-      if (allowedYoutubeIdentifiers.some(identifier => tagName === identifier)) {
+      if (allowedYoutubeIdentifiers.some((identifier) => tagName === identifier)) {
         isAllowedElement = true;
         break;
       }
 
       // 检查当前元素的ID
-      if (currentElement.id && allowedYoutubeIdentifiers.some(id => currentElement.id.includes(id))) {
+      if (currentElement.id && allowedYoutubeIdentifiers.some((id) => currentElement.id.includes(id))) {
         isAllowedElement = true;
         break;
       }
@@ -194,7 +194,7 @@ function isAllowedYouTubeElement(parent) {
       // 检查当前元素的classList
       if (currentElement.classList && currentElement.classList.length > 0) {
         const classList = Array.from(currentElement.classList);
-        if (classList.some(cls => allowedYoutubeIdentifiers.some(allowed => cls.includes(allowed)))) {
+        if (classList.some((cls) => allowedYoutubeIdentifiers.some((allowed) => cls.includes(allowed)))) {
           isAllowedElement = true;
           break;
         }
@@ -203,7 +203,7 @@ function isAllowedYouTubeElement(parent) {
       // 检查当前元素的className字符串（兼容性处理）
       if (typeof currentElement.className === 'string' && currentElement.className) {
         const classNames = currentElement.className.split(' ');
-        if (classNames.some(cls => allowedYoutubeIdentifiers.some(allowed => cls.includes(allowed)))) {
+        if (classNames.some((cls) => allowedYoutubeIdentifiers.some((allowed) => cls.includes(allowed)))) {
           isAllowedElement = true;
           break;
         }
@@ -221,7 +221,7 @@ function isAllowedYouTubeElement(parent) {
 // 新增辅助函数：根据单词所在 range 获取所在句子
 // =======================
 function isInlineSentenceFragment(element) {
-  if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
+  if (!element || element.nodeType !== Node.ELEMENT_NODE) {return false;}
   const display = window.getComputedStyle(element).display;
   return display === 'inline';
 }
@@ -265,11 +265,11 @@ function getSentenceForWord(detail) {
   //   startContainerText: detail.range?.startContainer?.textContent?.substring(0, 50),
   //   startOffset: detail.range?.startOffset
   // });
-  
+
   // 新增：检查 detail 和其必要属性是否有效
   if (!detail || !detail.range || !detail.range.startContainer) {
-    //console.error('[getSentenceForWord] 传入的 detail 或其 range/startContainer 无效。', detail);
-    return {sentence: "", range: null}; // 无效则返回空对象
+    // console.error('[getSentenceForWord] 传入的 detail 或其 range/startContainer 无效。', detail);
+    return { sentence: "", range: null }; // 无效则返回空对象
   }
   // console.log("=== [Debug] 开始获取句子 for word:", detail.word, "Container:", detail.range.startContainer, "Offset:", detail.range.startOffset);
   let container = detail.range.startContainer;
@@ -290,14 +290,14 @@ function getSentenceForWord(detail) {
   // 添加过滤器,只收集可见元素中的文本节点
   let rawFullTextBuilder = "";
   const isYouTube = window.location.hostname.includes('youtube.com');
-  
+
   // 使用找到的父元素作为遍历起点。内联片段（span/strong/em/a 等）不能作为句子边界，
   // 否则同一句被多个内联标签切开时只能拿到当前标签内的文本。
   const traversalParent = getSentenceTraversalParentFromRange(detail.range, parent, MIN_TEXT_LENGTH);
   // console.log('[getSentenceForWord] TreeWalker 遍历起点元素:', traversalParent);
   // console.log('[getSentenceForWord] traversalParent 标签名:', traversalParent.tagName);
   // console.log('[getSentenceForWord] traversalParent 文本内容:', traversalParent.textContent?.substring(0, 100));
-  
+
   const walker = document.createTreeWalker(
     traversalParent,
     NodeFilter.SHOW_TEXT,
@@ -332,19 +332,19 @@ function getSentenceForWord(detail) {
   let lastParentElement = null; // 记录上一个文本节点的父元素
   let lastBlockAncestor = null; // 记录上一个文本节点的最近块级祖先元素
   let lastTextNode = null; // 记录上一个文本节点，用于检测 br 标签
-  
+
   // 辅助函数：检测两个文本节点之间是否有 br 标签
   function hasBrBetween(node1, node2) {
-    if (!node1 || !node2) return false;
-    
+    if (!node1 || !node2) {return false;}
+
     // 获取两个节点的共同祖先
     let ancestor = node1.parentElement;
     while (ancestor) {
-      if (ancestor.contains(node2)) break;
+      if (ancestor.contains(node2)) {break;}
       ancestor = ancestor.parentElement;
     }
-    if (!ancestor) return false;
-    
+    if (!ancestor) {return false;}
+
     // 使用更简单的方法：遍历共同祖先的所有后代节点，检查两个文本节点之间是否有 br 标签
     const walker = document.createTreeWalker(
       ancestor,
@@ -352,7 +352,7 @@ function getSentenceForWord(detail) {
       null,
       false
     );
-    
+
     let foundFirst = false;
     let currentNode;
     while ((currentNode = walker.nextNode())) {
@@ -372,26 +372,26 @@ function getSentenceForWord(detail) {
     }
     return false;
   }
-  
+
   // 新增：记录规范化文本中每个字符对应的原始文本位置和节点信息
   // 用于创建跨元素的 Range（同时移除引用标记）
   const normalizedCharMap = []; // 每个元素: {node, originalOffset}
   let normalizedTextBuilder = ""; // 同时构建规范化文本（已移除引用标记）
-  
+
   // 获取当前单词所在的文本节点和偏移量，用于在遍历时计算 offset
-  const wordTextNode = detail.range.startContainer.nodeType === Node.TEXT_NODE 
-    ? detail.range.startContainer 
+  const wordTextNode = detail.range.startContainer.nodeType === Node.TEXT_NODE
+    ? detail.range.startContainer
     : null;
   const wordStartOffset = detail.range.startOffset;
   let offset = -1; // 将在遍历时计算
-  
+
   // console.log('[getSentenceForWord] 开始遍历，traversalParent:', traversalParent.tagName, traversalParent.className);
   // console.log('[getSentenceForWord] wordTextNode:', wordTextNode?.textContent?.substring(0, 30), 'wordStartOffset:', wordStartOffset);
-  
+
   while ((currentNode = walker.nextNode())) {
     // console.log('[getSentenceForWord] 遍历到文本节点:', currentNode.textContent?.substring(0, 50));
     const currentParentElement = currentNode.parentElement;
-    
+
     // 检查是否是单词所在的文本节点，如果是则计算 offset
     if (currentNode === wordTextNode && offset === -1) {
       // 计算单词在 normalizedTextBuilder 中的位置
@@ -399,10 +399,10 @@ function getSentenceForWord(detail) {
       let normalizedOffsetInNode = 0;
       let originalPos = 0;
       const nodeText = currentNode.textContent || "";
-      
+
       while (originalPos < wordStartOffset) {
         const char = nodeText[originalPos];
-        
+
         // 引用标记被移除，不计入规范化偏移
         if (char === '[' && originalPos + 1 < nodeText.length) {
           const restOfText = nodeText.substring(originalPos);
@@ -412,13 +412,13 @@ function getSentenceForWord(detail) {
             continue;
           }
         }
-        
+
         // 软连字符被移除，不计入规范化偏移
         if (char === '\u00AD') {
           originalPos++;
           continue;
         }
-        
+
         // 空白字符被合并为单个空格
         if (/[\s\u00A0]/.test(char)) {
           // 跳过连续空白，但只增加一个规范化偏移
@@ -431,41 +431,41 @@ function getSentenceForWord(detail) {
           originalPos++;
         }
       }
-      
+
       offset = normalizedTextBuilder.length + normalizedOffsetInNode;
       // console.log('[getSentenceForWord] 计算出的 offset:', offset, 'normalizedOffsetInNode:', normalizedOffsetInNode);
     }
-    
+
     // 查找当前文本节点的最近块级祖先元素
     let currentBlockAncestor = currentParentElement;
     while (currentBlockAncestor && currentBlockAncestor !== traversalParent && !isBlockElement(currentBlockAncestor)) {
       currentBlockAncestor = currentBlockAncestor.parentElement;
     }
-    
+
     // 检查是否跨越了块级元素边界
     if (lastBlockAncestor && currentBlockAncestor && currentBlockAncestor !== lastBlockAncestor) {
       // 如果跨越了块级元素边界，添加空格
       rawFullTextBuilder += ' ';
       // 记录规范化文本中的空格（块边界产生的空格）
       normalizedTextBuilder += ' ';
-      normalizedCharMap.push({node: lastParentElement ? lastParentElement.firstChild : null, originalOffset: 0, isBlockBoundary: true});
+      normalizedCharMap.push({ node: lastParentElement ? lastParentElement.firstChild : null, originalOffset: 0, isBlockBoundary: true });
     }
     // 检查两个文本节点之间是否有 br 标签
     else if (lastTextNode && hasBrBetween(lastTextNode, currentNode)) {
       // 如果有 br 标签，添加空格
       rawFullTextBuilder += ' ';
       normalizedTextBuilder += ' ';
-      normalizedCharMap.push({node: lastParentElement ? lastParentElement.firstChild : null, originalOffset: 0, isBrBoundary: true});
+      normalizedCharMap.push({ node: lastParentElement ? lastParentElement.firstChild : null, originalOffset: 0, isBrBoundary: true });
     }
-    
+
     const nodeText = currentNode.textContent || "";
     rawFullTextBuilder += nodeText; // 获取原始文本
-    
+
     // 构建规范化文本并记录映射（同时处理引用标记）
     let originalOffset = 0;
     while (originalOffset < nodeText.length) {
       const char = nodeText[originalOffset];
-      
+
       // 检查是否是引用标记 [\d+]
       if (char === '[' && originalOffset + 1 < nodeText.length) {
         const restOfText = nodeText.substring(originalOffset);
@@ -476,13 +476,13 @@ function getSentenceForWord(detail) {
           continue;
         }
       }
-      
+
       // 软连字符在规范化时被删除，跳过
       if (char === '\u00AD') {
         originalOffset++;
         continue;
       }
-      
+
       // 空白字符在规范化时被替换为单个空格
       if (/[\s\u00A0]/.test(char)) {
         // 跳过连续的空白字符
@@ -492,27 +492,27 @@ function getSentenceForWord(detail) {
         }
         // 只记录一个规范化空格
         normalizedTextBuilder += ' ';
-        normalizedCharMap.push({node: currentNode, originalOffset: spaceStartOffset, isSpace: true});
+        normalizedCharMap.push({ node: currentNode, originalOffset: spaceStartOffset, isSpace: true });
       } else {
         // 普通字符
         normalizedTextBuilder += char;
-        normalizedCharMap.push({node: currentNode, originalOffset: originalOffset});
+        normalizedCharMap.push({ node: currentNode, originalOffset: originalOffset });
         originalOffset++;
       }
     }
-    
+
     lastParentElement = currentParentElement; // 更新上一个父元素
     lastBlockAncestor = currentBlockAncestor; // 更新上一个块级祖先元素
     lastTextNode = currentNode; // 更新上一个文本节点
   }
-  //console.log('[getSentenceForWord] TreeWalker 构建的 rawFullText:', rawFullTextBuilder.substring(0, 200));
-  //console.log('[getSentenceForWord] rawFullText 总长度:', rawFullTextBuilder.length);
+  // console.log('[getSentenceForWord] TreeWalker 构建的 rawFullText:', rawFullTextBuilder.substring(0, 200));
+  // console.log('[getSentenceForWord] rawFullText 总长度:', rawFullTextBuilder.length);
 
   // --- 步骤 2-5: Offset 已在遍历时计算 ---
-  
+
   if (offset === -1) {
       // console.error("未能计算 Offset");
-      return {sentence: "", range: null};
+      return { sentence: "", range: null };
   }
   // console.log('[getSentenceForWord] 最终 offset:', offset);
   // --- 结束 Range Offset 计算 ---
@@ -540,7 +540,7 @@ function getSentenceForWord(detail) {
     '。」', '？」', '！」',
     '。』', '？』', '！』',
     '。］', '？］', '！］',
-    '。）', '？）', '！）',')','）',
+    '。）', '？）', '！）', ')', '）',
     '。\n', '？\n', '！\n', // 注意：\n 理论上已被 normalizeText 替换为空格
     '\n\n', // 注意：同上
     '^',
@@ -557,9 +557,9 @@ function getSentenceForWord(detail) {
   // 重新排序 startMarkers，将更长或带空格的放前面，增加仅标点的作为后备
   const orderedStartMarkers = [
     '. ', '? ', '! ', '.] ', '?] ', '!] ', '." ', '?" ', '!" ', '다. ', '까? ', '어! ', '; ', '…… ', '... ', // 长/带空格
-    '.', '?', '!', '。', '？', '！', '。」', '？」', '！」', '。』', '？』', '！』', '。］', '？］', '！］', '。）', '？）', '！）', '；' ,// 短/无空格/CJK
-    ')','）',
-    '： ','：',
+    '.', '?', '!', '。', '？', '！', '。」', '？」', '！」', '。』', '？』', '！』', '。］', '？］', '！］', '。）', '？）', '！）', '；', // 短/无空格/CJK
+    ')', '）',
+    '： ', '：'
   ];
 
   // Find the last occurrence of any sentence-ending marker *before* the word
@@ -601,7 +601,7 @@ function getSentenceForWord(detail) {
     sentenceStart = tentativeStart; // 最终的句子起始位置
 
     // Log the found marker and calculated start position
-    //console.log('[getSentenceForWord] 找到的句子开始标记:', foundStartMarker, '原始位置:', lastStartPos, '计算出的 sentenceStart (在标准化文本中，跳过空格后):', sentenceStart);
+    // console.log('[getSentenceForWord] 找到的句子开始标记:', foundStartMarker, '原始位置:', lastStartPos, '计算出的 sentenceStart (在标准化文本中，跳过空格后):', sentenceStart);
  }
 
 
@@ -627,7 +627,7 @@ function getSentenceForWord(detail) {
     '。』', '！』', '？』',
     '。）', '！）', '？）',
     '.', '?', '!', // 无空格后备
-    '。', '！', '？', // CJK 无引号
+    '。', '！', '？' // CJK 无引号
     // '\n\n' // 理论上已被 normalizeText 替换为空格
   ];
   let foundEndMarker = null;
@@ -686,21 +686,21 @@ function getSentenceForWord(detail) {
   // 判断是否需要扩展句子 (逻辑不变，但在标准化句子上操作)
   const needsExtension = () => {
     // 如果句子已经达到最大长度，不需要扩展
-    if (sentence.length >= MAX_SENTENCE_LENGTH) return false;
+    if (sentence.length >= MAX_SENTENCE_LENGTH) {return false;}
 
     // 如果句子以标点符号结尾，不需要扩展
-    if (/[。！？\.\!\?]$/.test(sentence)) return false;
+    if (/[。！？\.\!\?]$/.test(sentence)) {return false;}
 
     // 如果句子长度小于最小长度，需要扩展
-    if (sentence.length < MIN_SENTENCE_LENGTH) return true;
+    if (sentence.length < MIN_SENTENCE_LENGTH) {return true;}
 
     // 如果句子中包含未闭合的引号或括号，需要扩展
     const quotes = (sentence.match(/[「『（]/g) || []).length;
     const closeQuotes = (sentence.match(/[」』）]/g) || []).length;
-    if (quotes > closeQuotes) return true;
+    if (quotes > closeQuotes) {return true;}
 
     // 如果句子以逗号结尾，需要扩展
-    if (sentence.endsWith('、')) return true;
+    if (sentence.endsWith('、')) {return true;}
 
     return false;
   };
@@ -733,7 +733,7 @@ function getSentenceForWord(detail) {
 
   // console.log('[getSentenceForWord] 最终返回的句子:', sentence);
   // console.log('[getSentenceForWord] 最终句子长度:', sentence.length);
-  
+
   // --- 新增：创建句子的 Range 对象 ---
   let sentenceRange = null;
   try {
@@ -741,13 +741,13 @@ function getSentenceForWord(detail) {
     if (normalizedCharMap.length > 0 && sentenceRangeStart < normalizedCharMap.length) {
       // 找到起始位置
       let startInfo = normalizedCharMap[sentenceRangeStart];
-      
+
       // 找到结束位置（sentenceRangeEnd 是 exclusive，所以用 sentenceRangeEnd - 1）
       let endInfo = normalizedCharMap[Math.min(sentenceRangeEnd - 1, normalizedCharMap.length - 1)];
-      
+
       if (startInfo && endInfo && startInfo.node && endInfo.node) {
         sentenceRange = document.createRange();
-        
+
         // 设置起始位置
         let startOffset = startInfo.originalOffset;
         // 如果起始位置是空格，需要找到空格的实际起始位置
@@ -755,7 +755,7 @@ function getSentenceForWord(detail) {
           // 空格的 originalOffset 已经是空格的起始位置
         }
         sentenceRange.setStart(startInfo.node, startOffset);
-        
+
         // 设置结束位置（需要 +1 因为 Range 的 end 是 exclusive）
         let endOffset = endInfo.originalOffset + 1;
         // 如果结束位置是空格，需要找到空格的结束位置
@@ -773,14 +773,14 @@ function getSentenceForWord(detail) {
     // 创建 Range 失败，忽略错误，继续返回句子
     console.warn('[getSentenceForWord] 创建 Range 失败:', e);
   }
-  
+
   // 返回句子和 Range（保持向后兼容，如果只需要句子，调用方可以忽略 range）
-  return {sentence, range: sentenceRange};
+  return { sentence, range: sentenceRange };
 }
 
 // 辅助函数：判断元素是否为块级元素
 function isBlockElement(element) {
-  if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
+  if (!element || element.nodeType !== Node.ELEMENT_NODE) {return false;}
   const display = window.getComputedStyle(element).display;
   return display === 'block' || display === 'flex' || display === 'grid';
 }
@@ -802,7 +802,7 @@ function handleWordAnalysis() {
     console.log("用户触发后；word:  ", word);
     if (word) {
       console.log("鼠标所在单词为:", word);
-      let wordRangesArrays   = wordRangesMap.get(word.toLowerCase());
+      let wordRangesArrays = wordRangesMap.get(word.toLowerCase());
       console.log("wordRangesArrays:  ", wordRangesArrays);
       for (const detail of wordRangesArrays) {
         console.log("detail:  ", detail);
@@ -823,7 +823,7 @@ function handleWordAnalysis() {
     }
 
     if (hoveredDetail) {
-      const {sentence, range: sentenceRange} = getSentenceForWord(hoveredDetail);
+      const { sentence, range: sentenceRange } = getSentenceForWord(hoveredDetail);
 
       // 播放句子 TTS
       try {
@@ -867,8 +867,8 @@ async function showAnalysisWindow(word, sentence, hoveredRect) {
   analysisWindow.setAttribute('data-extension-element', 'true');
 
   // 防止鼠标事件穿透
-  ['mousemove', 'mouseenter', 'click'].forEach(eventName => {
-    analysisWindow.addEventListener(eventName, e => e.stopPropagation());
+  ['mousemove', 'mouseenter', 'click'].forEach((eventName) => {
+    analysisWindow.addEventListener(eventName, (e) => e.stopPropagation());
   });
 
   // 先添加到DOM以获取尺寸，但设置为不可见以防止闪烁
@@ -992,7 +992,7 @@ async function showAnalysisWindow(word, sentence, hoveredRect) {
 
   // === 应用缩放变换 ===
   // 添加CSS变换以抵消浏览器缩放
-  analysisWindow.style.transform = `scale(${1/zoomFactor})`;
+  analysisWindow.style.transform = `scale(${1 / zoomFactor})`;
   // 设置变换原点为左上角，确保缩放时基于左上角
   analysisWindow.style.transformOrigin = "left top";
 
@@ -1066,7 +1066,7 @@ async function showAnalysisWindow(word, sentence, hoveredRect) {
   // 发送消息的函数
   const sendMessage = async () => {
     const userMessage = inputField.value.trim();
-    if (!userMessage || isProcessing) return;
+    if (!userMessage || isProcessing) {return;}
 
     isProcessing = true;
     sendBtn.disabled = true;
@@ -1132,7 +1132,7 @@ function highlightSentence(detail, sentence) {
     if (startOffset === -1) {
       // 如果找不到完整句子，尝试使用部分匹配
       const words = sentence.split(/\s+/);
-      const wordIndex = words.findIndex(w => w.includes(detail.word));
+      const wordIndex = words.findIndex((w) => w.includes(detail.word));
       if (wordIndex !== -1) {
         const beforeWords = words.slice(0, wordIndex).join(' ');
         const afterWords = words.slice(wordIndex + 1).join(' ');
@@ -1210,7 +1210,7 @@ function highlightSentence(detail, sentence) {
 
  // 格式化内容，添加简单的Markdown解析
 function formatContent(content) {
-  if (!content) return '';
+  if (!content) {return '';}
 
 
   // 为拉丁字母文本添加特定样式
@@ -1236,7 +1236,7 @@ function formatContent(content) {
 
 // 添加函数：检测页面是否为暗色模式
 function isDarkMode() {
-  let limit=100;
+  let limit = 100;
   let textElements = [];
   let walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
   let count = 0;
@@ -1259,9 +1259,9 @@ function isDarkMode() {
   }
 
   // 过滤掉空文本节点
-  textElements = textElements.filter(element => element.text.length > 0);
+  textElements = textElements.filter((element) => element.text.length > 0);
 
-  let darkCount = textElements.filter(element => element.isDark).length;
+  let darkCount = textElements.filter((element) => element.isDark).length;
   let lightCount = textElements.length - darkCount;
 
   console.log("lightCount:", lightCount, "darkCount:", darkCount);
@@ -1408,7 +1408,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               content: content,
               isFirstChunk: isFirstChunk
             }
-          }).catch(err => console.log("发送流式更新失败:", err));
+          }).catch((err) => console.log("发送流式更新失败:", err));
         }
       }
     }
@@ -1437,7 +1437,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               content: `分析出错: ${error}`,
               isFirstChunk: true
             }
-          }).catch(err => console.log("发送错误信息失败:", err));
+          }).catch((err) => console.log("发送错误信息失败:", err));
         }
       }
     }
@@ -1448,7 +1448,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // 处理单词限制通知
   else if (message.action === "showWordLimitNotification") {
     showWordLimitNotification(message.message);
-    sendResponse({success: true});
+    sendResponse({ success: true });
     return true;
   }
   // 处理Orion TTS相关消息 - 这些消息会被orion_tts.js处理，这里只是为了兼容性
@@ -1458,7 +1458,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
            message.action === "stopAudio" ||
            message.action === "stopSpecificAudio") {
     // 这些消息会被orion_tts.js处理，这里只返回成功
-    sendResponse({success: true});
+    sendResponse({ success: true });
     return true;
   }
 });
@@ -1777,7 +1777,7 @@ function handleSidebarAnalysis() {
     console.log("用户触发后；word:  ", word);
     if (word) {
       console.log("鼠标所在单词为:", word);
-      let wordRangesArrays   = wordRangesMap.get(word.toLowerCase());
+      let wordRangesArrays = wordRangesMap.get(word.toLowerCase());
       // console.log("wordRangesArrays:  ", wordRangesArrays);
       for (const detail of wordRangesArrays) {
         const rect = detail.range.getBoundingClientRect();
@@ -1797,7 +1797,7 @@ function handleSidebarAnalysis() {
     }
 
     if (hoveredDetail) {
-      const {sentence, range: sentenceRange} = getSentenceForWord(hoveredDetail);
+      const { sentence, range: sentenceRange } = getSentenceForWord(hoveredDetail);
 
       // 播放句子 TTS
       try {
@@ -1867,7 +1867,7 @@ let isClosingAnalysisWindow = false; // 防止重复触发关闭
 let activeContentObserver = null;
 
 function closeAnalysisWindowWithAnimation() {
-  if (!analysisWindow || isClosingAnalysisWindow) return; // 如果窗口不存在或正在关闭，则返回
+  if (!analysisWindow || isClosingAnalysisWindow) {return;} // 如果窗口不存在或正在关闭，则返回
 
   isClosingAnalysisWindow = true;
 

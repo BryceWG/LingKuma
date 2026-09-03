@@ -10,7 +10,7 @@ let currentSentenceIndex = -1; // 当前选中的句子索引
 let isNavigatorActive = false; // 导航器是否激活（用户点击句子后激活）
 let sentenceNavigatorUpdateTimer = null; // 句子列表更新定时器
 let lastSentenceListUpdateTime = 0; // 上次更新句子列表的时间
-let sentenceListNeedsUpdate = false; // 句子列表是否需要更新 
+let sentenceListNeedsUpdate = false; // 句子列表是否需要更新
 
 // 配置项
 let currentSentenceAnchor = null; // 当前句子的懒导航锚点，不再激活时全页建表
@@ -19,13 +19,13 @@ let sentenceNavigatorConfig = {
   scrollThreshold: 0.7, // 滚动阈值：70%位置
   scrollBehavior: 'smooth', // 滚动行为：smooth 或 instant
   autoUpdateInterval: 2000, // 自动更新句子列表的间隔（毫秒）
-  minSentenceLength: 5, // 最小句子长度
+  minSentenceLength: 5 // 最小句子长度
 };
 
 // 初始化句子导航器
 function initSentenceNavigator() {
   console.log('[SentenceNavigator] 初始化句子导航器');
-  
+
   // 从storage加载配置
   chrome.storage.local.get(['sentenceNavigatorEnabled'], (result) => {
     sentenceNavigatorEnabled = result.sentenceNavigatorEnabled !== undefined ? result.sentenceNavigatorEnabled : true;
@@ -37,7 +37,7 @@ function initSentenceNavigator() {
     if (namespace === 'local' && changes.sentenceNavigatorEnabled) {
       sentenceNavigatorEnabled = changes.sentenceNavigatorEnabled.newValue;
       console.log('[SentenceNavigator] 功能开关已更新:', sentenceNavigatorEnabled);
-      
+
       if (!sentenceNavigatorEnabled) {
         deactivateNavigator();
       }
@@ -46,7 +46,7 @@ function initSentenceNavigator() {
 
   // 监听键盘事件
   document.addEventListener('keydown', handleNavigatorKeyDown, true);
-  
+
   console.log('[SentenceNavigator] 初始化完成');
 }
 
@@ -82,12 +82,12 @@ function handleNavigatorKeyDown(e) {
 // 检查是否在输入框中
 function isInputFocused() {
   const activeElement = document.activeElement;
-  if (!activeElement) return false;
-  
+  if (!activeElement) {return false;}
+
   const tagName = activeElement.tagName.toLowerCase();
   const isInput = tagName === 'input' || tagName === 'textarea' || tagName === 'select';
   const isEditable = activeElement.isContentEditable;
-  
+
   return isInput || isEditable;
 }
 
@@ -130,16 +130,16 @@ function deactivateNavigator() {
 // 更新句子列表
 function updateSentenceList() {
   const now = Date.now();
-  
+
   // 如果距离上次更新不到1秒，跳过
   if (now - lastSentenceListUpdateTime < 1000) {
     return;
   }
-  
+
   lastSentenceListUpdateTime = now;
-  
+
   console.log('[SentenceNavigator] 更新句子列表');
-  
+
   // 检查highlightManager是否可用
   if (!highlightManager || !highlightManager.parent2Text2RawsAllUnknow) {
     console.log('[SentenceNavigator] highlightManager不可用，无法获取句子列表');
@@ -168,7 +168,7 @@ function updateSentenceList() {
         }
 
         // 遍历该文本节点中的所有单词位置
-        // rawRanges 结构: [{wordLower, start, end}, ...] 
+        // rawRanges 结构: [{wordLower, start, end}, ...]
         if (rawRanges && rawRanges.length > 0) {
           for (const rawRange of rawRanges) {
             if (rawRange && rawRange.start !== undefined && rawRange.end !== undefined) {
@@ -177,7 +177,7 @@ function updateSentenceList() {
                 const wordRange = document.createRange();
                 wordRange.setStart(textNode, rawRange.start);
                 wordRange.setEnd(textNode, rawRange.end);
-                
+
                 // 创建detail对象用于getSentenceForWord
                 const detail = {
                   range: wordRange,
@@ -186,13 +186,13 @@ function updateSentenceList() {
 
                 // 获取句子
                 const { sentence, range: sentenceRange } = getSentenceForWord(detail);
-                
+
                 if (sentence && sentence.trim().length >= sentenceNavigatorConfig.minSentenceLength) {
                   // 去重检查
                   const normalizedSentence = sentence.trim().toLowerCase();
                   if (!sentenceSet.has(normalizedSentence)) {
                     sentenceSet.add(normalizedSentence);
-                    
+
                     newSentenceList.push({
                       sentence: sentence,
                       textNode: textNode,
@@ -229,7 +229,7 @@ function updateSentenceList() {
 
     sentenceList = newSentenceList;
     console.log('[SentenceNavigator] 句子列表已更新，共', sentenceList.length, '个句子');
-    
+
   } catch (error) {
     console.error('[SentenceNavigator] 更新句子列表失败:', error);
   }
@@ -242,14 +242,14 @@ function findSentenceIndex(sentence, sentenceInfo) {
   }
 
   const normalizedSentence = sentence.trim().toLowerCase();
-  
+
   // 首先尝试精确匹配
   for (let i = 0; i < sentenceList.length; i++) {
     if (sentenceList[i].sentence.trim().toLowerCase() === normalizedSentence) {
       return i;
     }
   }
-  
+
   // 如果有sentenceInfo，尝试通过位置匹配
   if (sentenceInfo && sentenceInfo.textNode) {
     for (let i = 0; i < sentenceList.length; i++) {
@@ -258,14 +258,14 @@ function findSentenceIndex(sentence, sentenceInfo) {
       }
     }
   }
-  
+
   // 尝试部分匹配
   for (let i = 0; i < sentenceList.length; i++) {
     if (sentenceList[i].sentence.includes(sentence) || sentence.includes(sentenceList[i].sentence)) {
       return i;
     }
   }
-  
+
   return -1;
 }
 
@@ -275,7 +275,7 @@ function normalizeNavigatorSentenceText(sentence) {
 }
 
 function normalizeNavigatorSentenceInfo(sentenceInfo) {
-  if (!sentenceInfo || !sentenceInfo.sentence) return null;
+  if (!sentenceInfo || !sentenceInfo.sentence) {return null;}
 
   const range = sentenceInfo.range || sentenceInfo.sentenceRange || null;
   const textNode = sentenceInfo.textNode ||
@@ -300,37 +300,37 @@ function getNavigatorTextEntries() {
 
   const entries = [];
   for (const [parent, textMap] of highlightManager.parent2Text2RawsAllUnknow.entries()) {
-    if (!document.contains(parent)) continue;
+    if (!document.contains(parent)) {continue;}
 
     for (const [textNode, rawRanges] of textMap.entries()) {
-      if (!document.contains(textNode) || !rawRanges || rawRanges.length === 0) continue;
+      if (!document.contains(textNode) || !rawRanges || rawRanges.length === 0) {continue;}
       entries.push({
         parent,
         textNode,
         rawRanges: rawRanges
-          .filter(raw => raw && raw.start !== undefined && raw.end !== undefined)
+          .filter((raw) => raw && raw.start !== undefined && raw.end !== undefined)
           .sort((a, b) => a.start - b.start)
       });
     }
   }
 
-  return entries.filter(entry => entry.rawRanges.length > 0);
+  return entries.filter((entry) => entry.rawRanges.length > 0);
 }
 
 function locateNavigatorAnchor(entries, anchor) {
-  if (!anchor || !anchor.textNode) return null;
+  if (!anchor || !anchor.textNode) {return null;}
 
-  const entryIndex = entries.findIndex(entry => entry.textNode === anchor.textNode);
-  if (entryIndex === -1) return null;
+  const entryIndex = entries.findIndex((entry) => entry.textNode === anchor.textNode);
+  if (entryIndex === -1) {return null;}
 
   const rawRanges = entries[entryIndex].rawRanges;
-  let rawIndex = rawRanges.findIndex(raw =>
+  let rawIndex = rawRanges.findIndex((raw) =>
     raw.start <= anchor.wordStart &&
     raw.end >= anchor.wordStart
   );
 
   if (rawIndex === -1) {
-    rawIndex = rawRanges.findIndex(raw => raw.start >= anchor.wordStart);
+    rawIndex = rawRanges.findIndex((raw) => raw.start >= anchor.wordStart);
     if (rawIndex === -1) {
       rawIndex = rawRanges.length - 1;
     }
@@ -370,11 +370,11 @@ function buildSentenceInfoFromRaw(entry, rawRange) {
 
 function findAdjacentSentence(direction) {
   const anchor = currentSentenceAnchor;
-  if (!anchor) return null;
+  if (!anchor) {return null;}
 
   const entries = getNavigatorTextEntries();
   const anchorPos = locateNavigatorAnchor(entries, anchor);
-  if (!anchorPos) return null;
+  if (!anchorPos) {return null;}
 
   const step = direction === 'next' ? 1 : -1;
   let entryIndex = anchorPos.entryIndex;
@@ -411,7 +411,7 @@ function findAdjacentSentence(direction) {
 
 function navigateToNextSentence() {
   console.log('[SentenceNavigator] 导航到下一个句子');
-  
+
   // 如果列表为空或需要更新，先同步更新
   const lazyNextSentence = findAdjacentSentence('next');
   if (lazyNextSentence) {
@@ -423,7 +423,7 @@ function navigateToNextSentence() {
     updateSentenceList();
     sentenceListNeedsUpdate = false;
   }
-  
+
   if (sentenceList.length === 0) {
     console.log('[SentenceNavigator] 句子列表为空');
     return;
@@ -431,7 +431,7 @@ function navigateToNextSentence() {
 
   // 计算下一个索引
   const nextIndex = currentSentenceIndex + 1;
-  
+
   // 检查是否超出范围
   if (nextIndex >= sentenceList.length) {
     console.log('[SentenceNavigator] 已到达最后一个句子');
@@ -451,13 +451,13 @@ function navigateToPreviousSentence() {
   }
 
   console.log('[SentenceNavigator] 导航到上一个句子');
-  
+
   // 如果列表为空或需要更新，先同步更新
   if (sentenceList.length > 0 && sentenceListNeedsUpdate) {
     updateSentenceList();
     sentenceListNeedsUpdate = false;
   }
-  
+
   if (sentenceList.length === 0) {
     console.log('[SentenceNavigator] 句子列表为空');
     return;
@@ -465,7 +465,7 @@ function navigateToPreviousSentence() {
 
   // 计算上一个索引
   const prevIndex = currentSentenceIndex - 1;
-  
+
   // 检查是否超出范围
   if (prevIndex < 0) {
     console.log('[SentenceNavigator] 已到达第一个句子');
@@ -478,7 +478,7 @@ function navigateToPreviousSentence() {
 
 // 导航到指定句子
 function navigateToLazySentence(sentenceInfo, direction) {
-  if (!sentenceInfo) return;
+  if (!sentenceInfo) {return;}
 
   currentSentenceAnchor = normalizeNavigatorSentenceInfo(sentenceInfo);
   currentSentenceIndex = -1;
@@ -537,21 +537,21 @@ function checkAndScroll(sentenceInfo, direction) {
   const viewportHeight = window.innerHeight;
   const sentenceTop = sentenceInfo.rect.top;
 
-  console.log('[SentenceNavigator] 滚动检查 - 方向:', direction, 
+  console.log('[SentenceNavigator] 滚动检查 - 方向:', direction,
     '句子顶部:', sentenceTop, '视口高度:', viewportHeight);
 
   if (direction === 'next') {
     // 向右导航（下一句）：判断句子是否在底部70%区域
     // 底部70%区域 = 从视口70%位置到底部
     const bottomThreshold = viewportHeight * 0.7; // 视口70%位置
-    
+
     if (sentenceTop > bottomThreshold) {
       // 句子在底部70%区域，需要向上滚动页面（显示下面的内容）
       // 将句子滚动到距离顶部30%的位置
       const targetPosition = viewportHeight * 0.3;
       const scrollTarget = sentenceTop + window.scrollY - targetPosition;
       console.log('[SentenceNavigator] 右键翻页 - 向上滚动到:', scrollTarget);
-      
+
       window.scrollTo({
         top: scrollTarget,
         behavior: sentenceNavigatorConfig.scrollBehavior
@@ -561,14 +561,14 @@ function checkAndScroll(sentenceInfo, direction) {
     // 向左导航（上一句）：判断句子是否在顶部20%区域或在视口上方
     // 顶部20%区域 = 从顶部到视口20%
     const topThreshold = viewportHeight * 0.2; // 视口20%位置
-    
+
     if (sentenceTop < topThreshold) {
       // 句子在顶部20%区域或在视口上方，需要向下滚动页面（显示上面的内容）
       // 将句子滚动到距离顶部70%的位置
       const targetPosition = viewportHeight * 0.7;
       const scrollTarget = sentenceTop + window.scrollY - targetPosition;
       console.log('[SentenceNavigator] 左键翻页 - 向下滚动到:', scrollTarget);
-      
+
       window.scrollTo({
         top: scrollTarget,
         behavior: sentenceNavigatorConfig.scrollBehavior
@@ -597,7 +597,7 @@ function triggerSentenceExplosion(sentenceInfo) {
 
   // 使用已经计算好的rect，避免重复计算
   let rect = sentenceInfo.rect;
-  
+
   // 如果rect还没计算，才计算
   if (!rect && typeof getSentenceRect === 'function' && sentenceInfo.textNode && sentenceInfo.range) {
     try {

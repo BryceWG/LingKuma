@@ -49,7 +49,7 @@ let backgroundVideoUrl = null; // 视频背景URL
 function checkUpdateNotification() {
   chrome.storage.local.get(['updateNotification'], function(result) {
     const notification = result.updateNotification;
-    
+
     // 如果存在更新通知且需要显示
     if (notification && notification.showNotification) {
       showUpdateNotification(notification.newVersion, notification.updateUrl);
@@ -64,7 +64,7 @@ function showUpdateNotification(version, updateUrl) {
   const updateLinkEl = document.getElementById('update-link');
   const closeBtn = document.getElementById('update-close-btn');
 
-  if (!notificationEl) return;
+  if (!notificationEl) {return;}
 
   // 设置版本号文本
   updateTextEl.textContent = `Update: ${version}`;
@@ -407,7 +407,7 @@ function applyBackgroundSettings(bgSettings) {
         "src/service/image/pattern.png",
         "src/service/image/pattern2.png",
         "src/service/image/pattern3.png",
-        ...tgPngFiles.map(filename => `src/service/image/tg_png/${filename}`)
+        ...tgPngFiles.map((filename) => `src/service/image/tg_png/${filename}`)
       ];
 
       const randomIndex = Math.floor(Math.random() * imageUrls.length);
@@ -456,8 +456,8 @@ function initializeSettings() {
         opacity: 0.3,
         isInverted: false,
         position: { x: 20, y: '50%' },
-        widthMode: 'auto',       // 默认为自动宽度模式
-        customWidth: 200         // 默认自定义宽度值
+        widthMode: 'auto', // 默认为自动宽度模式
+        customWidth: 200 // 默认自定义宽度值
       },
 
 
@@ -558,17 +558,17 @@ function initializeSettings() {
 
       // Thanox Reading 设置默认值
       thanoxReadingEnabled: false,
-      thanoxProcessingOpacity: 50,  // 处理中的透明值 (0-100)
-      thanoxCompletedOpacity: 10,   // 处理完成后的透明值 (0-100)
-      thanoxWordSpeed: 1000,        // 单词消失速度 (毫秒)
+      thanoxProcessingOpacity: 50, // 处理中的透明值 (0-100)
+      thanoxCompletedOpacity: 10, // 处理完成后的透明值 (0-100)
+      thanoxWordSpeed: 1000, // 单词消失速度 (毫秒)
 
       // 碎片特效设置默认值
-      thanoxFragmentEffect: true,   // 是否启用碎片特效
-      thanoxFragmentCount: 8,       // 碎片数量
+      thanoxFragmentEffect: true, // 是否启用碎片特效
+      thanoxFragmentCount: 8, // 碎片数量
       thanoxFragmentDuration: 2000, // 碎片动画持续时间 (毫秒)
 
       // 已知句子展示动效图开关默认值
-      showKnownSentenceAnimation: true, // 默认开启
+      showKnownSentenceAnimation: true // 默认开启
 
     };
 
@@ -598,7 +598,7 @@ function initializeSettings() {
              mergedObject[subKey] = currentObject[subKey]; // 保留用户已有的值
           }
         }
-         if(subNeedUpdate){
+         if (subNeedUpdate) {
             updatedSettings[key] = mergedObject;
             needUpdate = true;
          }
@@ -833,7 +833,7 @@ highlightJapanese.addEventListener('change', function(e) {
 autoDetectJapaneseKanji.addEventListener('change', function(e) {
     chrome.storage.local.set({ autoDetectJapaneseKanji: e.target.checked });
     // 通知 content script 重新检测页面语言
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
         if (tabs[0]) {
             chrome.tabs.sendMessage(tabs[0].id, {
                 action: 'redetectPageLanguage'
@@ -876,14 +876,14 @@ highlightAlphabetic.addEventListener('change', function(e) {
 
 
 
-////////////////////////插件开关//////////////////////////////
+/// /////////////////////插件开关//////////////////////////////
 
 // 新增：Bionic Reading 开关
 const bionicEnabled = document.getElementById('bionicEnabled');
 
     // 在哪里声明的？
     chrome.storage.local.get('bionicEnabled', function(result) {
-        bionicEnabled.checked = result.bionicEnabled  || false;
+        bionicEnabled.checked = result.bionicEnabled || false;
     });
 
     // 监听变化
@@ -893,7 +893,7 @@ const bionicEnabled = document.getElementById('bionicEnabled');
 
         // 向所有标签页发送切换消息
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "toggleBionic",
                     isEnabled: isEnabled
@@ -918,11 +918,11 @@ clipSubtitles.addEventListener('change', function(e) {
 
     // 向所有标签页发送切换消息
     chrome.tabs.query({}, function(tabs) {
-        tabs.forEach(tab => {
+        tabs.forEach((tab) => {
             chrome.tabs.sendMessage(tab.id, {
                 action: "toggleClipSubtitles",
                 isEnabled: isEnabled
-            }).catch(error => {
+            }).catch((error) => {
                 // 忽略此错误，这是正常情况
                 // 某些标签页可能没有加载内容脚本
             });
@@ -945,7 +945,7 @@ readingRuler.addEventListener('change', function(e) {
     chrome.storage.local.set({ readingRuler: isEnabled });
 
     // 向当前标签页发送消息以实时切换 Reading Ruler
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
         if (tabs[0]) {
             chrome.tabs.sendMessage(tabs[0].id, {
                 action: "toggleReadingRuler",
@@ -955,7 +955,7 @@ readingRuler.addEventListener('change', function(e) {
     });
 });
 
-//////////////////youtube captionsfix////////////////////////////
+/// ///////////////youtube captionsfix////////////////////////////
 
 const youtubeCaptionFix = document.getElementById('youtubeCaptionFix');
 
@@ -971,13 +971,13 @@ youtubeCaptionFix.addEventListener('change', function(e) {
 
     // 可选：通知 content script 更新行为 (如果需要实时生效)
     chrome.tabs.query({}, function(tabs) {
-        tabs.forEach(tab => {
+        tabs.forEach((tab) => {
             // 确保只向可能包含 YouTube 页面的标签页发送消息，或者让 content script 自行判断
             if (tab.url && tab.url.includes("youtube.com")) {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "toggleYoutubeCaptionFix", // 定义一个新的 action
                     enabled: isEnabled
-                }).catch(error => {
+                }).catch((error) => {
                     // 忽略错误，可能 content script 未注入
                 });
             }
@@ -1000,12 +1000,12 @@ youtubeCommaSentencing.addEventListener('change', function(e) {
 
     // 通知 YouTube 页面更新分句设置
     chrome.tabs.query({}, function(tabs) {
-        tabs.forEach(tab => {
+        tabs.forEach((tab) => {
             if (tab.url && tab.url.includes("youtube.com")) {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "updateYoutubeCommaSentencing",
                     enabled: isEnabled
-                }).catch(error => {
+                }).catch((error) => {
                     // 忽略错误，可能 content script 未注入
                 });
             }
@@ -1028,12 +1028,12 @@ youtubeBionicReading.addEventListener('change', function(e) {
 
     // 通知 content script 更新行为
     chrome.tabs.query({}, function(tabs) {
-        tabs.forEach(tab => {
+        tabs.forEach((tab) => {
             if (tab.url && tab.url.includes("youtube.com")) {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "updateYoutubeBionicReading",
                     enabled: isEnabled
-                }).catch(error => {
+                }).catch((error) => {
                     // 忽略错误，可能 content script 未注入
                 });
             }
@@ -1060,12 +1060,12 @@ youtubeFontSize.addEventListener('input', function(e) {
 
     // 通知 content script 更新字体大小
     chrome.tabs.query({}, function(tabs) {
-        tabs.forEach(tab => {
+        tabs.forEach((tab) => {
             if (tab.url && tab.url.includes("youtube.com")) {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "updateYoutubeFontSize",
                     fontSize: fontSize
-                }).catch(error => {
+                }).catch((error) => {
                     // 忽略错误，可能 content script 未注入
                 });
             }
@@ -1089,12 +1089,12 @@ youtubeFontFamily.addEventListener('change', function(e) {
 
     // 通知 content script 更新字体样式
     chrome.tabs.query({}, function(tabs) {
-        tabs.forEach(tab => {
+        tabs.forEach((tab) => {
             if (tab.url && tab.url.includes("youtube.com")) {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "updateYoutubeFontFamily",
                     fontFamily: fontFamily
-                }).catch(error => {
+                }).catch((error) => {
                     // 忽略错误，可能 content script 未注入
                 });
             }
@@ -1118,11 +1118,11 @@ lingqBlocker.addEventListener('change', function(e) {
 
     // 通知所有标签页更新 LingqBlocker 状态
     chrome.tabs.query({}, function(tabs) {
-        tabs.forEach(tab => {
+        tabs.forEach((tab) => {
             chrome.tabs.sendMessage(tab.id, {
                 action: "toggleLingqBlocker",
                 enabled: isEnabled
-            }).catch(error => {
+            }).catch((error) => {
                 // 忽略错误，可能 content script 未注入
             });
         });
@@ -1153,7 +1153,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-/////////////////////////////AI请求开关和数据库操作///////////////////////////////
+/// //////////////////////////AI请求开关和数据库操作///////////////////////////////
 
 
 // 自动请求AI释义
@@ -1327,9 +1327,9 @@ autoAddSentencesLimitSlider.addEventListener('input', function(e) {
 autoAddSentencesLimitInput.addEventListener('input', function(e) {
     let value = parseInt(e.target.value);
     // 确保值在合法范围内
-    if (isNaN(value)) value = 1;
-    if (value < 1) value = 1;
-    if (value > 999) value = 999;
+    if (isNaN(value)) {value = 1;}
+    if (value < 1) {value = 1;}
+    if (value > 999) {value = 999;}
 
     // 同步更新滑块值(滑块最大值为20)
     autoAddSentencesLimitSlider.value = value <= 20 ? value : 20;
@@ -1338,7 +1338,7 @@ autoAddSentencesLimitInput.addEventListener('input', function(e) {
     chrome.storage.local.set({ autoAddSentencesLimit: value });
 });
 
-//////////////////////////窗口设置///////////////////////////////
+/// ///////////////////////窗口设置///////////////////////////////
 
 // 新增：仅点击触发小窗
 const clickOnlyTooltip = document.getElementById('clickOnlyTooltip');
@@ -1382,7 +1382,7 @@ const autoRefreshTooltip = document.getElementById('autoRefreshTooltip');
 chrome.storage.local.get('autoCloseTooltip', function(result) {
     autoCloseTooltip.checked = result.autoCloseTooltip || false;
 
-    if(result.autoCloseTooltip === undefined){
+    if (result.autoCloseTooltip === undefined) {
         chrome.storage.local.set({ autoCloseTooltip: false });
     }
 
@@ -1392,7 +1392,7 @@ chrome.storage.local.get('autoCloseTooltip', function(result) {
 
 // 加载autoRefreshTooltip状态
 chrome.storage.local.get('autoRefreshTooltip', function(result) {
-    autoRefreshTooltip.checked = result.autoRefreshTooltip  || false;
+    autoRefreshTooltip.checked = result.autoRefreshTooltip || false;
 });
 
 // 监听autoCloseTooltip变化
@@ -1417,7 +1417,7 @@ function updateAutoRefreshTooltipState(enabled) {
 }
 
 
-//胶囊默认展开
+// 胶囊默认展开
 const defaultExpandCapsule = document.getElementById('defaultExpandCapsule');
 
 // 加载状态
@@ -1430,7 +1430,7 @@ defaultExpandCapsule.addEventListener('change', function(e) {
     chrome.storage.local.set({ defaultExpandCapsule: e.target.checked });
 });
 
-//优先向上弹出
+// 优先向上弹出
 const preferPopupAbove = document.getElementById('preferPopupAbove');
 
 // 加载状态
@@ -1456,7 +1456,7 @@ selectionPopupPreferDown.addEventListener('change', function(e) {
     chrome.storage.local.set({ selectionPopupPreferDown: e.target.checked });
 });
 
-//爆炸优先模式
+// 爆炸优先模式
 const explosionPriorityMode = document.getElementById('explosionPriorityMode');
 
 // 加载状态
@@ -1586,7 +1586,7 @@ devicePixelRatio.addEventListener('input', function(e) {
         settings[key] = value;
 
         // 立即发送消息到内容脚本
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
           if (tabs[0]) {
             chrome.tabs.sendMessage(tabs[0].id, {
               action: "updateRulerSettings",
@@ -1620,7 +1620,7 @@ devicePixelRatio.addEventListener('input', function(e) {
     }
 
     // 添加宽度模式选择事件监听
-    document.querySelectorAll('input[name="widthMode"]').forEach(radio => {
+    document.querySelectorAll('input[name="widthMode"]').forEach((radio) => {
       radio.addEventListener('change', function() {
         const widthMode = this.value;
         // 更新设置
@@ -1630,7 +1630,7 @@ devicePixelRatio.addEventListener('input', function(e) {
           chrome.storage.local.set({ rulerSettings: settings });
 
           // 添加：向当前标签页发送消息以实时更新
-          chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+          chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
             chrome.tabs.sendMessage(tabs[0].id, {
               action: "updateRulerSettings",
               settings: settings
@@ -1655,7 +1655,7 @@ devicePixelRatio.addEventListener('input', function(e) {
         chrome.storage.local.set({ rulerSettings: settings });
 
         // 向当前标签页发送消息以实时更新
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
           chrome.tabs.sendMessage(tabs[0].id, {
             action: "updateRulerSettings",
             settings: settings
@@ -1669,9 +1669,9 @@ devicePixelRatio.addEventListener('input', function(e) {
       const value = this.value;
       // 确保值在合法范围内
       let validValue = parseInt(value);
-      if (isNaN(validValue)) validValue = 200;
-      if (validValue < 50) validValue = 50;
-      if (validValue > 2400) validValue = 2400;
+      if (isNaN(validValue)) {validValue = 200;}
+      if (validValue < 50) {validValue = 50;}
+      if (validValue > 2400) {validValue = 2400;}
 
       // 同步更新滑块值
       document.getElementById('rulerCustomWidth').value = validValue;
@@ -1683,7 +1683,7 @@ devicePixelRatio.addEventListener('input', function(e) {
         chrome.storage.local.set({ rulerSettings: settings });
 
         // 向当前标签页发送消息以实时更新
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
           chrome.tabs.sendMessage(tabs[0].id, {
             action: "updateRulerSettings",
             settings: settings
@@ -1902,7 +1902,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
        // 向所有标签页发送字体更新消息
        chrome.tabs.query({}, function(tabs) {
-           tabs.forEach(tab => {
+           tabs.forEach((tab) => {
                chrome.tabs.sendMessage(tab.id, {
                    action: "setFont",
                    fontFamily: e.target.value
@@ -1919,7 +1919,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 向所有标签页发送字号更新消息
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "setFontSize",
                     fontSize: value
@@ -1932,9 +1932,9 @@ document.addEventListener('DOMContentLoaded', function() {
     fontSizeInput.addEventListener('input', function(e) {
         let value = parseInt(e.target.value);
         // 确保值在合法范围内
-        if (isNaN(value)) value = 16;
-        if (value < 8) value = 8;
-        if (value > 64) value = 64;
+        if (isNaN(value)) {value = 16;}
+        if (value < 8) {value = 8;}
+        if (value > 64) {value = 64;}
 
         // 同步更新滑块值
         fontSizeSlider.value = value;
@@ -1944,7 +1944,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 向所有标签页发送字号更新消息
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "setFontSize",
                     fontSize: value
@@ -2005,11 +2005,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 向所有标签页发送切换消息
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "toggleThanoxReading",
                     isEnabled: isEnabled
-                }).catch(error => {
+                }).catch((error) => {
                     // 忽略错误，某些标签页可能没有加载内容脚本
                 });
             });
@@ -2024,13 +2024,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 向所有标签页发送设置更新消息
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "updateThanoxSettings",
                     settings: {
                         processingOpacity: value / 100 // 转换为 0-1 范围
                     }
-                }).catch(error => {
+                }).catch((error) => {
                     // 忽略错误
                 });
             });
@@ -2045,13 +2045,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 向所有标签页发送设置更新消息
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "updateThanoxSettings",
                     settings: {
                         completedOpacity: value / 100 // 转换为 0-1 范围
                     }
-                }).catch(error => {
+                }).catch((error) => {
                     // 忽略错误
                 });
             });
@@ -2066,13 +2066,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 向所有标签页发送设置更新消息
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "updateThanoxSettings",
                     settings: {
                         wordSpeed: value
                     }
-                }).catch(error => {
+                }).catch((error) => {
                     // 忽略错误
                 });
             });
@@ -2086,13 +2086,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 向所有标签页发送设置更新消息
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "updateThanoxSettings",
                     settings: {
                         fragmentEffect: isEnabled
                     }
-                }).catch(error => {
+                }).catch((error) => {
                     // 忽略错误
                 });
             });
@@ -2107,13 +2107,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 向所有标签页发送设置更新消息
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "updateThanoxSettings",
                     settings: {
                         fragmentCount: value
                     }
-                }).catch(error => {
+                }).catch((error) => {
                     // 忽略错误
                 });
             });
@@ -2128,13 +2128,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 向所有标签页发送设置更新消息
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "updateThanoxSettings",
                     settings: {
                         fragmentDuration: value
                     }
-                }).catch(error => {
+                }).catch((error) => {
                     // 忽略错误
                 });
             });
@@ -2168,7 +2168,7 @@ window.addEventListener('DOMContentLoaded', () => {
   tooltipContainers.forEach((container) => {
     container.addEventListener('mouseenter', () => {
       const tooltip = container.querySelector('.tooltip-text');
-      if (!tooltip) return;
+      if (!tooltip) {return;}
 
       // 为了测量 tooltip 宽度，暂时显示 tooltip，但保持透明
       tooltip.style.visibility = 'hidden';
@@ -2283,7 +2283,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 从存储中加载已保存的设置；如果没有则使用默认值
     chrome.storage.local.get({
-        pluginBlacklistWebsites: '*://music.youtube.com/*;*ohmygpt*'//这里仅仅是ui，没用
+        pluginBlacklistWebsites: '*://music.youtube.com/*;*ohmygpt*'// 这里仅仅是ui，没用
     }, function(result) {
         blacklistInput.value = result.pluginBlacklistWebsites;
     });
@@ -2800,7 +2800,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const posHighlightSettings = document.getElementById('posHighlightSettings');
     const posHighlightEnabled = document.getElementById('posHighlightEnabled');
     const posHighlightLanguage = document.getElementById('posHighlightLanguage');
-    
+
     // 动词高亮设置
     const posHighlightVerbEnabled = document.getElementById('posHighlightVerbEnabled');
     const posHighlightVerbSettings = document.getElementById('posHighlightVerbSettings');
@@ -2820,7 +2820,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const posHighlightVerbUnderlineThickness = document.getElementById('posHighlightVerbUnderlineThickness');
     const posHighlightVerbUnderlineThicknessInput = document.getElementById('posHighlightVerbUnderlineThicknessInput');
     const posHighlightVerbUnderlinePosition = document.getElementById('posHighlightVerbUnderlinePosition');
-    
+
     // 介词高亮设置
     const posHighlightPrepositionEnabled = document.getElementById('posHighlightPrepositionEnabled');
     const posHighlightPrepositionSettings = document.getElementById('posHighlightPrepositionSettings');
@@ -2877,7 +2877,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (posHighlightLanguage) {
             posHighlightLanguage.value = result.posHighlightLanguage;
         }
-        
+
         // 动词设置
         if (posHighlightVerbEnabled) {
             posHighlightVerbEnabled.checked = result.posHighlightVerbEnabled;
@@ -2934,7 +2934,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (posHighlightVerbUnderlinePosition) {
             posHighlightVerbUnderlinePosition.value = result.posHighlightVerbUnderlinePosition;
         }
-        
+
         // 介词设置
         if (posHighlightPrepositionEnabled) {
             posHighlightPrepositionEnabled.checked = result.posHighlightPrepositionEnabled;
@@ -3000,7 +3000,7 @@ document.addEventListener('DOMContentLoaded', function() {
             chrome.storage.local.set({ posHighlightEnabled: isEnabled });
 
             chrome.tabs.query({}, function(tabs) {
-                tabs.forEach(tab => {
+                tabs.forEach((tab) => {
                     chrome.tabs.sendMessage(tab.id, {
                         action: "togglePosHighlight",
                         enabled: isEnabled
@@ -3015,7 +3015,7 @@ document.addEventListener('DOMContentLoaded', function() {
         posHighlightLanguage.addEventListener('change', function(e) {
             chrome.storage.local.set({ posHighlightLanguage: e.target.value });
 
-            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
                 if (tabs[0]) {
                     chrome.tabs.sendMessage(tabs[0].id, {
                         action: 'updatePosHighlightLanguage',
@@ -3072,7 +3072,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const opacity = posHighlightVerbBackgroundOpacity ? posHighlightVerbBackgroundOpacity.value : 25;
             const opacityHex = Math.round(opacity * 2.55).toString(16).padStart(2, '0');
             const colorWithOpacity = baseColor + opacityHex;
-            
+
             chrome.storage.local.set({ posHighlightVerbBackgroundColor: colorWithOpacity });
             if (posHighlightVerbBackgroundColor) {
                 posHighlightVerbBackgroundColor.value = colorWithOpacity;
@@ -3090,12 +3090,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (posHighlightVerbBackgroundOpacityValue) {
                 posHighlightVerbBackgroundOpacityValue.textContent = opacity;
             }
-            
+
             if (posHighlightVerbBackgroundColor && posHighlightVerbBackgroundColorPicker) {
                 const baseColor = posHighlightVerbBackgroundColorPicker.value;
                 const opacityHex = Math.round(opacity * 2.55).toString(16).padStart(2, '0');
                 const colorWithOpacity = baseColor + opacityHex;
-                
+
                 chrome.storage.local.set({ posHighlightVerbBackgroundColor: colorWithOpacity });
                 posHighlightVerbBackgroundColor.value = colorWithOpacity;
                 if (posHighlightVerbBackgroundColorPreview) {
@@ -3229,7 +3229,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const opacity = posHighlightPrepositionBackgroundOpacity ? posHighlightPrepositionBackgroundOpacity.value : 25;
             const opacityHex = Math.round(opacity * 2.55).toString(16).padStart(2, '0');
             const colorWithOpacity = baseColor + opacityHex;
-            
+
             chrome.storage.local.set({ posHighlightPrepositionBackgroundColor: colorWithOpacity });
             if (posHighlightPrepositionBackgroundColor) {
                 posHighlightPrepositionBackgroundColor.value = colorWithOpacity;
@@ -3247,12 +3247,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (posHighlightPrepositionBackgroundOpacityValue) {
                 posHighlightPrepositionBackgroundOpacityValue.textContent = opacity;
             }
-            
+
             if (posHighlightPrepositionBackgroundColor && posHighlightPrepositionBackgroundColorPicker) {
                 const baseColor = posHighlightPrepositionBackgroundColorPicker.value;
                 const opacityHex = Math.round(opacity * 2.55).toString(16).padStart(2, '0');
                 const colorWithOpacity = baseColor + opacityHex;
-                
+
                 chrome.storage.local.set({ posHighlightPrepositionBackgroundColor: colorWithOpacity });
                 posHighlightPrepositionBackgroundColor.value = colorWithOpacity;
                 if (posHighlightPrepositionBackgroundColorPreview) {
@@ -3360,7 +3360,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'posHighlightPrepositionUnderlineThickness',
             'posHighlightPrepositionUnderlinePosition'
         ], function(result) {
-            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
                 if (tabs[0]) {
                     chrome.tabs.sendMessage(tabs[0].id, {
                         action: 'updatePosHighlightConfig',
@@ -3465,7 +3465,7 @@ bionicLightThemeBtn.addEventListener('click', function() {
         bionicUpdateThemeButtons(false);
         // 向所有标签页发送主题更新消息
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "setTheme",
                     isDark: false
@@ -3480,7 +3480,7 @@ bionicDarkThemeBtn.addEventListener('click', function() {
         bionicUpdateThemeButtons(true);
         // 向所有标签页发送主题更新消息
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "setTheme",
                     isDark: true
@@ -3517,7 +3517,7 @@ highlightLightThemeBtn.addEventListener('click', function() {
         updateHighlightThemeButtons(false);
         // 通知所有标签页更新高亮主题
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "updateHighlightTheme",
                     isDark: false
@@ -3533,7 +3533,7 @@ highlightDarkThemeBtn.addEventListener('click', function() {
         updateHighlightThemeButtons(true);
         // 通知所有标签页更新高亮主题
         chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
+            tabs.forEach((tab) => {
                 chrome.tabs.sendMessage(tab.id, {
                     action: "updateHighlightTheme",
                     isDark: true
@@ -3603,18 +3603,18 @@ document.addEventListener('DOMContentLoaded', function() {
   if (openSidebarBtn) {
     openSidebarBtn.addEventListener('click', function() {
       // 获取当前活动标签页并打开侧栏
-      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
         if (tabs[0]) {
           if (chrome.sidePanel) {
             // Chrome/Edge: sidePanel API
-            chrome.sidePanel.open({tabId: tabs[0].id}, function() {
+            chrome.sidePanel.open({ tabId: tabs[0].id }, function() {
               if (chrome.runtime.lastError) {
                 console.error("打开侧边栏失败:", chrome.runtime.lastError);
               }
             });
           } else if (typeof browser !== 'undefined' && browser.sidebarAction) {
             // Firefox: sidebarAction API（需用户在浏览器侧栏选择器中选中 LingKuma 一次）
-            browser.sidebarAction.open().catch(err => console.error("打开侧边栏失败:", err));
+            browser.sidebarAction.open().catch((err) => console.error("打开侧边栏失败:", err));
           }
           // 关闭popup
           window.close();
@@ -3650,7 +3650,7 @@ document.addEventListener('DOMContentLoaded', function() {
     chrome.storage.local.set({ enableWaifu: e.target.checked });
 
     // 向当前标签页发送消息以实时更新
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
       if (tabs[0]) {
         chrome.tabs.sendMessage(tabs[0].id, {
           action: "toggleWaifu",
@@ -3668,7 +3668,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 如果功能已启用，向当前标签页发送消息以实时更新
     if (enableWaifu.checked) {
-      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
         if (tabs[0]) {
           chrome.tabs.sendMessage(tabs[0].id, {
             action: "updateWaifuUrl",
@@ -3724,10 +3724,10 @@ const i18n = {
   "font_size_setting": "字号设置",
   "font_size_unit": "px",
 
-  //clipboard
+  // clipboard
   "clip_subtitles": "剪切板监听字幕",
 
-  //reading ruler
+  // reading ruler
    "reading_ruler_tooltip": "琅嬛玉尺，助阅明眸。<br>极占性能，长文慎用。",
    "reading_ruler_blacklist": "阅读尺黑名单网站",
    "ruler_inverted_mode": "反色模式",
@@ -3888,7 +3888,7 @@ const i18n = {
     "underline_style_dotted": "点线",
     "underline_style_dashed": "虚线",
     "underline_position_bottom": "下",
-    "underline_position_top": "上",
+    "underline_position_top": "上"
   },
   en: {
     // 标题
@@ -3911,12 +3911,12 @@ const i18n = {
     "close_tooltip": "Close Tooltip",
 
 
-    //embed
+    // embed
       "embed_other_websites": "Embed in Other Pages",
       "embed_other_websites_tooltip": "Display a draggable window on the webpage",
       "waifu_url": "Please enter the URL of the website to display",
 
-    //bionic reading
+    // bionic reading
     "bionic_reading_tooltip": "Highlight the first four words of each sentence.<br>Reduce eye strain and improve reading efficiency.<br>Use with caution for long texts.",
     "bionic_blacklist": "Bionic Blacklist Websites",
     "font_selection": "Font Selection",
@@ -3932,10 +3932,10 @@ const i18n = {
     "font_size_setting": "Font Size Setting",
     "font_size_unit": "px",
 
-    //clipboare
+    // clipboare
     "clip_subtitles": "Monitor Clipboard for Subtitles",
 
-    //readingruler
+    // readingruler
     "reading_ruler_tooltip": "Reading guide to help focus.<br>Resource intensive for long texts.",
     "reading_ruler_blacklist": "Reading Ruler Blacklist Websites",
     "ruler_inverted_mode": "Inverted Mode",
@@ -4097,7 +4097,7 @@ const i18n = {
     "underline_style_dotted": "Dotted",
     "underline_style_dashed": "Dashed",
     "underline_position_bottom": "Bottom",
-    "underline_position_top": "Top",
+    "underline_position_top": "Top"
   },
   zh_TW: {
     "popupTitle": "設定",
@@ -4272,7 +4272,7 @@ const i18n = {
     "underline_style_dotted": "點線",
     "underline_style_dashed": "虛線",
     "underline_position_bottom": "下",
-    "underline_position_top": "上",
+    "underline_position_top": "上"
   },
   de: {
         "popupTitle": "Einstellungen",
@@ -4443,7 +4443,7 @@ const i18n = {
         "underline_style_dotted": "Gepunktet",
         "underline_style_dashed": "Gestrichelt",
         "underline_position_bottom": "Unten",
-        "underline_position_top": "Oben",
+        "underline_position_top": "Oben"
       },
     fr: {
         "popupTitle": "Paramètres",
@@ -4618,7 +4618,7 @@ const i18n = {
         "underline_style_dotted": "Pointillé",
         "underline_style_dashed": "Tirets",
         "underline_position_bottom": "Bas",
-        "underline_position_top": "Haut",
+        "underline_position_top": "Haut"
       },
     es: {
         "popupTitle": "Configuración",
@@ -4792,7 +4792,7 @@ const i18n = {
         "underline_style_dotted": "Punteado",
         "underline_style_dashed": "Guiones",
         "underline_position_bottom": "Abajo",
-        "underline_position_top": "Arriba",
+        "underline_position_top": "Arriba"
       },
     ja: {
           "popupTitle": "設定",
@@ -4966,7 +4966,7 @@ const i18n = {
           "underline_style_dotted": "点線",
           "underline_style_dashed": "破線",
           "underline_position_bottom": "下",
-          "underline_position_top": "上",
+          "underline_position_top": "上"
       },
     ko: {
           "popupTitle": "설정",
@@ -5140,7 +5140,7 @@ const i18n = {
           "underline_style_dotted": "점선",
           "underline_style_dashed": "파선",
           "underline_position_bottom": "아래",
-          "underline_position_top": "위",
+          "underline_position_top": "위"
       },
     ru: {
           "popupTitle": "Настройки",
@@ -5303,7 +5303,7 @@ const i18n = {
           "underline_style_dotted": "Точечный",
           "underline_style_dashed": "Штриховой",
           "underline_position_bottom": "Снизу",
-          "underline_position_top": "Сверху",
+          "underline_position_top": "Сверху"
     },
     it: {
           "popupTitle": "Impostazioni",
@@ -5429,7 +5429,7 @@ const i18n = {
           "underline_style_dotted": "Puntinato",
           "underline_position_bottom": "Sotto",
           "underline_position_top": "Sopra",
-          "underline_position_both": "Sopra+Sotto",
+          "underline_position_both": "Sopra+Sotto"
     }
 };
 
@@ -5443,7 +5443,7 @@ function applyLanguage(lang) {
   const elements = document.querySelectorAll('[data-i18n]');
 
   // 应用翻译
-  elements.forEach(el => {
+  elements.forEach((el) => {
     const key = el.getAttribute('data-i18n');
     // 检查是否有附加后缀
     const suffix = el.getAttribute('data-i18n-suffix') || '';
@@ -5489,7 +5489,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 设置选择器的当前值
     languageSelector.value = userLang;
 
-    //set
+    // set
     chrome.storage.local.set({ userLanguage: userLang });
 
     // 应用语言

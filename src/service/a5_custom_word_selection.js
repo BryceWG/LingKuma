@@ -63,13 +63,13 @@ function initCustomWordSelection() {
 // 处理文本选择
 async function handleTextSelection(e) {
   // 检查是否在黑名单中（与高亮黑名单同步）
-  if (isInCustomWordBlacklist) return;
+  if (isInCustomWordBlacklist) {return;}
 
   // 如果功能被禁用，直接返回
-  if (!isCustomWordSelectionEnabled) return;
+  if (!isCustomWordSelectionEnabled) {return;}
 
   // 如果正在进行逐词高亮，不触发划词弹窗
-  if (window.isWordByWordHighlighting) return;
+  if (window.isWordByWordHighlighting) {return;}
 
   // 触控设备需要更长的延迟，因为原生选择菜单会先出现
   // 检测是否是触控事件
@@ -136,13 +136,13 @@ async function handleSelectionChange() {
   // 触控设备拖动手柄时会持续触发 selectionchange
   selectionChangeTimer = setTimeout(async () => {
     // 检查是否在黑名单中
-    if (isInCustomWordBlacklist) return;
+    if (isInCustomWordBlacklist) {return;}
 
     // 如果功能被禁用，直接返回
-    if (!isCustomWordSelectionEnabled) return;
+    if (!isCustomWordSelectionEnabled) {return;}
 
     // 如果正在进行逐词高亮，不触发划词弹窗
-    if (window.isWordByWordHighlighting) return;
+    if (window.isWordByWordHighlighting) {return;}
 
     const selection = window.getSelection();
     const selectedText = selection.toString().trim();
@@ -199,13 +199,13 @@ async function showCustomWordSelectionPopup(selectedText, rect) {
     console.log('弹窗正在创建中，跳过重复请求');
     return;
   }
-  
+
   // 设置创建标志
   isCreatingPopup = true;
-  
+
   // 先隐藏现有弹窗
   hideCustomWordSelectionPopup();
-  
+
   // 获取划词弹窗间隙设置
   let gap = 0; // 默认值
   try {
@@ -216,7 +216,7 @@ async function showCustomWordSelectionPopup(selectedText, rect) {
   } catch (error) {
     console.error('获取划词弹窗间隙设置失败:', error);
   }
-  
+
   // 获取划词弹窗优先向下弹出设置
   let preferDown = false; // 默认值
   try {
@@ -227,12 +227,12 @@ async function showCustomWordSelectionPopup(selectedText, rect) {
   } catch (error) {
     console.error('获取划词弹窗优先向下弹出设置失败:', error);
   }
-  
+
   // 创建弹窗元素
   customWordSelectionPopup = document.createElement('div');
   customWordSelectionPopup.className = 'custom-word-selection-popup';
   customWordSelectionPopup.setAttribute('data-extension-element', 'true');
-  
+
   // 设置弹窗样式
   let popupStyles = `
     position: absolute;
@@ -273,7 +273,7 @@ async function showCustomWordSelectionPopup(selectedText, rect) {
 
   customWordSelectionPopup.style.cssText = popupStyles;
 
-  
+
   // 创建按钮内容 - 包含Create按钮和句子解析按钮 <span>Create</span>
   customWordSelectionPopup.innerHTML = ` 
     <div style="display: flex; align-items: center; gap: 0px;">
@@ -286,13 +286,13 @@ async function showCustomWordSelectionPopup(selectedText, rect) {
       </div>
     </div>
   `;
-  
+
   // 计算弹窗位置
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
   const popupWidth = 120; // 估算弹窗宽度 - 增加以容纳两个按钮
   const popupHeight = 26; // 估算弹窗高度
-  
+
   // 获取滚动偏移量
   const scrollX = window.scrollX || window.pageXOffset;
   const scrollY = window.scrollY || window.pageYOffset;
@@ -324,7 +324,7 @@ async function showCustomWordSelectionPopup(selectedText, rect) {
   } else if (left + popupWidth > scrollX + viewportWidth - gap) {
     left = scrollX + viewportWidth - popupWidth - gap;
   }
-  
+
   customWordSelectionPopup.style.left = left + 'px';
   customWordSelectionPopup.style.top = top + 'px';
 
@@ -604,12 +604,12 @@ function handleDocumentClick(e) {
   if (customWordSelectionPopup && customWordSelectionPopup.contains(e.target)) {
     return;
   }
-  
+
   // 如果点击的是其他扩展元素，不关闭
   if (e.target.closest('[data-extension-element]')) {
     return;
   }
-  
+
   // 关闭弹窗
   hideCustomWordSelectionPopup();
 }
@@ -624,12 +624,12 @@ function handleKeyDown(e) {
 // 显示自定义词组的 tooltip
 async function showEnhancedTooltipForCustomWord(customWord, sentence, wordRect) {
   console.log('显示自定义词组 tooltip:', customWord);
-  
+
   // 调用现有的 tooltip 显示函数，但传入特殊参数表示这是自定义词组
   if (typeof showEnhancedTooltipForWord === 'function') {
     // 创建一个模拟的 parent 元素
     const mockParent = document.body;
-    
+
     // 调用现有函数，传入 isCustom 标记
     await showEnhancedTooltipForWord(customWord, sentence, wordRect, mockParent, customWord, true);
   } else {
@@ -648,13 +648,13 @@ function toggleCustomWordSelection(enabled) {
 
 // 检查URL是否匹配黑名单模式（与高亮黑名单同步）
 function isUrlInBlacklist(url, blacklistPatterns) {
-  if (!blacklistPatterns) return false;
+  if (!blacklistPatterns) {return false;}
 
-  const patterns = blacklistPatterns.split(';').filter(pattern => pattern.trim() !== '');
+  const patterns = blacklistPatterns.split(';').filter((pattern) => pattern.trim() !== '');
 
   for (const pattern of patterns) {
     const trimmedPattern = pattern.trim();
-    if (trimmedPattern === '') continue;
+    if (trimmedPattern === '') {continue;}
 
     // 将通配符模式转换为正则表达式
     const regexPattern = trimmedPattern

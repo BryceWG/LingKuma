@@ -38,7 +38,7 @@ window.addEventListener(
       chrome.runtime.sendMessage({
         action: "updateClipboardContent",
         content: text
-      }).catch(err => {
+      }).catch((err) => {
         console.log('发送剪贴板内容失败:', err);
       });
     } catch (e) {
@@ -116,17 +116,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (request.action === "playAudio" && request.audioType === "playSupertoneTTS") {
         playSupertoneTTS(request)
-            .then(() => sendResponse({success: true}))
-            .catch(error => sendResponse({success: false, error: error.message}));
+            .then(() => sendResponse({ success: true }))
+            .catch((error) => sendResponse({ success: false, error: error.message }));
         return true;
     }
 
     if (request.action === "playCustom") {
         try {
             playCustom(request.url, request.count, request.volume);
-            sendResponse({success: true});
+            sendResponse({ success: true });
         } catch (error) {
-            sendResponse({success: false, error: error.message});
+            sendResponse({ success: false, error: error.message });
         }
         return true;
     }
@@ -141,22 +141,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             request.language_boost,
             request.model,
             request.speed
-        ).then(() => sendResponse({success: true}))
-         .catch(error => sendResponse({success: false, error: error.message}));
+        ).then(() => sendResponse({ success: true }))
+         .catch((error) => sendResponse({ success: false, error: error.message }));
         return true;
     }
 
     if (request.action === "playGptTTS") {
         playGptTTS(request)
-            .then(() => sendResponse({success: true}))
-            .catch(error => sendResponse({success: false, error: error.message}));
+            .then(() => sendResponse({ success: true }))
+            .catch((error) => sendResponse({ success: false, error: error.message }));
         return true;
     }
 
     if (request.action === "playSupertoneTTS") {
         playSupertoneTTS(request)
-            .then(() => sendResponse({success: true}))
-            .catch(error => sendResponse({success: false, error: error.message}));
+            .then(() => sendResponse({ success: true }))
+            .catch((error) => sendResponse({ success: false, error: error.message }));
         return true;
     }
 
@@ -168,8 +168,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             request.rate,
             request.volume,
             request.pitch
-        ).then(() => sendResponse({success: true}))
-         .catch(error => sendResponse({success: false, error: error.message}));
+        ).then(() => sendResponse({ success: true }))
+         .catch((error) => sendResponse({ success: false, error: error.message }));
         return true;
     }
 
@@ -178,14 +178,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             request.text,
             request.lang,
             request.isSentence
-        ).then(() => sendResponse({success: true}))
-         .catch(error => sendResponse({success: false, error: error.message}));
+        ).then(() => sendResponse({ success: true }))
+         .catch((error) => sendResponse({ success: false, error: error.message }));
         return true;
     }
 
     if (request.action === "stopAudio") {
         stopAllAudio();
-        sendResponse({success: true});
+        sendResponse({ success: true });
         return true;
     }
 
@@ -195,26 +195,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         } else if (request.audioType === "sentence") {
             stopSentenceAudio();
         }
-        sendResponse({success: true});
+        sendResponse({ success: true });
         return true;
     }
 
     // 新增剪贴板相关处理
     if (request.action === "startClipboardMonitoring") {
         startClipboardMonitoring();
-        sendResponse({success: true});
+        sendResponse({ success: true });
         return true;
     }
 
     if (request.action === "stopClipboardMonitoring") {
         stopClipboardMonitoring();
-        sendResponse({success: true});
+        sendResponse({ success: true });
         return true;
     }
 });
 
 // 页面加载后可能需要立即启动剪贴板监听
-chrome.runtime.sendMessage({action: "checkClipboardStatus"}, (response) => {
+chrome.runtime.sendMessage({ action: "checkClipboardStatus" }, (response) => {
     console.log("检查剪贴板状态:", response);
     if (response && response.clipboardEnabled) {
         startClipboardMonitoring();
@@ -262,7 +262,7 @@ function playCustom(url, count, volume) {
         });
     });
 
-    wordAudioPlayer.play().catch(error => {
+    wordAudioPlayer.play().catch((error) => {
         // 如果是因为播放被中断导致的错误，不需要报告为错误
         if (error.name === 'AbortError' && error.message.includes('interrupted by a call to pause')) {
             console.log('单词音频播放被正常中断');
@@ -339,7 +339,7 @@ function EdgeTts(token) {
  * @returns {string} UUID字符串
  */
 EdgeTts.prototype.generateUUID = function() {
-    return 'xxxxxxxx-xxxx-xxxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    return 'xxxxxxxx-xxxx-xxxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         const r = Math.random() * 16 | 0;
         const v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
@@ -362,10 +362,10 @@ EdgeTts.prototype.generateSecMsGec = function(trustedClientToken) {
         const hashBuffer = await crypto.subtle.digest('SHA-256', data);
 
         const hash = Array.from(new Uint8Array(hashBuffer))
-            .map(b => b.toString(16).padStart(2, '0'))
+            .map((b) => b.toString(16).padStart(2, '0'))
             .join('')
             .toUpperCase();
-        
+
         resolve(hash);
     });
 };
@@ -377,9 +377,9 @@ EdgeTts.prototype.generateSecMsGec = function(trustedClientToken) {
 EdgeTts.prototype.getSynthUrl = function() {
     return this.generateSecMsGec(this.token).then((secMsGEC) => {
         const reqId = this.generateUUID();
-        return this.wssUrl + '?TrustedClientToken=' + this.token + 
-               '&Sec-MS-GEC=' + secMsGEC + 
-               '&Sec-MS-GEC-Version=1-130.0.2849.68' + 
+        return this.wssUrl + '?TrustedClientToken=' + this.token +
+               '&Sec-MS-GEC=' + secMsGEC +
+               '&Sec-MS-GEC-Version=1-130.0.2849.68' +
                '&ConnectionId=' + reqId;
     });
 };
@@ -864,7 +864,7 @@ async function playEdgeTTS(text, autoVoice, voice, rate, volume, pitch) {
             });
 
             // 初始化MediaSource
-            await new Promise(resolve => {
+            await new Promise((resolve) => {
                 mediaSource.addEventListener('sourceopen', () => {
                     sourceBuffer = mediaSource.addSourceBuffer('audio/mpeg');
                     sourceBuffer.addEventListener('updateend', () => {
@@ -930,13 +930,13 @@ async function playEdgeTTS(text, autoVoice, voice, rate, volume, pitch) {
                         // 播放音频
                         wordAudioPlayer.play()
                             .then(() => console.log('Edge TTS单词播放已开始'))
-                            .catch(e => console.error('Edge TTS单词播放启动失败:', e));
+                            .catch((e) => console.error('Edge TTS单词播放启动失败:', e));
                     }
                 }
                 // 句子模式，使用MediaSource流式播放
                 else {
                     // 将Blob转换为ArrayBuffer
-                    audioBlob.arrayBuffer().then(buffer => {
+                    audioBlob.arrayBuffer().then((buffer) => {
                         try {
                             // 添加到待处理队列
                             if (sourceBuffer.updating || pendingAudioData.length > 0) {
@@ -953,13 +953,13 @@ async function playEdgeTTS(text, autoVoice, voice, rate, volume, pitch) {
                                 setTimeout(() => {
                                     audioPlayer.play()
                                         .then(() => console.log('Edge TTS句子播放开始'))
-                                        .catch(e => console.error('Edge TTS句子播放启动失败:', e));
+                                        .catch((e) => console.error('Edge TTS句子播放启动失败:', e));
                                 }, 100);
                             }
                         } catch (error) {
                             console.error('处理音频块时出错:', error);
                         }
-                    }).catch(error => {
+                    }).catch((error) => {
                         console.error('转换音频Blob到ArrayBuffer时出错:', error);
                     });
                 }
@@ -1018,13 +1018,13 @@ async function playEdgeTTS(text, autoVoice, voice, rate, volume, pitch) {
 }
 
 // 播放句子 //源playSentence
-async function playMinimaxi(apiEndpoint, apiKey, sentence, voiceId, emotion, language_boost,model,speed) {
+async function playMinimaxi(apiEndpoint, apiKey, sentence, voiceId, emotion, language_boost, model, speed) {
     try {
         // 只停止句子音频
         stopSentenceAudio();
 
 
-        //把sentetnce里面的"im"，替换成Im
+        // 把sentetnce里面的"im"，替换成Im
         sentence = sentence.replace(/im/g, "Im");
 
 
@@ -1095,7 +1095,7 @@ async function playMinimaxi(apiEndpoint, apiKey, sentence, voiceId, emotion, lan
         });
 
         // 初始化MediaSource
-        await new Promise(resolve => {
+        await new Promise((resolve) => {
             mediaSource.addEventListener('sourceopen', () => {
                 sourceBuffer = mediaSource.addSourceBuffer('audio/mpeg');
                 sourceBuffer.addEventListener('updateend', () => {
@@ -1141,7 +1141,7 @@ async function playMinimaxi(apiEndpoint, apiKey, sentence, voiceId, emotion, lan
 
             while (true) {
                 const endIndex = buffer.indexOf('\n\n');
-                if (endIndex === -1) break;
+                if (endIndex === -1) {break;}
 
                 const chunk = buffer.slice(0, endIndex);
                 buffer = buffer.slice(endIndex + 2);
@@ -1172,7 +1172,7 @@ async function playMinimaxi(apiEndpoint, apiKey, sentence, voiceId, emotion, lan
             if (!initialBufferingComplete && initialChunksCount >= MIN_INITIAL_CHUNKS) {
                 initialBufferingComplete = true;
                 console.log('初始缓冲完成，开始播放');
-                sentenceAudioPlayer.play().catch(e => console.error('播放启动失败:', e));
+                sentenceAudioPlayer.play().catch((e) => console.error('播放启动失败:', e));
             }
         }
     } catch (error) {
@@ -1206,7 +1206,7 @@ function getGptTTSMimeType(format) {
 
 function normalizeGptTTSVoice(voice) {
     const value = String(voice || 'alloy').trim();
-    if (!value) return 'alloy';
+    if (!value) {return 'alloy';}
     if (value.startsWith('{')) {
         try {
             return JSON.parse(value);
@@ -1294,7 +1294,7 @@ async function playGptTTS(options) {
             playCount++;
             if (!isSentence && playCount < (parseInt(count, 10) || 1)) {
                 player.currentTime = 0;
-                player.play().catch(error => {
+                player.play().catch((error) => {
                     chrome.runtime.sendMessage({
                         action: "audioPlaybackError",
                         error: error.message,
@@ -1360,8 +1360,8 @@ function normalizeSupertoneLanguage(language, model, isStream = false) {
 
 function splitSupertoneText(text, maxLength = 300) {
     const normalizedText = String(text || '').replace(/\s+/g, ' ').trim();
-    if (!normalizedText) return [];
-    if (normalizedText.length <= maxLength) return [normalizedText];
+    if (!normalizedText) {return [];}
+    if (normalizedText.length <= maxLength) {return [normalizedText];}
 
     const chunks = [];
     let remaining = normalizedText;
@@ -1381,7 +1381,7 @@ function splitSupertoneText(text, maxLength = 300) {
         chunks.push(remaining.slice(0, splitAt).trim());
         remaining = remaining.slice(splitAt).trim();
     }
-    if (remaining) chunks.push(remaining);
+    if (remaining) {chunks.push(remaining);}
     return chunks;
 }
 
@@ -1453,7 +1453,7 @@ async function playSupertoneBlob(blob, audioType, isSentence, count) {
         playCount++;
         if (!isSentence && playCount < (parseInt(count, 10) || 1)) {
             player.currentTime = 0;
-            player.play().catch(error => {
+            player.play().catch((error) => {
                 chrome.runtime.sendMessage({
                     action: "audioPlaybackError",
                     error: error.message,
@@ -1490,7 +1490,7 @@ async function playSupertoneStream(options, chunks, mimeType, audioType, isSente
             const reader = response.body.getReader();
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) break;
+                if (done) {break;}
                 buffers.push(value);
             }
         }
@@ -1540,7 +1540,7 @@ async function playSupertoneStream(options, chunks, mimeType, audioType, isSente
         });
     });
 
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
         mediaSource.addEventListener('sourceopen', () => {
             sourceBuffer = mediaSource.addSourceBuffer('audio/mpeg');
             sourceBuffer.addEventListener('updateend', () => {
@@ -1559,7 +1559,7 @@ async function playSupertoneStream(options, chunks, mimeType, audioType, isSente
 
         while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {break;}
             recordedChunks.push(value);
             const buffer = value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength);
             if (sourceBuffer.updating || pendingAudioData.length > 0) {
@@ -1570,7 +1570,7 @@ async function playSupertoneStream(options, chunks, mimeType, audioType, isSente
 
             if (!hasStarted) {
                 hasStarted = true;
-                player.play().catch(error => {
+                player.play().catch((error) => {
                     chrome.runtime.sendMessage({
                         action: "audioPlaybackError",
                         error: error.message,
@@ -1621,7 +1621,7 @@ async function playSupertoneTTS(options) {
         const outputFormat = (options.outputFormat || 'mp3').toLowerCase();
         const mimeType = getSupertoneTTSMimeType(outputFormat);
         const chunks = splitSupertoneText(options.text);
-        if (chunks.length === 0) return;
+        if (chunks.length === 0) {return;}
 
         if ((options.mode || 'stream') === 'stream') {
             await playSupertoneStream(options, chunks, mimeType, audioType, options.isSentence, options.count);
@@ -1648,9 +1648,9 @@ async function playSupertoneTTS(options) {
 }
 
 function appendAudioChunk(hexString) {
-    if (!hexString || !sourceBuffer) return null;
+    if (!hexString || !sourceBuffer) {return null;}
 
-    const bytes = new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+    const bytes = new Uint8Array(hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 
     if (sourceBuffer.updating || pendingAudioData.length > 0) {
         pendingAudioData.push(bytes.buffer);
@@ -1789,7 +1789,7 @@ async function playLocalSpeech(text, lang, isSentence) {
     // } else {
     //     stopWordAudio();
     // }
-    
+
 
     playLocalSpeechChromeTTS(text, lang, isSentence);
     return;
@@ -1804,14 +1804,14 @@ async function playLocalSpeech(text, lang, isSentence) {
 
     // 根据不同语言优化语音参数
     const languageSettings = {
-        'zh': { rate: 0.9, pitch: 1.0, volume: 0.95 },  // 中文
+        'zh': { rate: 0.9, pitch: 1.0, volume: 0.95 }, // 中文
         'ja': { rate: 0.85, pitch: 1.0, volume: 0.95 }, // 日语
-        'ko': { rate: 0.9, pitch: 1.0, volume: 1.0 },   // 韩语
-        'de': { rate: 0.9, pitch: 1.0, volume: 1.0 },   // 德语
-        'fr': { rate: 0.9, pitch: 1.0, volume: 1.0 },   // 法语
-        'es': { rate: 0.9, pitch: 1.0, volume: 1.0 },   // 西班牙语
-        'ru': { rate: 0.85, pitch: 1.0, volume: 1.0 },  // 俄语
-        'en': { rate: 0.95, pitch: 1.0, volume: 1.0 }   // 英语
+        'ko': { rate: 0.9, pitch: 1.0, volume: 1.0 }, // 韩语
+        'de': { rate: 0.9, pitch: 1.0, volume: 1.0 }, // 德语
+        'fr': { rate: 0.9, pitch: 1.0, volume: 1.0 }, // 法语
+        'es': { rate: 0.9, pitch: 1.0, volume: 1.0 }, // 西班牙语
+        'ru': { rate: 0.85, pitch: 1.0, volume: 1.0 }, // 俄语
+        'en': { rate: 0.95, pitch: 1.0, volume: 1.0 } // 英语
     };
 
     // 获取语言的基础代码
@@ -1844,7 +1844,7 @@ async function playLocalSpeech(text, lang, isSentence) {
     let voices = window.speechSynthesis.getVoices();
 
     // 按语言筛选语音
-    const matchingVoices = voices.filter(voice =>
+    const matchingVoices = voices.filter((voice) =>
         voice.lang && voice.lang.toLowerCase().startsWith(baseLang)
     );
 
@@ -1852,15 +1852,15 @@ async function playLocalSpeech(text, lang, isSentence) {
     const getVoiceScore = (voice) => {
         let score = 0;
         // Google 语音优先
-        if (voice.name.includes('Google')) score += 5;
+        if (voice.name.includes('Google')) {score += 5;}
         // Microsoft 语音次之
-        else if (voice.name.includes('Microsoft')) score += 4;
+        else if (voice.name.includes('Microsoft')) {score += 4;}
         // 自然语音
-        else if (voice.name.includes('Natural')) score += 3;
+        else if (voice.name.includes('Natural')) {score += 3;}
         // 本地语音
-        else if (!voice.localService) score += 2;
+        else if (!voice.localService) {score += 2;}
         // 完全匹配语言代码的优先
-        if (voice.lang.toLowerCase() === actualLang || voice.lang.toLowerCase().startsWith(baseLang)) score += 2;
+        if (voice.lang.toLowerCase() === actualLang || voice.lang.toLowerCase().startsWith(baseLang)) {score += 2;}
         return score;
     };
 

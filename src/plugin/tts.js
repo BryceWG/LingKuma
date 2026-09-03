@@ -79,7 +79,7 @@ function getTTSStorageValue(key) {
 
 if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
     chrome.storage.onChanged.addListener((changes, namespace) => {
-        if (namespace !== 'local') return;
+        if (namespace !== 'local') {return;}
         Object.keys(changes).forEach((key) => {
             ttsStorageCache[key] = changes[key].newValue;
         });
@@ -110,24 +110,24 @@ function isSentenceText(text, lang) {
 }
 
 function getTerminalPunctuatedSingleWord(text) {
-    if (typeof text !== 'string') return null;
+    if (typeof text !== 'string') {return null;}
 
     const trimmedText = text.trim();
     const match = trimmedText.match(/^(.+)([.?。？])$/u);
-    if (!match) return null;
+    if (!match) {return null;}
 
     const word = match[1].trim();
-    if (!word || /\s/u.test(word)) return null;
+    if (!word || /\s/u.test(word)) {return null;}
 
     // 仅处理末尾一个句号或问号的单词，避免把缩写、省略号等误判为单词。
-    if (/[。！？.!?]/u.test(word)) return null;
+    if (/[。！？.!?]/u.test(word)) {return null;}
 
     return word;
 }
 
 function isLikelySentenceText(text, sentence) {
-    if (!text) return false;
-    if (getTerminalPunctuatedSingleWord(text)) return false;
+    if (!text) {return false;}
+    if (getTerminalPunctuatedSingleWord(text)) {return false;}
 
     const normalizedText = text.trim();
     const normalizedSentence = (sentence || '').trim();
@@ -144,7 +144,7 @@ function isLikelySentenceText(text, sentence) {
 }
 
 function normalizeSentenceTextForTTS(text) {
-    if (typeof text !== 'string') return text;
+    if (typeof text !== 'string') {return text;}
 
     // Some TTS engines reject German-style double quotes.
     return text.replace(/[\u201e\u201c]/g, '"');
@@ -219,7 +219,7 @@ async function playTextInternal(params) {
             const isSentence = true;
 
             stopSpecificAudioType('sentence');
-            await new Promise(resolve => setTimeout(resolve, 20));
+            await new Promise((resolve) => setTimeout(resolve, 20));
 
             try {
                 const provider = ttsConfig.sentenceTTSProvider || 'local';
@@ -283,7 +283,7 @@ async function playTextInternal(params) {
     stopSpecificAudioType(isSentence ? 'sentence' : 'word');
 
     // 短暂延迟确保停止操作完成
-    await new Promise(resolve => setTimeout(resolve, 20));
+    await new Promise((resolve) => setTimeout(resolve, 20));
 
     // 根据TTS配置选择播放渠道
     try {
@@ -374,7 +374,7 @@ function evalSimpleExpr(expr, context) {
         const func = context[funcName.trim()];
         if (typeof func === 'function') {
             // 处理参数
-            const evaluatedArgs = args[0].split('+').map(arg => {
+            const evaluatedArgs = args[0].split('+').map((arg) => {
                 arg = arg.trim();
                 if (arg.startsWith('"') || arg.startsWith("'")) {
                     return arg.slice(1, -1);
@@ -397,7 +397,7 @@ function evalSimpleCondition(condition, context) {
     const leftValue = context[left.trim()] || left.trim();
     const rightValue = context[right.trim()] || right.trim().replace(/['"]/g, '');
 
-    switch(op) {
+    switch (op) {
         case '===':
         case '==':
             return leftValue === rightValue;
@@ -473,7 +473,7 @@ async function playMinimaxi(sentence, langOverride = null) {
 
     const randomVoice = voice_id_list[Math.floor(Math.random() * voice_id_list.length)];
     const randomEmotion = emotion_list[Math.floor(Math.random() * emotion_list.length)];
-    //lang是ISO 639-1 语言代码
+    // lang是ISO 639-1 语言代码
     const lang = langOverride || await fetchLanguageDetection(sentence, sentence) || 'auto';
 
     console.log('lang', lang);
@@ -483,7 +483,7 @@ async function playMinimaxi(sentence, langOverride = null) {
 // 'Chinese', 'Chinese,Yue', 'English', 'Arabic', 'Russian', 'Spanish', 'French', 'Portuguese', 'German', 'Turkish', 'Dutch', 'Ukrainian', 'Vietnamese', 'Indonesian', 'Japanese', 'Italian', 'Korean', 'auto'
 
 
-    //根据lang选择language_boost
+    // 根据lang选择language_boost
     let language_boost = 'auto';
     switch (lang) {
         case 'zh':
@@ -547,7 +547,7 @@ async function playMinimaxi(sentence, langOverride = null) {
         // 使用存储的值或默认值
         const group_id = aiConfigFromCache?.minimaxiGroupId || "1879163477474414979" ;
         const api_key = aiConfigFromCache?.minimaxiApiKey || "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJHcm91cE5hbWUiOiJraW5nIGFkb20iLCJVc2VyTmFtZSI6ImtpbmcgYWRvbSIsIkFjY291bnQiOiIiLCJTdWJqZWN0SUQiOiIxODc5MTYzNDc3NDgyODAzNTg3IiwiUGhvbmUiOiIiLCJHcm91cElEIjoiMTg3OTE2MzQ3NzQ3NDQxNDk3OSIsIlBhZ2VOYW1lIjoiIiwiTWFpbCI6InRpbnZkZUBnbWFpbC5jb20iLCJDcmVhdGVUaW1lIjoiMjAyNS0wMy0xNSAwMzoxMTozMSIsIlRva2VuVHlwZSI6MSwiaXNzIjoibWluaW1heCJ9.F2qLKhTG9SbJcttPAvMPBGCC3ejDnB53xkut_eflk6SJSzuz5sT89aHnVx_yA6e3v08mcYfwNhwV1DHkcUJMZnNtEJM_V-smBZ1rgnM3eZ0QfLozGBB1hnuRhhHOURJ7usXcfMzb6fCpO7m0GSdcJpNIJugl3T-uQl6_-ucc8Dlj4waWulqGGMC10rwb_OUwW8IL7VINTKuz8d_mdafUbTWUNujuQDlHwWS7s7Nuz6PGa8v9RVnyY_cpwyoWDZBJXigLf6KxcBhunmWEeT7PeVf06hWCKQrW4Az3Ib1dcYtiWlyDphmZN9L6n0NEo92eeRMcsC8ZJLRmLr1bHQAumw";
-        const voice_id = aiConfigFromCache?.minimaxiVoiceId || 'English_Graceful_Lady';//violet_de English_Whispering_girl
+        const voice_id = aiConfigFromCache?.minimaxiVoiceId || 'English_Graceful_Lady';// violet_de English_Whispering_girl
         const model = aiConfigFromCache?.minimaxiModel || 'speech-01-turbo';
         const speed = parseInt(aiConfigFromCache?.minimaxiSpeed) || 1.1; // 这里做一下str to int 转换
         const baseURL = aiConfigFromCache?.minimaxiBaseURL || 'https://api.minimaxi.chat/v1/t2a_v2?GroupId=';

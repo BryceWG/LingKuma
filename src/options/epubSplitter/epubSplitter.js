@@ -18,11 +18,11 @@ document.getElementById('epubFileInput').addEventListener('change', (event) => {
     if (file) {
         window.selectedEpubFile = file; // 存储文件到全局变量
         processButton.disabled = false; // 启用拆分按钮
-        fixButton.disabled = false;     // 启用修复按钮
+        fixButton.disabled = false; // 启用修复按钮
     } else {
         window.selectedEpubFile = null; // 清空文件
         processButton.disabled = true; // 禁用拆分按钮
-        fixButton.disabled = true;     // 禁用修复按钮
+        fixButton.disabled = true; // 禁用修复按钮
     }
 });
 
@@ -41,7 +41,7 @@ async function handleEpubUpload() {
     processButton.textContent = '正在处理中... | Processing... | 処理中...';
     processButton.disabled = true; // 明确禁用按钮防止重复点击
     // 新增：同时禁用修复按钮
-    if (fixButton) fixButton.disabled = true;
+    if (fixButton) {fixButton.disabled = true;}
 
     // 获取用户输入的目标单词数
     const targetWordsInput = document.getElementById('targetWordsInput');
@@ -50,21 +50,21 @@ async function handleEpubUpload() {
     try {
         const zip = new JSZip();
         const epubContent = await zip.loadAsync(file);
-        
+
         const newZip = new JSZip();
-        
+
         // 修改文件分类
         const htmlFiles = [];
         const opfFiles = [];
         const tocFiles = [];
         const coverFiles = [];
-        const imageFiles = [];  // 专门存储图片文件
+        const imageFiles = []; // 专门存储图片文件
         const otherFiles = [];
 
         // 第一次遍历：读取所有文件，分类存储内容
         for (const path in epubContent.files) {
             const entry = epubContent.files[path];
-            
+
             // 检查是否是图片文件
             if (path.match(/\.(jpg|jpeg|png|gif)$/i)) {
                 const binaryContent = await entry.async('uint8array');
@@ -73,7 +73,7 @@ async function handleEpubUpload() {
             }
 
             const content = await entry.async('string');
-            
+
             // 更新文件分类逻辑
             if (path.match(/cover\.|titlepage\./i) || content.includes('calibre:cover')) {
                 coverFiles.push({ path, content });
@@ -103,7 +103,7 @@ async function handleEpubUpload() {
                     /(xlink:href=["'])(.*?)(cover\.(jpg|jpeg|png|gif))["']/i,
                     (match, p1, p2, p3) => {
                         // 保持原始的图片文件名
-                        return `${p1}${p3}${p1.charAt(0)}`; 
+                        return `${p1}${p3}${p1.charAt(0)}`;
                     }
                 );
             }
@@ -140,12 +140,12 @@ async function handleEpubUpload() {
         }
 
         // 生成新的epub文件
-        const newEpubContent = await newZip.generateAsync({type: 'blob'});
-        
+        const newEpubContent = await newZip.generateAsync({ type: 'blob' });
+
         // --- 处理成功：恢复按钮状态（在下载前） ---
         processButton.textContent = originalButtonText; // 恢复原始文本
         // 保持按钮禁用，因为处理已完成，文件已清空
-        
+
         saveAs(newEpubContent, file.name.replace('.epub', '_split.epub'));
 
         // 处理完成后清空文件选择等
@@ -153,17 +153,17 @@ async function handleEpubUpload() {
         document.getElementById('epubFileInput').value = '';
         // 确保两个按钮都禁用
         processButton.disabled = true;
-        if (fixButton) fixButton.disabled = true;
+        if (fixButton) {fixButton.disabled = true;}
 
     } catch (error) {
         console.error('处理EPUB文件时出错:', error);
         alert('处理EPUB文件时出错: ' + error.message);
-        
+
         // --- 处理失败：恢复按钮状态 ---
         processButton.textContent = originalButtonText; // 恢复原始文本
         processButton.disabled = false; // 重新启用按钮，允许用户重试
         // 新增：根据是否有文件选择，恢复修复按钮状态
-         if (fixButton) fixButton.disabled = (window.selectedEpubFile === null);
+         if (fixButton) {fixButton.disabled = (window.selectedEpubFile === null);}
     }
 }
 
@@ -172,11 +172,11 @@ function splitChapter(content, originalPath, targetWords) {
         const parts = new Map();
         const parser = new DOMParser();
         const doc = parser.parseFromString(content, 'application/xhtml+xml');
-        
+
         // 获取正文内容
         const bodyContent = doc.querySelector('body');
         const words = bodyContent.textContent.trim().split(/\s+/);
-        
+
         // 使用传入的 targetWords 替代原来的固定值
         if (words.length <= targetWords) {
             parts.set(originalPath, content);
@@ -192,20 +192,20 @@ function splitChapter(content, originalPath, targetWords) {
 
         paragraphs.forEach((p) => {
             const pWords = p.textContent.trim().split(/\s+/).length;
-            
+
             if (currentWords + pWords > targetWords) {
                 // 创建新的分段文件
                 const newPath = originalPath.replace(
                     /(.+)\.(?:x?html|xhtml)$/i,
                     `$1.part${currentPart}.xhtml`
                 );
-                
+
                 const newDoc = doc.cloneNode(true);
                 const newBody = newDoc.querySelector('body');
                 newBody.innerHTML = currentContent.join('');
-                
+
                 parts.set(newPath, new XMLSerializer().serializeToString(newDoc));
-                
+
                 currentPart++;
                 currentWords = pWords;
                 currentContent = [p.outerHTML];
@@ -221,11 +221,11 @@ function splitChapter(content, originalPath, targetWords) {
                 /(.+)\.(?:x?html|xhtml)$/i,
                 `$1.part${currentPart}.xhtml`
             );
-            
+
             const newDoc = doc.cloneNode(true);
             const newBody = newDoc.querySelector('body');
             newBody.innerHTML = currentContent.join('');
-            
+
             parts.set(newPath, new XMLSerializer().serializeToString(newDoc));
         }
 
@@ -259,7 +259,7 @@ function updateContentOpf(content) {
     let replacements = [];
     fileMapping.forEach((newPaths, originalPath) => {
         const originalItem = findItemByHref(manifest, originalPath);
-        if (!originalItem) return;
+        if (!originalItem) {return;}
         const originalId = originalItem.getAttribute('id');
 
         if (newPaths.length > 1) {
@@ -284,7 +284,7 @@ function updateContentOpf(content) {
     replacements.sort((a, b) => a.spineIndex - b.spineIndex);
 
     // 逐个替换
-    replacements.forEach(rep => {
+    replacements.forEach((rep) => {
         const { originalId, originalItem, originalSpineItem, newPaths } = rep;
         // 记录原始 spine 项的下一个兄弟节点作为参考位置
         let referenceNode = originalSpineItem ? originalSpineItem.nextSibling : null;
@@ -322,7 +322,7 @@ function updateContentOpf(content) {
 function updateTocNcx(content) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(content, 'application/xml');
-    
+
     // 更新 navMap 中的 src 引用
     fileMapping.forEach((newPaths, originalPath) => {
         console.log("updateTocNcx  newPaths", newPaths);
@@ -343,16 +343,16 @@ function updateTocNcx(content) {
                     if (newPaths.length > 1) {
                         // 将原 navPoint 的链接指向第1部分
                         contentElement.setAttribute('src', normalizePath(newPaths[0]));
-                        
+
                         // 获取当前 navPoint 的命名空间（保证创建的子节点与之保持一致）
                         const ns = navPoint.namespaceURI || null;
-                        
+
                         // 针对拆分的部分，从下标1开始创建新的 Teil 项
                         for (let i = 1; i < newPaths.length; i++) {
                             // 创建新的 navPoint（不复制已有子节点，以免嵌套层级混乱）
                             const newNavPoint = doc.createElementNS(ns, 'navPoint');
                             newNavPoint.setAttribute('id', `${navPoint.getAttribute('id')}_part${i}`);
-                            
+
                             // 创建 navLabel 元素
                             const newNavLabel = doc.createElementNS(ns, 'navLabel');
                             const newText = doc.createElementNS(ns, 'text');
@@ -361,12 +361,12 @@ function updateTocNcx(content) {
                             newText.textContent = `${originalTitle} (Teil ${i + 1})`;
                             newNavLabel.appendChild(newText);
                             newNavPoint.appendChild(newNavLabel);
-                            
+
                             // 创建 content 元素，指向拆分后的对应部分
                             const newContent = doc.createElementNS(ns, 'content');
                             newContent.setAttribute('src', normalizePath(newPaths[i]));
                             newNavPoint.appendChild(newContent);
-                            
+
                             // 将新建的 navPoint 添加为原 navPoint 的子节点，实现缩进效果且保证顺序
                             navPoint.appendChild(newNavPoint);
                         }
@@ -378,13 +378,13 @@ function updateTocNcx(content) {
             }
         });
     });
-    
+
     // 重新排序 playOrder（将所有 navPoint 按文档顺序一一赋值）
     const allNavPoints = doc.querySelectorAll('navPoint');
     allNavPoints.forEach((navPoint, index) => {
         navPoint.setAttribute('playOrder', (index + 1).toString());
     });
-    
+
     return new XMLSerializer().serializeToString(doc);
 }
 

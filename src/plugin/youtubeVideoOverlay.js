@@ -101,7 +101,7 @@
     }
 
     function setWarmButtonState(button, active = false) {
-        if (!button) return;
+        if (!button) {return;}
         button.dataset.active = active ? 'true' : 'false';
         Object.assign(button.style, {
             backgroundColor: active ? YOUTUBE_OVERLAY_UI.terracotta : YOUTUBE_OVERLAY_UI.warmSand,
@@ -111,7 +111,7 @@
     }
 
     function styleControlBar(controlBar) {
-        if (!controlBar) return;
+        if (!controlBar) {return;}
         Object.assign(controlBar.style, {
             position: 'fixed',
             bottom: '18px',
@@ -133,7 +133,7 @@
     }
 
     function styleDockedControlBar(controlBar) {
-        if (!controlBar) return;
+        if (!controlBar) {return;}
         Object.assign(controlBar.style, {
             position: 'relative',
             bottom: 'auto',
@@ -197,7 +197,7 @@
     }
 
     function restoreOriginalVideo() {
-        if (!originalVideo || !originalParent) return;
+        if (!originalVideo || !originalParent) {return;}
 
         if (originalNextSibling && originalNextSibling.parentElement === originalParent) {
             originalParent.insertBefore(originalVideo, originalNextSibling);
@@ -874,7 +874,7 @@
     }
 
     function createFloatButton() {
-        if (floatButtonHost) return;
+        if (floatButtonHost) {return;}
 
         if (!isYouTubePage()) {
             console.log('[LingKuma] Not a YouTube page; skip overlay float button.');
@@ -961,7 +961,7 @@
     }
 
     function updateFloatButtonVisibility() {
-        if (!floatButtonHost) return;
+        if (!floatButtonHost) {return;}
 
         if (isYouTubePage()) {
             floatButtonHost.style.display = '';
@@ -971,7 +971,7 @@
     }
 
     function updateFloatButtonState() {
-        if (!floatButton) return;
+        if (!floatButton) {return;}
         if (isOverlayActive) {
             floatButton.dataset.overlay = 'on';
             floatButton.setAttribute('aria-label', 'YouTube overlay is on. Click to turn off.');
@@ -1097,7 +1097,7 @@
                 callback();
                 return;
             } else {
-                setTimeout(function () {
+                setTimeout(function() {
                     if (timeoutInMs && Date.now() - startTimeInMs > timeoutInMs) {
                         return;
                     }
@@ -1228,7 +1228,7 @@
                 return;
             }
 
-            switch(event.code) {
+            switch (event.code) {
                 case 'KeyA':
                     event.preventDefault();
                     navigateSubtitles('prev');
@@ -1314,7 +1314,7 @@
             try {
                 const playPromise = video.play();
                 if (playPromise !== undefined) {
-                    playPromise.catch(error => {
+                    playPromise.catch((error) => {
                         console.warn('播放视频时出错:', error);
                     });
                 }
@@ -1338,7 +1338,7 @@
     function getYoutubeID() {
         const videoURL = window.location.href;
         var splited = videoURL.split("v=");
-        if (splited.length < 2) return null;
+        if (splited.length < 2) {return null;}
         var splitedAgain = splited[1].split("&");
         var videoId = splitedAgain[0];
         return videoId;
@@ -1385,17 +1385,17 @@
         // into a word/punctuation timeline before finding sentence boundaries.
         const sourceSegments = [];
 
-        events.forEach(paragraph => {
+        events.forEach((paragraph) => {
             const paragraphStartTime = paragraph.tStartMs;
             if (paragraph.segs) {
-                paragraph.segs.forEach(segment => {
-                    if (segment.utf8 === "\n") return;
+                paragraph.segs.forEach((segment) => {
+                    if (segment.utf8 === "\n") {return;}
                     let wordStartTime = paragraphStartTime;
                     if (segment.tOffsetMs !== undefined) {
                         wordStartTime += segment.tOffsetMs;
                     }
                     let wordText = segment.utf8.trim();
-                    if (wordText === "") return;
+                    if (wordText === "") {return;}
                     sourceSegments.push({
                         text: wordText,
                         tStartMs: wordStartTime,
@@ -1440,9 +1440,9 @@
             }
             pushWord();
 
-            const wordTokens = tokens.filter(token => token.type === 'word');
+            const wordTokens = tokens.filter((token) => token.type === 'word');
             let wordIndex = 0;
-            tokens.forEach(token => {
+            tokens.forEach((token) => {
                 if (token.type === 'punctuation') {
                     if (words.length > 0) {
                         words[words.length - 1].punctuation =
@@ -1482,7 +1482,7 @@
 
         for (let i = 0; i < subtitles.length; i++) {
             const element = subtitles[i];
-            if (!element || Array.isArray(element) || !element.utf8) continue;
+            if (!element || Array.isArray(element) || !element.utf8) {continue;}
             if (timestamp >= element.tStartMs && timestamp <= element.tEndMs) {
                 closestIndex = i;
                 break;
@@ -1529,7 +1529,7 @@
         let result = '';
         for (let i = 0; i < words.length; i++) {
             const item = words[i];
-            if (!item || !item.data) continue;
+            if (!item || !item.data) {continue;}
             if (item.data && typeof item.data === 'object' && item.data.utf8) {
                 if (result.length > 0) {
                     result += ' ';
@@ -1824,7 +1824,7 @@
     }
 
     function navigateSubtitles(direction) {
-        if (!rebuiltSubtitles || rebuiltSubtitles.length === 0) return;
+        if (!rebuiltSubtitles || rebuiltSubtitles.length === 0) {return;}
 
         const currentTime = getYoutubeCurrentTime();
         const currentSentence = getCurrentSentence(currentTime, rebuiltSubtitles);
@@ -1843,7 +1843,7 @@
             const firstWordItem = currentSentence.words[0];
             const lastWordItem = currentSentence.words[currentSentence.words.length - 1];
 
-            if (!firstWordItem || !lastWordItem) return null;
+            if (!firstWordItem || !lastWordItem) {return null;}
 
             const currentStartIndex = firstWordItem.originalIndex;
             const currentEndIndex = lastWordItem.originalIndex;
@@ -1906,9 +1906,9 @@
                 let nextSentenceStartIndex = -1;
 
                 for (let i = currentEndIndex + 1; i < rebuiltSubtitles.length; i++) {
-                    if (Array.isArray(rebuiltSubtitles[i-1]) &&
-                        rebuiltSubtitles[i-1][0] &&
-                        punctuationRegex.test(rebuiltSubtitles[i-1][0]) &&
+                    if (Array.isArray(rebuiltSubtitles[i - 1]) &&
+                        rebuiltSubtitles[i - 1][0] &&
+                        punctuationRegex.test(rebuiltSubtitles[i - 1][0]) &&
                         !Array.isArray(rebuiltSubtitles[i])) {
                         nextSentenceStartIndex = i;
                         break;
@@ -1985,7 +1985,7 @@
             const wordItem = targetSentence.words[i];
             if (wordItem && wordItem.data && !Array.isArray(wordItem.data) &&
                 wordItem.data.tStartMs !== undefined && wordItem.data.tEndMs !== undefined) {
-                if (!firstValidWord) firstValidWord = wordItem.data;
+                if (!firstValidWord) {firstValidWord = wordItem.data;}
                 lastValidWord = wordItem.data;
             }
         }
@@ -2148,7 +2148,7 @@
         });
 
         button.addEventListener('mouseenter', () => {
-            if (button.dataset.active === 'true') return;
+            if (button.dataset.active === 'true') {return;}
             button.style.transform = 'translateY(-1px)';
             button.style.backgroundColor = YOUTUBE_OVERLAY_UI.ivory;
             button.style.boxShadow = '0 0 0 1px ' + YOUTUBE_OVERLAY_UI.ringDeep + ', 0 8px 20px rgba(20, 20, 19, 0.1)';
@@ -2210,7 +2210,7 @@
             gap: '10px'
         });
 
-        modes.forEach(mode => {
+        modes.forEach((mode) => {
             const modeBtn = document.createElement('button');
             modeBtn.innerHTML = `<strong>${mode.name}</strong><br><small>${mode.desc}</small>`;
             Object.assign(modeBtn.style, {
@@ -2359,7 +2359,7 @@
             button.style.borderColor = isActive ? YOUTUBE_OVERLAY_UI.terracotta : YOUTUBE_OVERLAY_UI.borderWarm;
         }
 
-        modes.forEach(mode => {
+        modes.forEach((mode) => {
             const modeBtn = document.createElement('button');
             modeBtn.innerHTML = `<strong>${mode.name}</strong><br><small>${mode.desc}</small>`;
             Object.assign(modeBtn.style, {
@@ -2463,7 +2463,7 @@
 
     function updateDisplayMode() {
         const overlay = document.getElementById('youtube-video-overlay');
-        if (!overlay) return;
+        if (!overlay) {return;}
 
         const videoContainer = document.getElementById('overlay-video-container');
         const controlBar = document.getElementById('overlay-control-bar');
@@ -2472,9 +2472,9 @@
         const leftContainer = document.getElementById('overlay-left-container');
         const rightContainer = document.getElementById('overlay-right-container');
 
-        if (subtitleContainer) subtitleContainer.remove();
-        if (subtitleListContainer) subtitleListContainer.remove();
-        if (rightContainer) rightContainer.remove();
+        if (subtitleContainer) {subtitleContainer.remove();}
+        if (subtitleListContainer) {subtitleListContainer.remove();}
+        if (rightContainer) {rightContainer.remove();}
 
         if (leftContainer) {
             if (videoContainer && videoContainer.parentElement === leftContainer) {
@@ -2840,7 +2840,7 @@
     function fitSubtitleText() {
         const subtitleContainer = document.getElementById('overlay-subtitle-container');
         const subtitleText = document.getElementById('overlay-subtitle-text');
-        if (!subtitleContainer || !subtitleText || !subtitleText.textContent) return;
+        if (!subtitleContainer || !subtitleText || !subtitleText.textContent) {return;}
 
         const defaultFontSize = 24;
         const minimumFontSize = checkMobileMode() ? 14 : 16;

@@ -12,13 +12,13 @@
 
     // 检查URL是否匹配黑名单模式
     function isUrlInBlacklist(url, blacklistPatterns) {
-        if (!blacklistPatterns) return false;
+        if (!blacklistPatterns) {return false;}
 
-        const patterns = blacklistPatterns.split(';').filter(pattern => pattern.trim() !== '');
+        const patterns = blacklistPatterns.split(';').filter((pattern) => pattern.trim() !== '');
 
         for (const pattern of patterns) {
             const trimmedPattern = pattern.trim();
-            if (trimmedPattern === '') continue;
+            if (trimmedPattern === '') {continue;}
 
             // 将通配符模式转换为正则表达式
             const regexPattern = trimmedPattern
@@ -65,7 +65,7 @@
     let posHighlightConfig = {
         enabled: false, // 功能总开关
         language: 'english', // POS language: german, english, auto
-        
+
         // 动词高亮设置
         verbEnabled: true, // 动词高亮开关
         verbBackgroundEnabled: true, // 动词背景高亮开关
@@ -75,7 +75,7 @@
         verbUnderlineColor: '#FF6B6B', // 动词下划线颜色
         verbUnderlineThickness: 2, // 动词下划线粗度
         verbUnderlinePosition: 'bottom', // 动词下划线位置
-        
+
         // 介词高亮设置
         prepositionEnabled: true, // 介词高亮开关
         prepositionBackgroundEnabled: true, // 介词背景高亮开关
@@ -127,7 +127,7 @@
         ], (result) => {
             posHighlightConfig.enabled = result.posHighlightEnabled || false;
             posHighlightConfig.language = result.posHighlightLanguage || 'german';
-            
+
             // 动词设置
             posHighlightConfig.verbEnabled = result.posHighlightVerbEnabled !== false;
             posHighlightConfig.verbBackgroundEnabled = result.posHighlightVerbBackgroundEnabled !== false;
@@ -137,7 +137,7 @@
             posHighlightConfig.verbUnderlineColor = result.posHighlightVerbUnderlineColor || '#FF6B6B';
             posHighlightConfig.verbUnderlineThickness = result.posHighlightVerbUnderlineThickness || 2;
             posHighlightConfig.verbUnderlinePosition = result.posHighlightVerbUnderlinePosition || 'bottom';
-            
+
             // 介词设置
             posHighlightConfig.prepositionEnabled = result.posHighlightPrepositionEnabled !== false;
             posHighlightConfig.prepositionBackgroundEnabled = result.posHighlightPrepositionBackgroundEnabled !== false;
@@ -314,8 +314,8 @@
     // =======================
     function stopPosHighlight() {
         // 移除所有 CSS Highlight
-        [VERB_UNDERLINE_GROUP, VERB_BACKGROUND_GROUP, 
-         PREPOSITION_UNDERLINE_GROUP, PREPOSITION_BACKGROUND_GROUP].forEach(group => {
+        [VERB_UNDERLINE_GROUP, VERB_BACKGROUND_GROUP,
+         PREPOSITION_UNDERLINE_GROUP, PREPOSITION_BACKGROUND_GROUP].forEach((group) => {
             if (CSS.highlights.has(group)) {
                 CSS.highlights.delete(group);
             }
@@ -349,9 +349,9 @@
     // =======================
 
     function schedulePosHighlightReapply() {
-        if (!posHighlightConfig.enabled) return;
+        if (!posHighlightConfig.enabled) {return;}
 
-        [80, 400].forEach(delay => {
+        [80, 400].forEach((delay) => {
             setTimeout(() => {
                 if (posHighlightObserver && posHighlightConfig.enabled) {
                     posHighlightObserver.reapplyHighlights();
@@ -441,14 +441,14 @@
             );
 
             const scanChunk = (deadline) => {
-                if (this.scanCancelled) return;
+                if (this.scanCancelled) {return;}
 
                 let count = 0;
                 let textNode = null;
                 const hasIdleTime = deadline && typeof deadline.timeRemaining === 'function';
 
                 while (count < 120) {
-                    if (hasIdleTime && deadline.timeRemaining() < 3 && count > 0) break;
+                    if (hasIdleTime && deadline.timeRemaining() < 3 && count > 0) {break;}
 
                     textNode = walker.nextNode();
                     if (!textNode) {
@@ -476,7 +476,7 @@
         }
 
         handleViewportChange() {
-            if (this.scanCancelled || this.viewportRefreshScheduled) return;
+            if (this.scanCancelled || this.viewportRefreshScheduled) {return;}
 
             this.viewportRefreshScheduled = true;
             const refresh = () => {
@@ -502,19 +502,19 @@
                 }
 
                 if (this.isElementNearViewport(parent)) {
-                    textNodes.forEach(textNode => this.enqueueTextNodeProcessing(textNode));
+                    textNodes.forEach((textNode) => this.enqueueTextNodeProcessing(textNode));
                     this.pendingTextNodes.delete(parent);
                 }
             });
 
             const seenTextNodes = new Set();
-            this.collectViewportCandidateElements().forEach(element => {
+            this.collectViewportCandidateElements().forEach((element) => {
                 this.queueVisibleTextNodesInElement(element, seenTextNodes);
             });
 
             this.processedTextNodes.forEach((data, textNode) => {
                 const parent = textNode.parentElement;
-                if (!parent) return;
+                if (!parent) {return;}
 
                 if (this.isElementInViewport(parent) && !this.visibleRanges.has(textNode)) {
                     this.highlightPOS(textNode, data.verbs, data.prepositions);
@@ -532,7 +532,7 @@
                 return candidates;
             }
 
-            const xPoints = [0.25, 0.5, 0.75].map(ratio => Math.max(0, Math.min(width - 1, Math.floor(width * ratio))));
+            const xPoints = [0.25, 0.5, 0.75].map((ratio) => Math.max(0, Math.min(width - 1, Math.floor(width * ratio))));
             const yPoints = [];
             const yStep = Math.max(120, Math.floor(height / 6));
 
@@ -541,8 +541,8 @@
             }
             yPoints.push(height - 1);
 
-            yPoints.forEach(y => {
-                xPoints.forEach(x => {
+            yPoints.forEach((y) => {
+                xPoints.forEach((x) => {
                     let element = document.elementFromPoint(x, y);
                     let depth = 0;
 
@@ -560,10 +560,10 @@
         }
 
         queueVisibleTextNodesInElement(element, seenTextNodes) {
-            if (!element || element.nodeType !== Node.ELEMENT_NODE) return;
+            if (!element || element.nodeType !== Node.ELEMENT_NODE) {return;}
 
             for (const selector of this.ignoredSelectors) {
-                if (element.closest(selector)) return;
+                if (element.closest(selector)) {return;}
             }
 
             const walker = document.createTreeWalker(
@@ -575,11 +575,11 @@
             let textNode;
             let count = 0;
             while ((textNode = walker.nextNode()) && count < 120) {
-                if (seenTextNodes.has(textNode)) continue;
+                if (seenTextNodes.has(textNode)) {continue;}
                 seenTextNodes.add(textNode);
 
                 const parent = textNode.parentElement;
-                if (!parent || !this.isElementNearViewport(parent)) continue;
+                if (!parent || !this.isElementNearViewport(parent)) {continue;}
 
                 if (this.processedTextNodes.has(textNode)) {
                     const data = this.processedTextNodes.get(textNode);
@@ -600,7 +600,7 @@
             }
 
             const parent = node.parentElement;
-            if (!parent) return NodeFilter.FILTER_REJECT;
+            if (!parent) {return NodeFilter.FILTER_REJECT;}
 
             for (const selector of this.ignoredSelectors) {
                 if (parent.closest(selector)) {
@@ -612,15 +612,15 @@
         }
 
         queueTextNode(textNode) {
-            if (!textNode || !textNode.parentElement) return false;
-            if (this.processedTextNodes.has(textNode) || this.processingTextNodes.has(textNode)) return false;
+            if (!textNode || !textNode.parentElement) {return false;}
+            if (this.processedTextNodes.has(textNode) || this.processingTextNodes.has(textNode)) {return false;}
 
             const parent = textNode.parentElement;
             const text = textNode.textContent;
-            if (!text || !text.trim()) return false;
+            if (!text || !text.trim()) {return false;}
 
             for (const selector of this.ignoredSelectors) {
-                if (parent.closest(selector)) return false;
+                if (parent.closest(selector)) {return false;}
             }
 
             this.intersectionObserver.observe(parent);
@@ -638,7 +638,7 @@
         }
 
         enqueueTextNodeProcessing(textNode) {
-            if (!textNode || this.processedTextNodes.has(textNode) || this.processingTextNodes.has(textNode)) return;
+            if (!textNode || this.processedTextNodes.has(textNode) || this.processingTextNodes.has(textNode)) {return;}
 
             this.processingTextNodes.add(textNode);
             this.processingQueue.push(textNode);
@@ -646,10 +646,10 @@
         }
 
         scheduleTextNodeProcessing() {
-            if (this.processingScheduled) return;
+            if (this.processingScheduled) {return;}
 
             this.processingScheduled = true;
-            this.scheduleIdle(deadline => this.processQueuedTextNodes(deadline));
+            this.scheduleIdle((deadline) => this.processQueuedTextNodes(deadline));
         }
 
         processQueuedTextNodes(deadline) {
@@ -662,7 +662,7 @@
             const maxMs = this.language === 'auto' ? 4 : 8;
 
             while (this.processingQueue.length > 0 && count < maxNodes && performance.now() - start < maxMs) {
-                if (hasIdleTime && deadline.timeRemaining() < 3 && count > 0) break;
+                if (hasIdleTime && deadline.timeRemaining() < 3 && count > 0) {break;}
 
                 const textNode = this.processingQueue.shift();
                 this.processingTextNodes.delete(textNode);
@@ -676,17 +676,17 @@
         }
 
         processTextNode(textNode) {
-            if (!textNode || !textNode.parentElement) return;
+            if (!textNode || !textNode.parentElement) {return;}
 
             const parent = textNode.parentElement;
             const text = textNode.textContent;
 
-            if (!text.trim()) return;
+            if (!text.trim()) {return;}
 
-            if (this.processedTextNodes.has(textNode)) return;
+            if (this.processedTextNodes.has(textNode)) {return;}
 
             for (const selector of this.ignoredSelectors) {
-                if (parent.closest(selector)) return;
+                if (parent.closest(selector)) {return;}
             }
 
             const { verbs, prepositions } = this.extractPOS(text);
@@ -697,7 +697,7 @@
                 text: text
             });
 
-            if (verbs.length === 0 && prepositions.length === 0) return;
+            if (verbs.length === 0 && prepositions.length === 0) {return;}
 
             this.intersectionObserver.observe(parent);
 
@@ -711,7 +711,7 @@
                 return this.extractAutoPOS(text);
             }
 
-            if (!this.nlp) return { verbs: [], prepositions: [] };
+            if (!this.nlp) {return { verbs: [], prepositions: [] };}
             return this.extractPOSWithNlp(text, this.nlp);
         }
 
@@ -721,9 +721,9 @@
                 prepositions: []
             };
 
-            this.getLanguageDetectionSegments(text, this.autoSegmentsPerTextNode).forEach(segment => {
+            this.getLanguageDetectionSegments(text, this.autoSegmentsPerTextNode).forEach((segment) => {
                 const nlp = this.getNlpForText(segment.text);
-                if (!nlp) return;
+                if (!nlp) {return;}
 
                 const segmentResult = this.extractPOSWithNlp(segment.text, nlp, segment.start);
                 result.verbs.push(...segmentResult.verbs);
@@ -750,7 +750,7 @@
                         text: segmentText,
                         start: match.index + leadingWhitespace
                     });
-                    if (hasSegmentLimit && segments.length >= maxSegments) break;
+                    if (hasSegmentLimit && segments.length >= maxSegments) {break;}
                 }
             }
 
@@ -775,7 +775,7 @@
                 const doc = nlp(text);
 
                 const verbMatches = doc.verbs().out('offset');
-                verbMatches.forEach(match => {
+                verbMatches.forEach((match) => {
                     if (match.offset && match.offset.start !== undefined && match.offset.length !== undefined) {
                         result.verbs.push({
                             word: match.text || text.substring(match.offset.start, match.offset.start + match.offset.length),
@@ -786,7 +786,7 @@
                 });
 
                 const prepMatches = doc.match('#Preposition').out('offset');
-                prepMatches.forEach(match => {
+                prepMatches.forEach((match) => {
                     if (match.offset && match.offset.start !== undefined && match.offset.length !== undefined) {
                         result.prepositions.push({
                             word: match.text || text.substring(match.offset.start, match.offset.start + match.offset.length),
@@ -825,7 +825,7 @@
             }
 
             const sample = text.trim().slice(0, 160);
-            if (sample.length < 12) return '';
+            if (sample.length < 12) {return '';}
 
             const cacheKey = sample.toLowerCase();
             if (this.languageDetectionCache.has(cacheKey)) {
@@ -870,13 +870,13 @@
         }
 
         highlightPOS(textNode, verbs, prepositions) {
-            if (!textNode) return;
-            if (this.visibleRanges.has(textNode)) return;
+            if (!textNode) {return;}
+            if (this.visibleRanges.has(textNode)) {return;}
 
             const verbRanges = [];
             const prepRanges = [];
 
-            verbs.forEach(verb => {
+            verbs.forEach((verb) => {
                 try {
                     const range = new Range();
                     range.setStart(textNode, verb.start);
@@ -885,7 +885,7 @@
                 } catch (error) {}
             });
 
-            prepositions.forEach(prep => {
+            prepositions.forEach((prep) => {
                 try {
                     const range = new Range();
                     range.setStart(textNode, prep.start);
@@ -903,7 +903,7 @@
                     } else {
                         highlight = CSS.highlights.get(VERB_BACKGROUND_GROUP);
                     }
-                    verbRanges.forEach(range => highlight.add(range));
+                    verbRanges.forEach((range) => highlight.add(range));
                 }
 
                 if (posHighlightConfig.verbUnderlineEnabled) {
@@ -914,7 +914,7 @@
                     } else {
                         highlight = CSS.highlights.get(VERB_UNDERLINE_GROUP);
                     }
-                    verbRanges.forEach(range => highlight.add(range));
+                    verbRanges.forEach((range) => highlight.add(range));
                 }
             }
 
@@ -927,7 +927,7 @@
                     } else {
                         highlight = CSS.highlights.get(PREPOSITION_BACKGROUND_GROUP);
                     }
-                    prepRanges.forEach(range => highlight.add(range));
+                    prepRanges.forEach((range) => highlight.add(range));
                 }
 
                 if (posHighlightConfig.prepositionUnderlineEnabled) {
@@ -938,7 +938,7 @@
                     } else {
                         highlight = CSS.highlights.get(PREPOSITION_UNDERLINE_GROUP);
                     }
-                    prepRanges.forEach(range => highlight.add(range));
+                    prepRanges.forEach((range) => highlight.add(range));
                 }
             }
 
@@ -968,7 +968,7 @@
                     return;
                 }
 
-                textNodes.forEach(textNode => {
+                textNodes.forEach((textNode) => {
                     if (element.contains(textNode)) {
                         textNodes.delete(textNode);
                     }
@@ -984,10 +984,10 @@
             const ranges = this.visibleRanges.get(textNode);
             if (ranges) {
                 if (ranges.verbs && ranges.verbs.length > 0) {
-                    [VERB_BACKGROUND_GROUP, VERB_UNDERLINE_GROUP].forEach(group => {
+                    [VERB_BACKGROUND_GROUP, VERB_UNDERLINE_GROUP].forEach((group) => {
                         if (CSS.highlights.has(group)) {
                             const highlight = CSS.highlights.get(group);
-                            ranges.verbs.forEach(range => {
+                            ranges.verbs.forEach((range) => {
                                 try { highlight.delete(range); } catch (e) {}
                             });
                         }
@@ -995,10 +995,10 @@
                 }
 
                 if (ranges.prepositions && ranges.prepositions.length > 0) {
-                    [PREPOSITION_BACKGROUND_GROUP, PREPOSITION_UNDERLINE_GROUP].forEach(group => {
+                    [PREPOSITION_BACKGROUND_GROUP, PREPOSITION_UNDERLINE_GROUP].forEach((group) => {
                         if (CSS.highlights.has(group)) {
                             const highlight = CSS.highlights.get(group);
-                            ranges.prepositions.forEach(range => {
+                            ranges.prepositions.forEach((range) => {
                                 try { highlight.delete(range); } catch (e) {}
                             });
                         }
@@ -1010,13 +1010,13 @@
         }
 
         handleIntersection(entries) {
-            entries.forEach(entry => {
+            entries.forEach((entry) => {
                 const element = entry.target;
 
                 if (entry.isIntersecting) {
                     const pendingNodes = this.pendingTextNodes.get(element);
                     if (pendingNodes) {
-                        pendingNodes.forEach(textNode => this.enqueueTextNodeProcessing(textNode));
+                        pendingNodes.forEach((textNode) => this.enqueueTextNodeProcessing(textNode));
                         this.pendingTextNodes.delete(element);
                     }
                 }
@@ -1034,8 +1034,8 @@
         }
 
         handleMutation(mutations) {
-            mutations.forEach(mutation => {
-                mutation.addedNodes.forEach(node => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
                     if (node.nodeType === Node.TEXT_NODE) {
                         this.queueTextNode(node);
                     } else if (node.nodeType === Node.ELEMENT_NODE) {
@@ -1051,7 +1051,7 @@
                     }
                 });
 
-                mutation.removedNodes.forEach(node => {
+                mutation.removedNodes.forEach((node) => {
                     if (node.nodeType === Node.TEXT_NODE) {
                         this.removeHighlight(node);
                         this.removePendingTextNode(node);
@@ -1079,7 +1079,7 @@
 
         reapplyHighlights(options = {}) {
             [VERB_UNDERLINE_GROUP, VERB_BACKGROUND_GROUP,
-             PREPOSITION_UNDERLINE_GROUP, PREPOSITION_BACKGROUND_GROUP].forEach(group => {
+             PREPOSITION_UNDERLINE_GROUP, PREPOSITION_BACKGROUND_GROUP].forEach((group) => {
                 if (CSS.highlights.has(group)) {
                     CSS.highlights.delete(group);
                 }
@@ -1087,7 +1087,7 @@
             this.visibleRanges.clear();
 
             this.processedTextNodes.forEach((data, textNode) => {
-                if (!textNode.parentElement) return;
+                if (!textNode.parentElement) {return;}
 
                 let nextData = data;
                 if (options.refreshPOS) {
@@ -1111,37 +1111,37 @@
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === 'togglePosHighlight') {
             posHighlightConfig.enabled = message.enabled;
-            
+
             if (message.enabled) {
                 startPosHighlight();
             } else {
                 stopPosHighlight();
             }
-            
+
             sendResponse({ success: true });
         } else if (message.action === 'updatePosHighlightLanguage') {
             posHighlightConfig.language = message.language;
-            
+
             if (posHighlightConfig.enabled) {
                 stopPosHighlight();
                 startPosHighlight();
             }
-            
+
             sendResponse({ success: true });
         } else if (message.action === 'updatePosHighlightConfig') {
             // 更新配置
-            Object.keys(message.config).forEach(key => {
+            Object.keys(message.config).forEach((key) => {
                 if (posHighlightConfig.hasOwnProperty(key)) {
                     posHighlightConfig[key] = message.config[key];
                 }
             });
-            
+
             updateHighlightStyles();
             sendResponse({ success: true });
         } else if (message.action === 'toggleHighlight') {
             schedulePosHighlightReapply();
         }
-        
+
         return false;
     });
 

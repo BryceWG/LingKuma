@@ -312,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // 发送消息的函数
   const sendMessage = async () => {
     const userMessage = inputField.value.trim();
-    if (!userMessage || isProcessing) return;
+    if (!userMessage || isProcessing) {return;}
 
     isProcessing = true;
     sendBtn.disabled = true;
@@ -356,7 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 格式化内容，添加简单的Markdown解析
 function formatContent(content) {
-  if (!content) return '';
+  if (!content) {return '';}
 
 
   // 为拉丁字母文本添加特定样式
@@ -416,7 +416,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       currentAIResponseSpan.innerHTML += formatContent(content);
     } else {
       console.log('[Sidebar] currentAIResponseSpan 为空，创建临时 span 元素');
-      
+
       if (analysisResult) {
         const aiResponseDiv = document.createElement('div');
         aiResponseDiv.className = 'ai-message';
@@ -440,7 +440,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ status: "updated" });
   } else if (message.action === "streamComplete") {
     console.log('[Sidebar] 收到 streamComplete:', message.data);
-    
+
     // 将 AI 回复添加到对话历史
     if (currentAIResponseSpan) {
       const aiResponseText = currentAIResponseSpan.textContent || currentAIResponseSpan.innerText;
@@ -449,10 +449,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         console.log('[Sidebar] 已添加 AI 回复到对话历史:', aiResponseText.substring(0, 50) + '...');
       }
     }
-    
+
     // 清理流式上下文
     currentAIResponseSpan = null;
-    
+
     sendResponse({ status: "completed" });
   }
 
@@ -485,14 +485,14 @@ async function streamSidebarChatAnalysis(sentence, conversationHistory, analysis
   // 获取用户自定义的 AI 提示词
   chrome.storage.local.get('aiConfig', async function(result) {
     let customChatPrompt = result?.aiConfig?.chatPrompt || '请根据以下句子和对话历史回答用户的问题：\n\n句子：{sentence}\n\n对话历史：{history}\n\n用户问题：{question}';
-    
+
     // 构建对话历史字符串
-    const historyStr = conversationHistory.map(msg => `${msg.role === 'user' ? '用户' : 'AI'}: ${msg.content}`).join('\n');
-    
+    const historyStr = conversationHistory.map((msg) => `${msg.role === 'user' ? '用户' : 'AI'}: ${msg.content}`).join('\n');
+
     // 获取最后一个用户问题
     const lastUserMessage = conversationHistory[conversationHistory.length - 1];
     const question = lastUserMessage ? lastUserMessage.content : '';
-    
+
     let promptText = customChatPrompt
       .replace('{sentence}', sentence)
       .replace('{history}', historyStr)
@@ -555,7 +555,7 @@ function useLegacySidebarChatAnalysis(messages, responseContentSpan, analysisRes
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${config.apiKey}`,
-        "x-gemini-legacy-support": "true",
+        "x-gemini-legacy-support": "true"
       },
       body: JSON.stringify({
         model: config.apiModel,
@@ -564,7 +564,7 @@ function useLegacySidebarChatAnalysis(messages, responseContentSpan, analysisRes
         temperature: 1
       })
     })
-    .then(response => {
+    .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -596,7 +596,7 @@ function useLegacySidebarChatAnalysis(messages, responseContentSpan, analysisRes
             for (const line of lines) {
               if (line.startsWith('data: ')) {
                 const dataStr = line.slice(6).trim();
-                if (dataStr === '[DONE]') continue;
+                if (dataStr === '[DONE]') {continue;}
 
                 try {
                   const data = JSON.parse(dataStr);
@@ -620,7 +620,7 @@ function useLegacySidebarChatAnalysis(messages, responseContentSpan, analysisRes
 
       processStream();
     })
-    .catch(err => {
+    .catch((err) => {
       console.error('对话分析失败:', err);
       responseContentSpan.innerHTML += ` 错误: ${err.message}`;
     });

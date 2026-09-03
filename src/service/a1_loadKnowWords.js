@@ -26,7 +26,7 @@ function shouldSkipYouTubeFrame() {
     // Cross-origin frames may not expose ancestorOrigins.
   }
 
-  return candidateUrls.some(url => {
+  return candidateUrls.some((url) => {
     try {
       return isYouTubeHost(new URL(url).hostname);
     } catch (error) {
@@ -47,30 +47,30 @@ if (shouldSkipLingKumaFrame) {
 // if (isInIframe) {
 //   console.log("content.js 在iframe中加载");
 // }
- 
-//数据示例：
+
+// 数据示例：
 // 0
-// : 
+// :
 // "epub-rs"
         // value
-        // : 
+        // :
         // "epub-rs"
 // 1
-// : 
+// :
 // "bible"
         // value
-        // : 
+        // :
         // "bible"
 // 2
-// : 
+// :
 // "britain"
         // value
-        // : 
+        // :
         // "britain"
 let knownWords = new Set();
 
 let wordDetails = [];
-let wordRangesMap = new Map(); 
+let wordRangesMap = new Map();
 let tooltipEl = null;
 // 新增全局变量，用于存储当前选中的单词
 let currentTooltipWord = null;
@@ -158,7 +158,7 @@ function startHighlightRuntimeFromStorage() {
 
 // console.log("content.js 已加载");
 
-//监听插件开关状态变化
+// 监听插件开关状态变化
 initPlugin();
 
 function getInitialHighlightEnabled(result) {
@@ -233,7 +233,7 @@ function getHighlightPageKeyForCurrentPage() {
 }
 function initPlugin() {
   console.log("插件功能初始化中...");
-  
+
   // 添加消息监听器，处理插件开关状态变化
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "toggleHighlight") {
@@ -273,44 +273,44 @@ function wildcardToRegExp(pattern) {
 
 // 判断 URL 是否匹配某个单一模式
 function isUrlMatch(url, pattern) {
-  if (!pattern) return false;
+  if (!pattern) {return false;}
   let regex = wildcardToRegExp(pattern);
   return regex.test(url);
 }
 
 // 判断 URL 是否匹配由分号分隔的多个模式中的任意一个
 function patternListMatch(url, patternList) {
-  if (!patternList) return false;
-  const patterns = patternList.split(';').map(s => s.trim()).filter(Boolean);
+  if (!patternList) {return false;}
+  const patterns = patternList.split(';').map((s) => s.trim()).filter(Boolean);
   for (let pat of patterns) {
-    if (isUrlMatch(url, pat)) return true;
+    if (isUrlMatch(url, pat)) {return true;}
   }
   return false;
 }
 
 // 检查当前URL是否匹配黑名单模式
 function isUrlInBlacklist(url, blacklistPatterns) {
-    if (!blacklistPatterns) return false;
-    
-    const patterns = blacklistPatterns.split(';').filter(pattern => pattern.trim() !== '');
-    
+    if (!blacklistPatterns) {return false;}
+
+    const patterns = blacklistPatterns.split(';').filter((pattern) => pattern.trim() !== '');
+
     for (const pattern of patterns) {
         const trimmedPattern = pattern.trim();
-        if (trimmedPattern === '') continue;
-        
+        if (trimmedPattern === '') {continue;}
+
         // 将通配符模式转换为正则表达式
         const regexPattern = trimmedPattern
             .replace(/\./g, '\\.')
             .replace(/\*/g, '.*')
             .replace(/\?/g, '.');
-            
+
         const regex = new RegExp(`^${regexPattern}$`);
-        
+
         if (regex.test(url)) {
             return true;
         }
     }
-    
+
     return false;
 }
 
