@@ -1782,7 +1782,7 @@ async function positionWordExplosion(sentenceRect = null) {
     wordExplosionEl.style.top = Math.max(20 + scrollY, y) + 'px';
     wordExplosionEl.style.bottom = 'auto';
     wordExplosionEl.style.maxHeight = '600px';
-    wordExplosionEl.style.overflow = 'auto';
+    wordExplosionEl.style.overflow = 'hidden';
     return;
   }
 
@@ -1871,7 +1871,7 @@ async function positionWordExplosion(sentenceRect = null) {
     // 先设置样式，以便获取实际高度
     wordExplosionEl.style.left = explosionLeft + 'px';
     wordExplosionEl.style.maxHeight = 'none'; // 先不限制，获取自然高度
-    wordExplosionEl.style.overflow = 'auto';
+    wordExplosionEl.style.overflow = 'hidden';
 
     // 强制重排以获取实际高度
     wordExplosionEl.offsetHeight;
@@ -1919,7 +1919,7 @@ async function positionWordExplosion(sentenceRect = null) {
     // 先设置 maxHeight 和临时的 left，以便获取实际高度
     wordExplosionEl.style.left = (bottomCenterX - explosionWidth / 2) + 'px';
     wordExplosionEl.style.maxHeight = finalMaxHeight + 'px';
-    wordExplosionEl.style.overflow = 'auto';
+    wordExplosionEl.style.overflow = 'hidden';
     wordExplosionEl.style.bottom = 'auto';
 
     // 强制重排以获取实际高度
@@ -1968,7 +1968,7 @@ async function positionWordExplosion(sentenceRect = null) {
     wordExplosionEl.style.top = topCenterY + 'px';
     wordExplosionEl.style.bottom = 'auto';
     wordExplosionEl.style.maxHeight = maxHeight + 'px';
-    wordExplosionEl.style.overflow = 'auto';
+    wordExplosionEl.style.overflow = 'hidden';
 
     // 记录定位信息（向下展开不需要重新定位）
     currentExplosionPosition = {
@@ -5191,12 +5191,13 @@ function injectExplosionStyles() {
       background: #FBFAF5;
       border: 1px solid #ccc;
       border-radius: 16px;
-      padding: 10px;
+      padding: 0;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       z-index: 2147483645; /* 比查词弹窗低一层 */
       max-width: min(${wordExplosionMaxWidth}px, 80vw);
       max-height: 600px;
-      overflow: auto; /* 外层容器负责滚动 */
+      /* 圆角裁剪在外层；滚动放到内层，避免滚动条把四角裁成直角 */
+      overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: ${wordExplosionFontSize}px;
       line-height: 1.5;
@@ -5371,10 +5372,17 @@ function injectExplosionStyles() {
       color: #666;
     }
 
-    /* 内容容器 */
+    /* 内容容器：继承外层 max-height，在内层滚动（外层只负责圆角裁剪） */
     .word-explosion-content {
-      margin-top: 4px;
-      /* 移除max-height和overflow，让内容自然撑开，由外层容器负责滚动 */
+      margin: 0;
+      padding: 8px;
+      box-sizing: border-box;
+      max-height: inherit; /* 跟随 JS 写在 container 上的 maxHeight */
+      overflow-x: hidden;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     /* 原句 */
@@ -5383,8 +5391,8 @@ function injectExplosionStyles() {
       font-size: 12px;
       font-weight: 500;
       color: #333;
-      margin-bottom: 2px;
-      padding: 2px 4px;
+      margin: 0;
+      padding: 4px 8px;
       background: #f8f9fa;
       border-radius: 7px;
       border-left: 2px solid #4CAF50;
@@ -5445,33 +5453,39 @@ function injectExplosionStyles() {
 
     /* 句子翻译 */
     .word-explosion-sentence-translations {
-      margin-bottom: 2px;
+      margin: 0;
       display: flex;
       flex-wrap: wrap;
-      gap: 2px;
+      gap: 4px;
+    }
+
+    /* 无翻译时不占位，避免与 gap 叠加出双倍空白 */
+    .word-explosion-sentence-translations:empty {
+      display: none;
     }
     /* 句子翻译 font-size: 11px;*/
     .word-explosion-sentence-translation {
       
       color: #555;
-      padding: 1px 4px;
+      padding: 2px 6px;
       background: #fff3cd;
       border-radius: 7px;
       border: 1px solid #ffc107;
       flex: 0 1 auto;
     }
 
-    /* 分隔线 */
+    /* 分隔线：上下间距由 .word-explosion-content 的 gap 统一控制 */
     .word-explosion-separator {
       height: 1px;
       background: #e0e0e0;
-      margin: 3px 0;
+      margin: 0;
+      flex-shrink: 0;
     }
 
     /* 单词列表容器 */
     .word-explosion-words {
       display: flex;
-      gap: 3px;
+      gap: 8px;
     }
 
     /* 垂直布局 */
@@ -5512,15 +5526,16 @@ function injectExplosionStyles() {
       
       min-width: unset;
       flex: none;
-      margin-bottom: 3px;
+      margin-bottom: 8px;
     }
 
-    /* 单词项 padding: 2px 4px; */
+    /* 单词项：四周内边距对称 */
     .word-explosion-word-item {
-      padding: 0px 1px 3px 5px;
+      padding: 4px 8px;
       background: #f5f5f5;
       border-radius: 7px;
       border: 1px solid #e0e0e0;
+      box-sizing: border-box;
     }
 
     .word-explosion-word-item:hover {
@@ -5657,22 +5672,23 @@ function injectExplosionStyles() {
       font-size: 14px;
     }
 
-    /* 滚动条样式 */
-    .word-explosion-container::-webkit-scrollbar {
+    /* 滚动条样式（内层 content，外层保持圆角） */
+    .word-explosion-content::-webkit-scrollbar {
       width: 8px;
     }
 
-    .word-explosion-container::-webkit-scrollbar-track {
-      background: #f1f1f1;
+    .word-explosion-content::-webkit-scrollbar-track {
+      background: transparent;
       border-radius: 4px;
+      margin: 8px 0;
     }
 
-    .word-explosion-container::-webkit-scrollbar-thumb {
+    .word-explosion-content::-webkit-scrollbar-thumb {
       background: #888;
       border-radius: 4px;
     }
 
-    .word-explosion-container::-webkit-scrollbar-thumb:hover {
+    .word-explosion-content::-webkit-scrollbar-thumb:hover {
       background: #555;
     }
 

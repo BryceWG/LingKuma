@@ -6217,11 +6217,11 @@ body {
     border-radius: inherit;
 }
 
-/* 固定顶栏 */
+/* 固定顶栏：上下与分割线的间距统一 8px */
 .fixed-header {
     flex-shrink: 0;
     background: transparent; /* 改为透明，让父级背景色和花纹透出来 */
-    padding: 2px 16px 2px;  /* 减少底部padding从16px到8px */
+    padding: 8px 16px;
     border-bottom: 1px solid rgb(213,216,220);
     z-index: 1; /* 提升层级，位于伪元素之上 */
     position: relative; /* 创建新的堆叠上下文 */
@@ -6230,12 +6230,12 @@ body {
     height: auto; /* 允许高度自适应 */
 }
 
-/* 可滚动的中间内容区域 */
+/* 可滚动的中间内容区域：上下与分割线的间距统一 8px */
 .scrollable-content {
     font-size: 16px !important;
     flex: 1;
     overflow-y: auto; /* 使用标准的auto值，确保滚动条行为一致 */
-    padding: 5px 16px 0;  /* 顶部和左右添加padding，底部不加 */
+    padding: 8px 16px;
     position: relative; /* 创建新的堆叠上下文 */
     z-index: 1; /* 提升层级 */
     background: transparent; /* 改为透明 */
@@ -6254,13 +6254,13 @@ body {
     border-bottom-right-radius: 8px;
 }
 
-/* 调整内容区域的padding */
+/* 父级已提供水平 padding，子区域不再叠加，避免左右/视觉不齐 */
 .header,
 .tags,
 .section,
 .bottom-nav {
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 /* 第一个元素顶部padding */
@@ -6278,6 +6278,9 @@ body {
     /* 移除了边框 */
     margin: 0;
     border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     /* 移除了 border-top */
     /* 移除了 box-shadow */
 }
@@ -6290,7 +6293,7 @@ body {
 }
 
 .word-title {
-    margin-left: -11px;
+    margin-left: 0;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -7033,8 +7036,8 @@ html[data-theme='dark'] .sound-icon svg path {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    row-gap: 0px;
-    margin-bottom: 0px;
+    row-gap: 6px;
+    margin: 0;
 }
 
 .tag {
@@ -7047,7 +7050,7 @@ html[data-theme='dark'] .sound-icon svg path {
     background-color: #dcdddd8a;
     backdrop-filter: blur(10px);
     color: var(--text-color);
-    margin-bottom: 6px; /* 添加底部边距，确保换行后的行间距 */
+    margin: 0;
     position: relative; /* 添加相对定位，使删除按钮可以绝对定位 */
 }
 
@@ -7113,7 +7116,7 @@ html[data-theme='dark'] .sound-icon svg path {
 }
 
 .section {
-    margin-bottom: 5px;
+    margin: 0;
     background: var(--background-color);
     border: none;
     border-radius: 8px;
@@ -7186,7 +7189,7 @@ html[data-theme='dark'] .sound-icon svg path {
     background: #dcdddd8a;
     backdrop-filter: blur(10px);
     border-radius: 4px;
-    margin: 4px;
+    margin: 0;
 
 }
 
@@ -7408,9 +7411,13 @@ html[data-theme='dark'] .scrollable-content::-webkit-scrollbar-thumb:hover {
     min-height: auto;
 }
 
-.examples-section{
-padding-top: 5px;
+/* 无例句时不占位，避免释义区下方多出一块空白导致上下间距不齐 */
+.examples-section {
+    padding-top: 0;
+}
 
+.examples-section:has(.example-sentence-pair) {
+    padding-top: 8px;
 }
 
 /* AI 释义合并横幅（AI1/AI2 合并为一条横幅，各占一行） */
